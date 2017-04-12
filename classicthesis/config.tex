@@ -12,3 +12,174 @@
 
 % Fixing bug related to Pandoc to Latex conversion
 \def\tightlist{}
+
+% *****************************************************************************
+% 1. Configure classicthesis for your needs here, e.g., remove "drafting" below
+% in order to deactivate the time-stamp on the pages
+% *****************************************************************************
+\PassOptionsToPackage{eulerchapternumbers,listings,drafting,%
+				      pdfspacing,%floatperchapter,%linedheaders,%
+				      subfig,beramono,eulermath,parts}{classicthesis}
+
+% ********************************************************************
+% Available options for classicthesis.sty
+% (see ClassicThesis.pdf for more information):
+% drafting
+% parts nochapters linedheaders
+% eulerchapternumbers beramono eulermath pdfspacing minionprospacing
+% tocaligned dottedtoc manychapters
+% listings floatperchapter subfig
+% ********************************************************************
+
+% ********************************************************************
+% Triggers for this config
+% ********************************************************************
+\usepackage{ifthen}
+
+% ********************************************************************
+% Setup, finetuning, and useful commands
+% ********************************************************************
+\newcounter{dummy} % necessary for correct hyperlinks (to index, bib, etc.)
+\newlength{\abcd} % for ab..z string length calculation
+\providecommand{\mLyX}{L\kern-.1667em\lower.25em\hbox{Y}\kern-.125emX\@}
+\newcommand{\ie}{i.\,e.}
+\newcommand{\Ie}{I.\,e.}
+\newcommand{\eg}{e.\,g.}
+\newcommand{\Eg}{E.\,g.}
+
+% *****************************************************************************
+% 3. Loading some handy packages
+% *****************************************************************************
+% ********************************************************************
+% Packages with options that might require adjustments
+% ********************************************************************
+
+\PassOptionsToPackage{english}{babel}
+\usepackage{babel}
+
+\PassOptionsToPackage{fleqn}{amsmath} % math environments and more by the AMS
+\usepackage{amsmath}
+
+% ********************************************************************
+% General useful packages
+% ********************************************************************
+\PassOptionsToPackage{T1}{fontenc}
+\usepackage{fontenc}
+
+\DeclareTextCommandDefault{\nobreakspace}{\leavevmode\nobreak\ }
+\usepackage{textcomp} % fix warning with missing font shapes
+\usepackage{scrhack}  % fix warnings when using KOMA with listings package
+\usepackage{xspace}   % to get the spacing after macros right
+\usepackage{mparhack} % get marginpar right
+\usepackage{fixltx2e} % fixes some LaTeX stuff
+\PassOptionsToPackage{printonlyused,smaller}{acronym}
+\usepackage{acronym} % nice macros for handling all acronyms in the thesis
+{% raw %}
+\renewcommand*{\acsfont}[1]{\textssc{#1}} % for MinionPro
+\newcommand{\bflabel}[1]{{#1}\hfill} % fix the list of acronyms
+{% endraw %}
+
+\usepackage{biblatex}
+\bibliography{$bibfile$}
+$if(book-class)$
+\renewcommand\bibname{$bibtitle$}
+$else$
+\renewcommand\refname{$bibtitle$}
+$endif$
+
+% *****************************************************************************
+% 4. Setup floats: tables, (sub)figures, and captions
+% *****************************************************************************
+\usepackage{tabularx} % better tables
+\setlength{\extrarowheight}{3pt} % increase table row height
+{% raw %}
+\newcommand{\tableheadline}[1]{\multicolumn{1}{c}{\spacedlowsmallcaps{#1}}}
+\newcommand{\myfloatalign}{\centering} % to be used with each float for alignment
+{% endraw %}
+\usepackage{caption}
+\captionsetup{format=hang,font=small}
+\usepackage{subcaption}
+
+% *****************************************************************************
+% 5. Setup code listings
+% *****************************************************************************
+\usepackage{listings}
+\lstset{emph={trueIndex,root},emphstyle=\color{BlueViolet}}%\underbar} % for special keywords
+\lstset{language=[LaTeX]Tex,%C++,
+    keywordstyle=\color{RoyalBlue},%\bfseries,
+    basicstyle=\small\ttfamily,
+    %identifierstyle=\color{NavyBlue},
+    commentstyle=\color{Green}\ttfamily,
+    stringstyle=\rmfamily,
+    numbers=none,%left,%
+    numberstyle=\scriptsize,%\tiny
+    stepnumber=5,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frameround=ftff,
+    frame=single,
+    belowcaptionskip=.75\baselineskip
+    %frame=L
+}
+
+% ********************************************************************
+% Using PDFLaTeX
+% ********************************************************************
+\PassOptionsToPackage{pdftex,hyperfootnotes=false,pdfpagelabels}{hyperref}
+\usepackage{hyperref}  % backref linktocpage pagebackref
+\pdfcompresslevel=9
+\pdfadjustspacing=1
+
+$if(graphics)$
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+$endif$
+
+% ********************************************************************
+% Hyperreferences
+% ********************************************************************
+\hypersetup{
+    %draft,	% = no hyperlinking at all (useful in b/w printouts)
+    colorlinks=true, linktocpage=true, pdfstartpage=3, pdfstartview=FitV,%
+    % uncomment the following line if you want to have black links (e.g., for printing)
+    colorlinks=false, linktocpage=false, pdfborder={0 0 0}, pdfstartpage=3, pdfstartview=FitV,%
+    breaklinks=true, pdfpagemode=UseNone, pageanchor=true, pdfpagemode=UseOutlines,%
+    plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=1,%
+    hypertexnames=true, pdfhighlight=/O,%nesting=true,%frenchlinks,%
+    urlcolor=webbrown, linkcolor=RoyalBlue, citecolor=webgreen, %pagecolor=RoyalBlue,%
+    %urlcolor=Black, linkcolor=Black, citecolor=Black, %pagecolor=Black,%
+    pdftitle={$title$},%
+    pdfauthor={\textcopyright\ $author$, $university$},%
+    pdfsubject={},%
+    pdfkeywords={},%
+    pdfcreator={pdfLaTeX},%
+    pdfproducer={LaTeX with hyperref and classicthesis}%
+}
+\urlstyle{same}  % don't use monospace font for urls
+
+
+$if(numbersections)$
+\setcounter{secnumdepth}{5}
+$else$
+\setcounter{secnumdepth}{0}
+$endif$
+% ********************************************************************
+% Last, but not least...
+% ********************************************************************
+\usepackage{classicthesis}
+
+{% if crop %}
+%\usepackage[{{ paper }}paper]{geometry}
+%\usepackage[cam,{{ crop }},center,frame]{crop}
+\usepackage[{{ crop }}paper,layout={{ paper }}paper,layouthoffset=17mm,layoutvoffset=23.5mm,showcrop]{geometry}% B5 at A4
+{% else %}
+\usepackage[{{ paper }}paper,layout={{ paper }}paper]{geometry}
+{% endif %}
