@@ -1,4 +1,9 @@
-\usepackage[utf8]{inputenc}
+\PassOptionsToPackage{utf8}{inputenc}
+\usepackage{inputenc}
+
+\PassOptionsToPackage{utf8}{luainputenc}
+\usepackage[utf8]{luainputenc}
+
 \usepackage{url}
 \usepackage{microtype}
 \usepackage{booktabs}
@@ -17,10 +22,9 @@
 % 1. Configure classicthesis for your needs here, e.g., remove "drafting" below
 % in order to deactivate the time-stamp on the pages
 % *****************************************************************************
-\PassOptionsToPackage{eulerchapternumbers,listings,drafting,%
-				      pdfspacing,%floatperchapter,%linedheaders,%
-				      subfig,beramono,eulermath,parts}{classicthesis}
-
+\PassOptionsToPackage{eulerchapternumbers,listings,dottedtoc,
+					 %floatperchapter,%linedheaders,%minionprospacing,
+					 subfig,beramono,eulermath}{classicthesis}
 % ********************************************************************
 % Available options for classicthesis.sty
 % (see ClassicThesis.pdf for more information):
