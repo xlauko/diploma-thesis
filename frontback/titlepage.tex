@@ -1,0 +1,39 @@
+\begin{titlepage}
+    \begin{addmargin}[-1cm]{-3cm}
+    \begin{center}
+        \large
+
+        \hfill
+
+        \bigskip \bigskip
+
+    	$if(title)$
+        \begingroup
+            \Large{\color{Maroon}\spacedallcaps{$title$}} \\ \bigskip
+        \endgroup
+    	$endif$
+
+        \spacedlowsmallcaps{$author$}
+
+        \vfill
+
+    	\includegraphics[width=5cm]{$university_logo$}
+
+        \vfill
+
+    	$if(subtitle)$
+        \spacedlowsmallcaps{$subtitle$} \\
+        \smallskip
+    	$endif$
+
+		$year$
+
+        \vfill
+
+      \end{center}
+      \begin{tabularx}{\linewidth}{l X r}
+        $department$ & & \spacedlowsmallcaps{Supervisor}  \\
+        $university$ & & $supervisor$
+      \end{tabularx}
+  \end{addmargin}
+\end{titlepage}
