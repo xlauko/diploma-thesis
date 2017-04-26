@@ -22,9 +22,11 @@
 % 1. Configure classicthesis for your needs here, e.g., remove "drafting" below
 % in order to deactivate the time-stamp on the pages
 % *****************************************************************************
-\PassOptionsToPackage{eulerchapternumbers,listings,dottedtoc,
-					 %floatperchapter,%linedheaders,%minionprospacing,
+\PassOptionsToPackage{listings,dottedtoc,
+                     %eulerchapternumbers,
+					 floatperchapter,linedheaders,%minionprospacing,
 					 subfig,beramono,eulermath}{classicthesis}
+
 % ********************************************************************
 % Available options for classicthesis.sty
 % (see ClassicThesis.pdf for more information):
@@ -183,7 +185,20 @@ $endif$
 {% if crop %}
 %\usepackage[{{ paper }}paper]{geometry}
 %\usepackage[cam,{{ crop }},center,frame]{crop}
-\usepackage[{{ crop }}paper,layout={{ paper }}paper,layouthoffset=17mm,layoutvoffset=23.5mm,showcrop]{geometry}% B5 at A4
+\usepackage[
+    {{ crop }}paper
+    ,layout={{ paper }}paper
+    ,layouthoffset=17mm
+    ,layoutvoffset=23.5mm
+    ,showcrop
+]{geometry}% B5 at A4
 {% else %}
-\usepackage[{{ paper }}paper,layout={{ paper }}paper]{geometry}
+\usepackage[
+    {{ paper }}paper
+    ,layout={{ paper }}paper
+]{geometry}
 {% endif %}
+
+\areaset[current]{312pt}{657pt}
+\setlength{\marginparwidth}{7.5em}%
+\setlength{\marginparsep}{2em}%

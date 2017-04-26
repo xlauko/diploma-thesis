@@ -32,17 +32,18 @@
 %    * Do not use bold fonts in this style, it is designed around them
 %    * Use tables as in the examples
 %    * See classicthesis-preamble.sty for useful commands
+\RequirePackage{fix-cm}
 \documentclass[twoside,openright,titlepage,numbers=noenddot,headinclude,footinclude,
                parts,%1headlines,% letterpaper a4paper
                footinclude=true,cleardoublepage=empty,abstractoff, % <--- obsolete, remove (todo)
                BCOR={{ BCOR }},fontsize={{ fontsize }},{{ language }},%
                ]{$documentclass$}
 
-$if(fontfamily)$
+%$if(fontfamily)$
 \usepackage{$fontfamily$}
-$else$
+%$else$
 \usepackage{lmodern}
-$endif$
+%$endif$
 $if(linestretch)$
 \usepackage{setspace}
 \setstretch{$linestretch$}
@@ -51,6 +52,14 @@ $endif$
 {% include 'classicthesis/config.tex' %}
 
 {% include 'classicthesis/hyphenation.tex' %}
+\usepackage{blindtext}
+%\usepackage{titlesec}
+%\titleformat{\chapter}[display]
+%  {\bfseries\LARGE}
+%  {\filleft\MakeUppercase{\chaptertitlename}\quad\Huge\thechapter}
+%  {4ex}
+%  {\titlerule\vspace{1ex}\filright}
+%  [\vspace{1ex}\titlerule]
 
 \begin{document}
 \frenchspacing

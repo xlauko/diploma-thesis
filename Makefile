@@ -1,6 +1,6 @@
 
 all: thesis_skeleton.latex appendix.tex
-	pandoc contents/*.md ref-appendix/references.tex \
+	pandoc chapters/*.md ref-appendix/references.tex \
 	--include-before-body=frontback/dedication.tex \
 	--include-before-body=frontback/acknowledgements.tex \
 	--include-before-body=frontback/abstract.tex \
@@ -11,8 +11,8 @@ all: thesis_skeleton.latex appendix.tex
 	-S \
     -V bibfile='thesis' \
 	-V bibtitle='Bibliography' \
-	-V documentclass='scrbook' \
-	-V fontfamily='libertine' \
+	-V documentclass='scrreprt' \
+	-V fontfamily='times' \
 	-V author='Henrich Lauko' \
 	-V year='2017' \
 	-V department='Faculty of Informatics' \
