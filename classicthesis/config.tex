@@ -24,7 +24,7 @@
 % *****************************************************************************
 \PassOptionsToPackage{listings,dottedtoc,
                      %eulerchapternumbers,
-					 floatperchapter,linedheaders,%minionprospacing,
+					 floatperchapter,%linedheaders,%minionprospacing,
 					 subfig,beramono,eulermath}{classicthesis}
 
 % ********************************************************************
@@ -202,3 +202,32 @@ $endif$
 \areaset[current]{312pt}{657pt}
 \setlength{\marginparwidth}{7.5em}%
 \setlength{\marginparsep}{2em}%
+
+\newlength\titleindent
+\setlength\titleindent{1em}
+
+\titleformat{\chapter}[display]%
+        {\relax}{\mbox{}\oldmarginpar{\vspace*{-                                                          3\baselineskip}\color{halfgray}\chapterNumber\thechapter}}{0pt}%
+        {\raggedright\spacedallcaps}[\normalsize\vspace*{.8\baselineskip}\titlerule]%
+
+\titleformat{\section}
+      {\relax}
+      {\makebox[0pt][r]{\textsc{\MakeTextLowercase{\thesection}\hspace{\titleindent}}}}
+      {0em}
+      {\spacedlowsmallcaps}
+\titleformat{\subsection}
+      {\relax}
+      {\makebox[0pt][r]{\textsc{\MakeTextLowercase{\thesubsection}\hspace{\titleindent}}}}
+      {0em}
+      {\normalsize\itshape}
+\titleformat{\subsubsection}
+      {\relax}
+      {\textsc{\MakeTextLowercase{\thesubsubsection}}}
+      {1em}
+      {\normalsize\itshape}
+\titleformat{\paragraph}[runin]
+      {\normalfont\normalsize}
+      {\theparagraph}
+      {0pt}
+      {\spacedlowsmallcaps}
+

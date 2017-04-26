@@ -11,7 +11,7 @@ all: thesis_skeleton.latex appendix.tex
 	-S \
     -V bibfile='thesis' \
 	-V bibtitle='Bibliography' \
-	-V documentclass='scrreprt' \
+	-V documentclass='scrbook' \
 	-V fontfamily='times' \
 	-V author='Henrich Lauko' \
 	-V year='2017' \
