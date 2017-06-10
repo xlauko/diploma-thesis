@@ -1,9 +1,6 @@
 
 all: thesis_skeleton.latex appendix.tex
 	pandoc chapters/*.md ref-appendix/references.tex \
-	--include-before-body=frontback/dedication.tex \
-	--include-before-body=frontback/acknowledgements.tex \
-	--include-before-body=frontback/abstract.tex \
 	--include-after-body=ref-appendix/appendix.tex \
 	--atx-headers \
 	--latex-engine=pdflatex --template=thesis_skeleton.latex \

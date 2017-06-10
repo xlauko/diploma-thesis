@@ -53,13 +53,6 @@ $endif$
 
 {% include 'classicthesis/hyphenation.tex' %}
 \usepackage{blindtext}
-%\usepackage{titlesec}
-%\titleformat{\chapter}[display]
-%  {\bfseries\LARGE}
-%  {\filleft\MakeUppercase{\chaptertitlename}\quad\Huge\thechapter}
-%  {4ex}
-%  {\titlerule\vspace{1ex}\filright}
-%  [\vspace{1ex}\titlerule]
 
 \begin{document}
 \frenchspacing
@@ -71,6 +64,14 @@ $endif$
 %*******************************************************
 
 {% include 'frontback/titlepage.tex' %}
+
+{% include 'frontback/declaration.tex' %}
+
+{% include 'frontback/abstract.tex' %}
+
+{% include 'frontback/keywords.tex' %}
+
+{% include 'frontback/acknowledgements.tex' %}
 
 \pagestyle{scrheadings}
 
