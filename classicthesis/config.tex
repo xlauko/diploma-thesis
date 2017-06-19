@@ -87,8 +87,22 @@
 \newcommand{\bflabel}[1]{{#1}\hfill} % fix the list of acronyms
 {% endraw %}
 
-\usepackage{biblatex}
-\bibliography{$bibfile$}
+\usepackage[
+   backend=bibtex8,
+   bibencoding=ascii,
+   language=auto,
+   bibstyle=alpha,dashed=false,
+   style=authoryear-comp,
+   citestyle=authoryear-comp,
+   firstinits=true,
+   url=true,
+   doi=true,
+   hyperref=auto,				% detect hyperref and create links
+   block=ragged 				% format bibliography into blocks, ragged on right
+]{biblatex}
+
+\addbibresource{$bibfile$}
+
 $if(book-class)$
 \renewcommand\bibname{$bibtitle$}
 $else$
@@ -156,9 +170,9 @@ $endif$
 % ********************************************************************
 \hypersetup{
     %draft,	% = no hyperlinking at all (useful in b/w printouts)
-    colorlinks=true, linktocpage=true, pdfstartpage=3, pdfstartview=FitV,%
+    colorlinks=true, linktocpage=true, pdfstartpage=3, pdfstartview=FitV, linktoc=page,
     % uncomment the following line if you want to have black links (e.g., for printing)
-    colorlinks=false, linktocpage=false, pdfborder={0 0 0}, pdfstartpage=3, pdfstartview=FitV,%
+    % colorlinks=false, linktocpage=false, pdfborder={0 0 0}, pdfstartpage=3, pdfstartview=FitV,%
     breaklinks=true, pdfpagemode=UseNone, pageanchor=true, pdfpagemode=UseOutlines,%
     plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=1,%
     hypertexnames=true, pdfhighlight=/O,%nesting=true,%frenchlinks,%
