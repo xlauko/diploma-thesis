@@ -5,7 +5,6 @@
 \usepackage[utf8]{luainputenc}
 
 \usepackage{lipsum}
-
 \usepackage{url}
 \usepackage{microtype}
 \usepackage{booktabs}
@@ -187,7 +186,6 @@ $endif$
 }
 \urlstyle{same}  % don't use monospace font for urls
 
-
 $if(numbersections)$
 \setcounter{secnumdepth}{5}
 $else$
@@ -247,3 +245,12 @@ $endif$
       {0pt}
       {\spacedlowsmallcaps}
 
+\makeatletter
+\renewcommand{\@chapapp}{}% Not necessary...
+\newenvironment{chapquote}[2][2em]
+  {\setlength{\@tempdima}{ #1 }%
+   \def\chapquote@author{ #2 }%
+   \parshape 1 \@tempdima \dimexpr\textwidth-2\@tempdima\relax%
+   \itshape}
+  {\par\normalfont\hfill--\ \chapquote@author\hspace*{\@tempdima}\par\bigskip}
+\makeatother
