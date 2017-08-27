@@ -4,7 +4,7 @@ all: thesis_skeleton.latex appendix.tex
 	--include-after-body=ref-appendix/appendix.tex \
 	--atx-headers \
 	--filter=pandoc-citeproc \
-	--latex-engine=pdflatex --template=thesis_skeleton.latex \
+	--latex-engine=lualatex --template=thesis_skeleton.latex \
 	--bibliography=bib/thesis.bib --csl=bib/ieee.csl \
 	-S \
     -V bibfile='bib/thesis.bib' \
