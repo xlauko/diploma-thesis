@@ -4,9 +4,10 @@
 \PassOptionsToPackage{utf8}{luainputenc}
 \usepackage[utf8]{luainputenc}
 
-\usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
+\usepackage[dvipsnames]{xcolor}  % Coloured text etc.
 
 \usepackage{lipsum}
+\usepackage{mwe}
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabulary}
@@ -15,8 +16,29 @@
 \usepackage{rotating}
 \usepackage{enumitem}
 \usepackage{longtable}
+\usepackage{luacode}
+\usepackage{sidenotes}
 \setlist{nolistsep}
-\usepackage[activate={true,nocompatibility},tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10]{microtype}
+\usepackage[tracking=true,factor=1100,stretch=10,shrink=10]{microtype}
+
+%todo settings
+\usepackage[colorinlistoftodos,prependcaption]{todonotes}
+\newcommand{\fixmargin}[1]{
+    { \let\marginpar\oldmarginpar #1 }
+}
+
+\newcommand{\mytodo}[1]{
+    \todo[inline, linecolor=red,backgroundcolor=red!25,bordercolor=red]
+    { #1 }
+}
+
+\newcommand{\question}[1]{
+\fixmargin {
+    \todo[linecolor=green,backgroundcolor=green!25,bordercolor=green]
+    { #1 }
+}
+}
+
 
 % Fixing bug related to Pandoc to Latex conversion
 \def\tightlist{}
@@ -110,7 +132,6 @@ $else$
 \renewcommand\refname{$bibtitle$}
 $endif$
 
-\usepackage[color=red,colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 % *****************************************************************************
 % 4. Setup floats: tables, (sub)figures, and captions
 % *****************************************************************************
@@ -150,8 +171,8 @@ $endif$
 % ********************************************************************
 % Using PDFLaTeX
 % ********************************************************************
-\PassOptionsToPackage{pdftex,hyperfootnotes=false,pdfpagelabels}{hyperref}
-\usepackage{hyperref}  % backref linktocpage pagebackref
+\PassOptionsToPackage{hyperfootnotes=false,pdfpagelabels}{hyperref}
+\usepackage{hyperref}
 \pdfcompresslevel=9
 \pdfadjustspacing=1
 
