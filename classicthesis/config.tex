@@ -21,6 +21,7 @@
 \setlist{nolistsep}
 \usepackage[tracking=true,factor=1100,stretch=10,shrink=10]{microtype}
 
+
 %todo settings
 \usepackage[colorinlistoftodos,prependcaption]{todonotes}
 \newcommand{\fixmargin}[1]{
@@ -89,7 +90,11 @@
 \usepackage{babel}
 
 \PassOptionsToPackage{fleqn}{amsmath} % math environments and more by the AMS
-\usepackage{amsmath}
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+
+\theoremstyle{definition}
+\newtheorem{Def}{Definition}[section]
+\newtheorem{Ex}{Example}[section]
 
 % ********************************************************************
 % General useful packages
@@ -240,6 +245,7 @@ $endif$
 \areaset[current]{312pt}{657pt}
 \setlength{\marginparwidth}{7.5em}%
 \setlength{\marginparsep}{2em}%
+\renewcommand*{\marginfont}{\footnotesize}
 
 \newlength\titleindent
 \setlength\titleindent{1em}
