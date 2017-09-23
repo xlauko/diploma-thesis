@@ -1,7 +1,7 @@
 # Introduction
 
 \begin{chapquote}{Monty Python}
-Nobody expects Spanish inquisition.
+Nobody Expects the Spanish Inquisition.
 \end{chapquote}
 
 \noindent
