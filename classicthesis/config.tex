@@ -5,6 +5,12 @@
 \usepackage[utf8]{luainputenc}
 
 \usepackage[dvipsnames]{xcolor}  % Coloured text etc.
+\definecolor{orioles}{HTML}{F6511D}
+\definecolor{ucla}{HTML}{FFB400}
+\definecolor{vivid}{HTML}{00A6ED}
+\definecolor{apple}{HTML}{7FB800}
+\definecolor{pruss}{HTML}{0D2C54}
+
 
 \usepackage{lipsum}
 \usepackage{svg}
@@ -14,6 +20,7 @@
 \usepackage{tabulary}
 \usepackage{subcaption}
 \usepackage{amstext}
+\usepackage{amssymb}
 \usepackage{rotating}
 \usepackage{enumitem}
 \usepackage{longtable}
@@ -22,6 +29,42 @@
 \setlist{nolistsep}
 \usepackage[tracking=true,factor=1100,stretch=10,shrink=10]{microtype}
 
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows, shadows, positioning, calc, fit, backgrounds, decorations.pathmorphing}
+\tikzset {
+    component/.style={
+        fill=white, draw, text centered,
+        rounded corners=1pt, minimum height=3 em,
+        minimum width=2.2 cm, text width=2 cm
+    },
+    bcomponent/.style={
+        fill=white, draw, text centered, minimum height=3 em,
+        minimum width=2.2 cm, text width=6 cm
+    },
+    outer/.style={
+        draw=none
+    },
+    input/.style={
+        dashed
+    },
+    output/.style={
+        decorate, decoration={snake, post length=0.1 cm}
+    },
+    connector/.style={
+        -latex,
+        font=\scriptsize
+    },
+    rectangle connector/.style={
+        connector,
+        to path={(\tikztostart) -- ++(#1,0pt) \tikztonodes |- (\tikztotarget) },
+        pos=0.5
+    },
+    rectangle connector/.default=-2cm,
+    straight connector/.style={
+        connector,
+        to path=--(\tikztotarget) \tikztonodes
+    }
+}
 
 %todo settings
 \usepackage[colorinlistoftodos,prependcaption]{todonotes}
@@ -94,7 +137,7 @@
 \usepackage{amsmath,amsfonts,amssymb,amsthm}
 
 \theoremstyle{definition}
-\newtheorem{definition}{Definition}[section]
+\newtheorem{definition}{Def.}[section]
 \newtheorem{example}{Example}[section]
 
 % ********************************************************************
