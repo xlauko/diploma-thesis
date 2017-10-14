@@ -121,6 +121,8 @@ int n  = __vm_choose( range );
 
 ---
 
+\mytodo{ tau reduction }
+
 ### Verification workflow
 
 A verification in \DIVINE is split into two phases, see figure
@@ -155,21 +157,27 @@ program.
 \tikzset{>=latex}
 
 \tikzstyle{divm}=[fill=apple!20]
+\tikzstyle{data}=[font=\small]
 \tikzstyle{prepbox}=[fill=vivid!20]
     \node [] (input) {\Cpp{} code};
     \node [right = 1 cm of input] (prop) {property and options};
 
-    \node [component, below = 1 cm of input] (cc) {compiler};
+    \node [component, below = 1 cm of input] (cc) {Compiler};
     \node [component, below = 2 cm of cc.west, anchor = west, text width= 4 cm] (lart) {Instrumentation};
     \node [left = 0.5 cm of cc] (runtime) {runtime};
     \node [above = 0.1 cm of cc, xshift=-2cm] (preproc) {Preprocessing};
 
-    \node [component, below = 3 cm of lart.west, anchor = west, text width =
-    4cm] (divm) {DiVM};
-    \node [below = 5.2 cm of preproc.west, anchor = west] (divine) {Verification};
+    \node [component, below = 2.5 cm of lart.west, anchor = west, text width =
+    4cm] (interpreter) {Interpreter};
 
-    \node [below = 5.5 cm of cc, text=apple] (valid) {Valid};
-    \node [right = 0.5 cm of valid, text=orioles] (ce) {Error};
+    \node [component, below = 0.5 cm of interpreter, text width = 4cm] (gen)
+    {State space generator};
+    \node [component, below = 0.5 cm of gen, text width = 4cm] (alg)
+    {Verification algorithm};
+    \node [below = 4.6 cm of preproc.west, anchor = west] (verif) {Verification};
+
+    \node [below = 1 cm of alg, text=apple, anchor = west] (valid) {Valid};
+    \node [below = 1 cm of alg, text=orioles, anchor = east] (err) {Error};
 
     \begin{pgfonlayer}{background}
         \node[prepbox, outer, fit = (cc) (runtime) (preproc) (lart)] (prepbox) {};
@@ -177,22 +185,22 @@ program.
 
 
     \begin{pgfonlayer}{background}
-        \node[divm, outer, fit = (divine) (divm)] (prepbox) {};
+        \node[divm, outer, fit = (verif) (interpreter) (alg)] (prepbox) {};
     \end{pgfonlayer}
 
     \draw [->, input] (input) -- (cc);
-    \draw [->] (cc) -> node {LLVM IR} (cc |- lart.north);
+    \draw [->] (cc) -> node [data] {LLVM IR} (cc |- lart.north);
     \draw [->] (runtime) -- (cc);
     \draw [->, input] (prop) |- (lart);
-    \draw [->, input] (prop) |- (divm);
+    \draw [->, input] (prop) |- (interpreter);
     \draw [->] ( perpendicular cs: vertical line through={(cc.south)},
                                    horizontal line through={(lart.south)} )
-               -> node {DiVM IR}
+               -> node [data, yshift=0.3cm] {DiVM IR}
                ( perpendicular cs: vertical line through={(cc.south)},
-                                   horizontal line through={(divm.north)} )
+                                   horizontal line through={(interpreter.north)} )
       ;
-    \draw [->, dashed] (divm.south) -- (valid.north);
-    \draw [->, dashed] (divm.south) -- (ce.north);
+    \draw [->, dashed] (alg.south -| valid.north) -- (valid.north);
+    \draw [->, dashed] (alg.south -| err.north) -- (err.north);
 \end{tikzpicture}
 }
 \caption{ \mytodo{ finish figure } Verification workflow}\label{fig:verification}
