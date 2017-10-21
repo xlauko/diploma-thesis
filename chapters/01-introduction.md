@@ -6,8 +6,8 @@ Nobody Expects the Spanish Inquisition.
 
 \noindent
 Since the early beginnings of computer science, software engineers struggle to
-achieve correctness of a software.  Nowadays a common approach used by industry
-is a testing. Testing enables developers to cover basic use cases, but with a
+achieve correctness of software. Nowadays a common approach used by the industry
+is testing. Testing enables developers to cover basic use cases, but with a
 growth of a software its hardly scales up to a satisfactory coverage.
 
 \question{ Should I describe it more? } Besides that testing is in trouble, when
@@ -34,7 +34,7 @@ model from llvm. Hence the model corresponds precisely to program execution.
 ## Aims
 
 Abstraction of program have no cost for explicit program verification, since
-model checker is not modified. Only interpretation of abstracted values adds
+the model checker is not modified. Only interpretation of abstracted values adds
 cost to model checking, but since the abstracted values narrows the domain of
 values, the size of the state space will be decreased.
 

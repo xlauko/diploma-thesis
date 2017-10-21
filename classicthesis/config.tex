@@ -11,7 +11,7 @@
 \definecolor{apple}{HTML}{7FB800}
 \definecolor{pruss}{HTML}{0D2C54}
 
-
+\usepackage{lscape}
 \usepackage{lipsum}
 \usepackage{svg}
 \usepackage{mwe}
@@ -30,16 +30,85 @@
 \usepackage[tracking=true,factor=1100,stretch=10,shrink=10]{microtype}
 
 \usepackage{tikz}
-\usetikzlibrary{shapes, arrows, shadows, positioning, calc, fit, backgrounds, decorations.pathmorphing}
-\tikzset {
-    component/.style={
-        fill=white, draw, text centered,
-        rounded corners=1pt, minimum height=3 em,
-        minimum width=2.2 cm, text width=2 cm
+\usetikzlibrary{shapes, arrows, automata, shadows, positioning, calc, shapes.geometric, fit, backgrounds, decorations.pathmorphing}
+
+\tikzset{
+    data/.style={
+        rounded corners = 2mm,
+        minimum height = 1cm,
+        text width = 3.2cm,
+        inner sep =5pt,
+        align = center,
+        text=pruss
     },
-    bcomponent/.style={
-        fill=white, draw, text centered, minimum height=3 em,
-        minimum width=2.2 cm, text width=6 cm
+    llvm/.style={
+        data,
+        fill=orioles!40,
+        font = \ttfamily,
+    },
+    pc/.style={
+        data,
+        font = \ttfamily,
+        fill=apple!40,
+    },
+    br/.style={
+        data,
+        diamond,
+        aspect=2.5,
+        inner sep=-2pt,
+        fill=ucla!40,
+        font = \ttfamily
+    },
+    flow/.style={
+        ->,
+        thick,
+        color=pruss
+    },
+    fun/.style={
+        inner sep=7pt,
+        rectangle,
+        draw,
+        dashed,
+        thick,
+        color=pruss,
+        rounded corners= 3pt,
+        prefix after command= {
+            \pgfextra{\tikzset{every label/.style={
+            color=pruss,
+            font=\ttfamily
+        }}}}
+    },
+    clabel/.style={
+        color=pruss,
+        font=\bfseries
+    },
+    fnlabel/.style={
+        color=pruss,
+        font=\ttfamily
+    },
+    bb/.style={
+        fill=pruss!10,
+        inner sep=3pt,
+        rounded corners= 3pt
+    },
+    emptycomponent/.style={
+        draw, text centered,
+        rounded corners=3pt, minimum height=3 em,
+        minimum width=2.2 cm, text width=2 cm,
+        thick,
+        color=pruss
+    },
+    component/.style={
+        emptycomponent,
+        fill=white
+    },
+    runtime/.style={
+        component,
+        fill=vivid!40
+    },
+    verification/.style={
+        component,
+        fill=apple!40
     },
     outer/.style={
         draw=none
@@ -175,11 +244,11 @@
 
 \addbibresource{$bibfile$}
 
-$if(book-class)$
-\renewcommand\bibname{$bibtitle$}
-$else$
+%$if(book-class)$
+%\renewcommand\bibname{$bibtitle$}
+%$else$
 \renewcommand\refname{$bibtitle$}
-$endif$
+%$endif$
 
 % *****************************************************************************
 % 4. Setup floats: tables, (sub)figures, and captions
