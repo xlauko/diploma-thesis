@@ -1,0 +1,38 @@
+\chapter{Introduction}\label{ch:Introduction}
+
+%\begin{chapquote}{Monty Python}
+%Nobody Expects the Spanish Inquisition.
+%\end{chapquote}
+
+\noindent
+Since the early beginnings of computer science, software engineers struggle to
+achieve correctness of software. Nowadays a common approach used by the industry
+is testing. Testing enables developers to cover basic use cases, but with a
+growth of a software its hardly scales up to a satisfactory coverage.
+
+Besides that testing is in trouble, whenit encounters some nondeterminism in a
+program. We may distinguish two types of nondeterminism. A data nondeterminism
+that is introduced by user inputs and control-flow nondeterminism that is caused
+by unpredictable interleaving of parallel programs.
+
+To beat the problems of testing there have been invented many techniques of
+formal verification.
+
+\add{ Another approaches (model checking, abstract interpretation, symbolic execution) }
+
+\add{ how to hadle nondeterminism from }
+
+\add{ Setting in divine world } To verify real world programs, DIVINE builds
+model from llvm. Hence the model corresponds precisely to program execution.
+
+\section{Aims}
+
+Abstraction of program have no cost for explicit program verification, since
+the model checker is not modified. Only interpretation of abstracted values adds
+cost to model checking, but since the abstracted values narrows the domain of
+values, the size of the state space will be decreased.
+
+\add{ Aims of work }
+
+\add{ Chapters descriptions linked with aims }
+

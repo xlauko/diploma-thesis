@@ -7,33 +7,29 @@
 
         \bigskip \bigskip
 
-    	$if(title)$
         \begingroup
-            \Large{\color{Maroon}\spacedallcaps{$title$}} \\ \bigskip
+            \Large{\color{Maroon}\spacedallcaps{\Title}} \\ \bigskip
         \endgroup
-    	$endif$
 
-        \spacedlowsmallcaps{$author$}
-
-        \vfill
-
-    	\includegraphics[width=5cm]{$university_logo$}
+        \spacedlowsmallcaps{\Author}
 
         \vfill
 
-    	$if(subtitle)$
-        \spacedlowsmallcaps{$subtitle$} \\
+    	\includegraphics[width=5cm]{\Logo}
+
+        \vfill
+
+        \spacedlowsmallcaps{\Subtitle} \\
         \smallskip
-    	$endif$
 
-		$year$
+        \Year
 
         \vfill
 
       \end{center}
       \begin{tabularx}{\linewidth}{l X r}
-        $department$ & & \spacedlowsmallcaps{Supervisor}  \\
-        $university$ & & $supervisor$
+        \Department & & \spacedlowsmallcaps{Supervisor}  \\
+        \University & & \Supervisor
       \end{tabularx}
   \end{addmargin}
 \end{titlepage}

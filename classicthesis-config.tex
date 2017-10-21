@@ -1,0 +1,401 @@
+% ****************************************************************************************************
+% classicthesis-config.tex
+% formerly known as loadpackages.sty, classicthesis-ldpkg.sty, and classicthesis-preamble.sty
+% Use it at the beginning of your ClassicThesis.tex, or as a LaTeX Preamble
+% in your ClassicThesis.{tex,lyx} with \input{classicthesis-config}
+% ****************************************************************************************************
+% If you like the classicthesis, then I would appreciate a postcard.
+% My address can be found in the file ClassicThesis.pdf. A collection
+% of the postcards I received so far is available online at
+% http://postcards.miede.de
+% ****************************************************************************************************
+\PassOptionsToPackage{utf8}{inputenc}
+\usepackage{inputenc}
+
+\usepackage[dvipsnames]{xcolor}  % Coloured text etc.
+\definecolor{orioles}{HTML}{F6511D}
+\definecolor{ucla}{HTML}{FFB400}
+\definecolor{vivid}{HTML}{00A6ED}
+\definecolor{apple}{HTML}{7FB800}
+\definecolor{pruss}{HTML}{0D2C54}
+
+% ****************************************************************************************************
+% 1. Configure classicthesis for your needs here, e.g., remove "drafting" below
+% in order to deactivate the time-stamp on the pages
+% ****************************************************************************************************
+\PassOptionsToPackage{eulerchapternumbers,listings,drafting,%
+					 pdfspacing,%floatperchapter,%linedheaders,%
+					 subfig,beramono,eulermath,parts}{classicthesis}
+% ********************************************************************
+\PassOptionsToPackage{
+    listings,
+    dottedtoc,
+    eulerchapternumbers,
+	pdfspacing,
+    floatperchapter,%linedheaders,%minionprospacing,
+	subfig,
+    beramono,
+    eulermath
+}{classicthesis}
+% Available options for classicthesis.sty
+% (see ClassicThesis.pdf for more information):
+% drafting
+% parts nochapters linedheaders
+% eulerchapternumbers beramono eulermath pdfspacing minionprospacing
+% tocaligned dottedtoc manychapters
+% listings floatperchapter subfig
+% ********************************************************************
+
+
+% ****************************************************************************************************
+% 2. Personal data and user ad-hoc commands
+% ****************************************************************************************************
+\newcommand{\Title}{Symbolic Model Checking via Program Transformations}
+
+\newcommand{\Subtitle}{Diploma Thesis\xspace}
+\newcommand{\Logo}{img/fi-logo}
+\newcommand{\Author}{Henrich Lauko\xspace}
+\newcommand{\Supervisor}{RNDr. Petr Ročkai, Ph.D.\xspace}
+\newcommand{\Department}{Faculty of Informatics\xspace}
+\newcommand{\University}{Masaryk University\xspace}
+\newcommand{\Year}{2017\xspace}
+\newcommand{\myVersion}{version 0.1\xspace}
+
+% ********************************************************************
+% Setup, finetuning, and useful commands
+% ********************************************************************
+\newcounter{dummy} % necessary for correct hyperlinks (to index, bib, etc.)
+\newlength{\abcd} % for ab..z string length calculation
+\providecommand{\mLyX}{L\kern-.1667em\lower.25em\hbox{Y}\kern-.125emX\@}
+\newcommand{\ie}{i.\,e.}
+\newcommand{\Ie}{I.\,e.}
+\newcommand{\eg}{e.\,g.}
+\newcommand{\Eg}{E.\,g.}
+
+% ****************************************************************************************************
+% 3. Loading some handy packages
+% ****************************************************************************************************
+% ********************************************************************
+% Packages with options that might require adjustments
+% ********************************************************************
+%\PassOptionsToPackage{ngerman,american}{babel}   % change this to your language(s)
+% Spanish languages need extra options in order to work with this template
+%\PassOptionsToPackage{spanish,es-lcroman}{babel}
+\usepackage{babel}
+
+\usepackage{minted}
+\setminted{
+    frame=lines,
+    framesep=2mm,
+    baselinestretch=1.2,
+    fontsize=\footnotesize
+}
+\usemintedstyle{lovelace}
+
+\newcommand{\code}[1]{\texttt{#1}}
+
+\usepackage{csquotes}
+
+\PassOptionsToPackage{%
+	backend=bibtex8,bibencoding=ascii,%
+	language=auto,%
+	style=numeric-comp,%
+    sorting=nyt, % name, year, title
+    maxbibnames=10, % default: 3, et al.
+    backref=true,%
+    natbib=true, % natbib compatibility mode (\citep and \citet still work)
+    url=true,
+    doi=true,
+    hyperref=auto,				% detect hyperref and create links
+    block=ragged 				% format bibliography into blocks, ragged on right
+}{biblatex}
+\usepackage{biblatex}
+
+\PassOptionsToPackage{fleqn}{amsmath} % math environments and more by the AMS
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Def.}[section]
+\newtheorem{example}{Example}[section]
+\newcommand{\definitionautorefname}{Def.}
+\newcommand{\exampleautorefname}{Ex.}
+
+% ********************************************************************
+% General useful packages
+% ********************************************************************
+\PassOptionsToPackage{T1}{fontenc} % T2A for cyrillics
+\usepackage{fontenc}
+\usepackage{textcomp} % fix warning with missing font shapes
+\usepackage{scrhack} % fix warnings when using KOMA with listings package
+\usepackage{xspace} % to get the spacing after macros right
+\usepackage{mparhack} % get marginpar right
+\PassOptionsToPackage{printonlyused,smaller}{acronym}
+\usepackage{acronym} % nice macros for handling all acronyms in the thesis
+%\renewcommand*{\acsfont}[1]{\textsc{#1}}
+\renewcommand*{\aclabelfont}[1]{\acsfont{#1}}
+
+\usepackage[tracking=true,factor=1100,stretch=10,shrink=10]{microtype}
+
+% ****************************************************************************************************
+% 4. Setup floats: tables, (sub)figures, and captions
+% ****************************************************************************************************
+\usepackage{tabularx} % better tables
+    \setlength{\extrarowheight}{3pt} % increase table row height
+\newcommand{\tableheadline}[1]{\multicolumn{1}{c}{\spacedlowsmallcaps{#1}}}
+\newcommand{\myfloatalign}{\centering} % to be used with each float for alignment
+\usepackage{caption}
+\captionsetup{font=small}
+\usepackage{subfig}
+
+% ****************************************************************************************************
+% 6. PDFLaTeX, hyperreferences and citation backreferences
+% ****************************************************************************************************
+\PassOptionsToPackage{pdftex,hyperfootnotes=false,pdfpagelabels}{hyperref}
+\usepackage{hyperref}  % backref linktocpage pagebackref
+\pdfcompresslevel=9
+\pdfadjustspacing=1
+\PassOptionsToPackage{pdftex}{graphicx}
+\usepackage{graphicx}
+
+
+% ********************************************************************
+% Hyperreferences
+% ********************************************************************
+\hypersetup{%
+    %draft, % = no hyperlinking at all (useful in b/w printouts)
+    colorlinks=true, linktocpage=true, pdfstartpage=3, pdfstartview=FitV,%
+    % uncomment the following line if you want to have black links (e.g., for printing)
+    %colorlinks=false, linktocpage=false, pdfstartpage=3, pdfstartview=FitV, pdfborder={0 0 0},%
+    breaklinks=true, pdfpagemode=UseNone, pageanchor=true, pdfpagemode=UseOutlines,%
+    plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=1,%
+    hypertexnames=true, pdfhighlight=/O,%nesting=true,%frenchlinks,%
+    urlcolor=webbrown, linkcolor=RoyalBlue, citecolor=webgreen, %pagecolor=RoyalBlue,%
+    %urlcolor=Black, linkcolor=Black, citecolor=Black, %pagecolor=Black,%
+    pdftitle={\Title},%
+    pdfauthor={\textcopyright\ \Author, \University, \Department},%
+    pdfsubject={},%
+    pdfkeywords={},%
+    pdfcreator={pdfLaTeX},%
+    pdfproducer={LaTeX with hyperref and classicthesis}%
+}
+
+% ********************************************************************
+% Setup autoreferences
+% ********************************************************************
+\makeatletter
+\@ifpackageloaded{babel}%
+    {%
+       \addto\extrasamerican{%
+			\renewcommand*{\figureautorefname}{Figure}%
+			\renewcommand*{\tableautorefname}{Table}%
+			\renewcommand*{\partautorefname}{Part}%
+			\renewcommand*{\chapterautorefname}{Chapter}%
+			\renewcommand*{\sectionautorefname}{Section}%
+			\renewcommand*{\subsectionautorefname}{Section}%
+			\renewcommand*{\subsubsectionautorefname}{Section}%
+                }%
+       \addto\extrasngerman{%
+			\renewcommand*{\paragraphautorefname}{Absatz}%
+			\renewcommand*{\subparagraphautorefname}{Unterabsatz}%
+			\renewcommand*{\footnoteautorefname}{Fu\"snote}%
+			\renewcommand*{\FancyVerbLineautorefname}{Zeile}%
+			\renewcommand*{\theoremautorefname}{Theorem}%
+			\renewcommand*{\appendixautorefname}{Anhang}%
+			\renewcommand*{\equationautorefname}{Gleichung}%
+			\renewcommand*{\itemautorefname}{Punkt}%
+                }%
+            % Fix to getting autorefs for subfigures right (thanks to Belinda Vogt for changing the definition)
+            \providecommand{\subfigureautorefname}{\figureautorefname}%
+    }{\relax}
+\makeatother
+
+
+% ********************************************************************
+% Development Stuff
+% ********************************************************************
+\listfiles
+
+% ********************************************************************
+% Last, but not least...
+% ********************************************************************
+\usepackage{classicthesis}
+
+\areaset[current]{312pt}{657pt}
+\setlength{\marginparwidth}{7.5em}%
+\setlength{\marginparsep}{2em}%
+
+\newlength\titleindent
+\setlength\titleindent{1em}
+
+\titleformat{\chapter}[display]%
+        {\relax}{\mbox{}\oldmarginpar{\vspace*{-                                                          3\baselineskip}\color{halfgray}\chapterNumber\thechapter}}{0pt}%
+        {\raggedright\spacedallcaps}[\normalsize\vspace*{.8\baselineskip}\titlerule]%
+
+\titleformat{\section}
+      {\relax}
+      {\makebox[0pt][r]{\textsc{\MakeTextLowercase{\thesection}\hspace{\titleindent}}}}
+      {0em}
+      {\spacedlowsmallcaps}
+\titleformat{\subsection}
+      {\relax}
+      {\makebox[0pt][r]{\textsc{\MakeTextLowercase{\thesubsection}\hspace{\titleindent}}}}
+      {0em}
+      {\normalsize\itshape}
+\titleformat{\subsubsection}
+      {\relax}
+      {\textsc{\MakeTextLowercase{\thesubsubsection}}}
+      {1em}
+      {\normalsize\itshape}
+\titleformat{\paragraph}[runin]
+      {\normalfont\normalsize}
+      {\theparagraph}
+      {0pt}
+      {\spacedlowsmallcaps}
+
+\makeatletter
+\renewcommand{\@chapapp}{}% Not necessary...
+\newenvironment{chapquote}[2][2em]
+  {\setlength{\@tempdima}{ #1 }%
+   \def\chapquote@author{ #2 }%
+   \parshape 1 \@tempdima \dimexpr\textwidth-2\@tempdima\relax%
+   \itshape}
+  {\par\normalfont\hfill--\ \chapquote@author\hspace*{\@tempdima}\par\bigskip}
+\makeatother
+
+\usepackage{xargs}
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+\newcommandx{\add}[2][1=]{\todo[inline, linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+\newcommandx{\change}[2][1=]{\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}}
+\newcommandx{\info}[2][1=]{\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
+\newcommandx{\improvement}[2][1=]{\todo[inline,linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
+\newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
+
+\usetikzlibrary{shapes, arrows, automata, shadows, positioning, calc, shapes.geometric, fit, backgrounds, decorations.pathmorphing}
+
+\tikzset{
+    data/.style={
+        rounded corners = 2mm,
+        minimum height = 1cm,
+        text width = 3.2cm,
+        inner sep =5pt,
+        align = center,
+        text=pruss
+    },
+    llvm/.style={
+        data,
+        fill=orioles!40,
+        font = \ttfamily,
+    },
+    pc/.style={
+        data,
+        font = \ttfamily,
+        fill=apple!40,
+    },
+    br/.style={
+        data,
+        diamond,
+        aspect=2.5,
+        inner sep=-2pt,
+        fill=ucla!40,
+        font = \ttfamily
+    },
+    flow/.style={
+        ->,
+        thick,
+        color=pruss
+    },
+    fun/.style={
+        inner sep=7pt,
+        rectangle,
+        draw,
+        dashed,
+        thick,
+        color=pruss,
+        rounded corners= 3pt,
+        prefix after command= {
+            \pgfextra{\tikzset{every label/.style={
+            color=pruss,
+            font=\ttfamily
+        }}}}
+    },
+    clabel/.style={
+        color=pruss,
+        font=\bfseries
+    },
+    fnlabel/.style={
+        color=pruss,
+        font=\ttfamily
+    },
+    bb/.style={
+        fill=pruss!10,
+        inner sep=3pt,
+        rounded corners= 3pt
+    },
+    emptycomponent/.style={
+        draw, text centered,
+        rounded corners=3pt, minimum height=3 em,
+        minimum width=2.2 cm, text width=2 cm,
+        thick,
+        color=pruss
+    },
+    component/.style={
+        emptycomponent,
+        fill=white
+    },
+    runtime/.style={
+        component,
+        fill=vivid!40
+    },
+    verification/.style={
+        component,
+        fill=apple!40
+    },
+    outer/.style={
+        draw=none
+    },
+    input/.style={
+        dashed
+    },
+    output/.style={
+        decorate, decoration={snake, post length=0.1 cm}
+    },
+    connector/.style={
+        -latex,
+        font=\scriptsize
+    },
+    rectangle connector/.style={
+        connector,
+        to path={(\tikztostart) -- ++(#1,0pt) \tikztonodes |- (\tikztotarget) },
+        pos=0.5
+    },
+    rectangle connector/.default=-2cm,
+    straight connector/.style={
+        connector,
+        to path=--(\tikztotarget) \tikztonodes
+    }
+}
+
+% ****************************************************************************************************
+% 8. Further adjustments (experimental)
+% ****************************************************************************************************
+% ********************************************************************
+% Changing the text area
+% ********************************************************************
+%\linespread{1.05} % a bit more for Palatino
+%\areaset[current]{312pt}{761pt} % 686 (factor 2.2) + 33 head + 42 head \the\footskip
+%\setlength{\marginparwidth}{7em}%
+%\setlength{\marginparsep}{2em}%
+
+% ********************************************************************
+% Using different fonts
+% ********************************************************************
+%\usepackage[oldstylenums]{kpfonts} % oldstyle notextcomp
+%\usepackage[osf]{libertine}
+%\usepackage[light,condensed,math]{iwona}
+%\renewcommand{\sfdefault}{iwona}
+%\usepackage{lmodern} % <-- no osf support :-(
+%\usepackage{cfr-lm} %
+%\usepackage[urw-garamond]{mathdesign} <-- no osf support :-(
+%\usepackage[default,osfigures]{opensans} % scale=0.95
+%\usepackage[sfdefault]{FiraSans}
+% ****************************************************************************************************

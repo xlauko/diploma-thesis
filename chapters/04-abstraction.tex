@@ -1,0 +1,55 @@
+\chapter{Abstractions}\label{ch:abstraction}
+
+Finally we are coming to main chapter of this thesis, where we will try to tackle
+handling of inputs in model checking. We would like to minimize nondeterministic
+choices during model checking process, hence minimize the state space of a
+verified program and speed up a verification (enable model checker to verify
+larger set of programs).
+
+One of the approaches as mentioned in \autoref{ch:divine} is the symbolic model checking.
+From the point of abstractions the symbolic representation forms a precise abstraction
+of program data. In this chapter, we will review how programs are abstracted more generally.
+And thereafter we will present a novel approach to abstractions via transformations
+in preprocessing phase of model checking.
+
+\section{ Approaches of abstraction }
+
+\add{ There are two main approaches to do abstractions of programs: \newline
+    1. interprets \newline
+    2. compilers
+}
+\add{ intro to abstractions with some definitions }
+
+\section{Abstract domains} \label{sec:absdom}
+
+\add{ An abstract domain is an abstract algebra, implemented as a library module,
+providing a description of abstract program properties and abstract property
+transformers describing the operational effect of program instructions and
+commands in the abstract. Abstract domains are often complete lattices, an
+abstraction of powersets [@Cousot79] }
+
+\section{Symbolic domain}
+
+
+\add{ Add pros and cons of both approaches }
+
+\section{ Abstraction via program transformation }
+
+- information lossless transformation
+
+- Transformation objectives:
+\add{ add citation to objectives }
+
+\subsection{Data flow analysis}
+    - annotation propagations
+
+\subsection{Data type determination}
+    - intrinsics creation
+
+\subsection{Approximate invariant assertions}
+    - bcp + assumes
+
+\subsection{ Domain manipulations insertion }
+    - substitution
+
+\section{ Other domains }

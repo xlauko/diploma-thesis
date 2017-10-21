@@ -1,16 +1,14 @@
-# Preliminaries
+\chapter{Preliminaries}\label{ch:preliminaries}
 
 In this chapter, we will introduce foundations for proposed the
 abstraction-based model checking approach. We will cover \LLVM bitcode as the
-input language for verification. Focus will be on the
-[instruction set for value manipulation](#intro-to-llvm-ir) and its [semantics](#semantics), the [\LLVM
-type system](#type-system) and the [control flow](#control-flow) of programs.
-Subsequently the notion of [model checking](#model-checking) will be explored in
+input language for verification. Focus will be on the instruction set for
+value manipulation and its semantics, the \LLVM type system and the control flow
+of programs. Subsequently the notion of model checking will be explored in
 the context of \LLVM programs. The exposition of model checking is mainly based on
-Petr Ročkai's dissertation [@Rockai15] further covered in [chapter 3](#chap03).
+Petr Ročkai's dissertation \cite{Rockai15} further covered in \autoref{ch:divine}.
 
-## Intro to \LLVMIR
-
+\section{Intro to \LLVMIR} \label{sec:introtollvm}
 \marginpar{The \LLVM project is a collection of modular and
 reusable compiler and toolchain technologies. Despite its name -- low level
 virtual machine, \LLVM has little to do with traditional virtual
@@ -18,13 +16,13 @@ machines. The name \LLVM itself is not an acronym; it is the full name
 of the project. \href{http://llvm.org/}{[\LLVM website]}}
 
 Besides defining the semantics of bitcode in the form of \LLVMIR (intermediate
-representation), \LLVM{} [@LLVM:web] is primarily a toolkit for building
-compilers. It was firstly introduced by Ch. Lattner and V. Adve [@Lattner04] as
-an optimization framework. Nowadays \LLVM represents a set of libraries for
+representation), \LLVM{}~\cite{LLVM:web} is primarily a toolkit for building
+compilers. It was firstly introduced by Ch. Lattner and V. Adve \cite{Lattner04}
+as an optimization framework. Nowadays \LLVM represents a set of libraries for
 building and manipulation of an intermediate representation of a program and
 platform-specific code generators.
 
-According to \LLVM language reference manual [@LLVM:langref],
+According to \LLVM language reference manual~\cite{LLVM:langref},
 \LLVM is a static single assignment (\SSA) based representation that
 provides type safety, low-level operations, flexibility, and
 the capability of representing ‘all’ high-level languages cleanly. It is the
@@ -36,21 +34,19 @@ suitable for model checking. Model checking can abstract from complicated
 grammar of verified language and process \LLVM bicode produced by compiler
 front-end.
 
-### Instructions, Functions and other LLVM building blocks
-
+\subsection{Instructions, Functions and other LLVM building blocks} \label{subsec:infnllvm}
 An \LLVMIR aims to be slightly richer assembly-like language. When we look
-into \LLVMIR file (or _module_),
 \marginpar{\LLVM programs are composed of modules, each of which is a
 translation unit of the input programs.}
-we can find there a description of global data and function definitions. Each
-function definition has a list of basic blocks, forming a control flow graph for
-the function.
+into \LLVMIR file (or \emph{module}), we can find there a description of global
+data and function definitions. Each function definition has a list of basic blocks,
+forming a control flow graph for the function.
 
-\begin{definition}\label{sec:basicblock}
+\begin{definition}\label{def:basicblock}
 A basic block is a sequence of instructions that ends with a terminator
 instruction (such as a branch or function return). The computation of a program
 within a basic block is entirely sequential, performing instructions in their
-order of appearance in the block [\hyperlink{ref-Rockai15}{2}].
+order of appearance in the block~\cite{Rockai15}.
 \end{definition}
 
 Instructions from basic blocks manipulate values in virtual registers or
@@ -59,18 +55,17 @@ return value, which is assigned to register for the time of execution of a
 function. Considering values in registers, a whole \LLVM bitcode is always in
 partial \SSA form.
 
-\begin{definition}\label{sec:ssa}
+\begin{definition}\label{def:ssa}
 A static single assignment (\SSA{}) is a property of an intermediate representation
 (\textsc{ir}), which requires that each variable is assigned exactly once, and every
-variable is defined before it is used [\hyperlink{ref-Cytron91}{?}].
-\mytodo{ fix citation }
+variable is defined before it is used~\cite{Cytron91}.
 \end{definition}
 
 In addition to register values \LLVMIR allows address-taken variables (i.e. it's
 allowed to take address of the variable and mutate it as normal variable).
 Hence the address-taken variables are not part of the \SSA form. In unoptimized
 \LLVM bitcode, each higher-level (C/\Cpp{}) variable becomes an address-taken
-variable, created by an `alloca` instruction. Consequently, register values are only
+variable, created by an \code{alloca} instruction. Consequently, register values are only
 created by the compiler as intermediate results of instructions. However, the \LLVM
 optimiser can lift many address-taken variables into registers if the addresses
 of those variables are not actually taken.
@@ -78,120 +73,120 @@ of those variables are not actually taken.
 For our purpose we will meet only a subset of \LLVM instructions. Concretely
 instructions for manipulation of transformed values, memory operations and
 control flow (terminator) instructions. Precise documentation of all can be
-found at \LLVM language reference manual [@LLVM:langref]. For better
+found at \LLVM language reference manual \cite{LLVM:langref}. For better
 undertanding of \LLVM bitcode, look at the following example.
 
----
+\improvement{ Add hrule to examples }
 
 \begin{example}
 Let's have a look at piece of \Cpp{} code and corresponding \LLVM bitcode.
-\end{example}
 
-```cpp
+\begin{minted}{cpp}
 int factorial(int n) {
     if (n == 0 )
         return 1;
     return n * factorial(n - 1);
 }
-```
+\end{minted}
 
-```llvm
+\begin{minted}{llvm}
 define i32 @factorial(i32 %n) {
   %1 = icmp eq i32 %n, 0
   br i1 %1, label %then, label %else
-```
-\mytodo{ klikihakova ciara }
+\end{minted}
+
+\improvement{ klikihakova ciara }
 \noindent
-In \LLVM bitcode, the `factorial` function is defined as a global object (prefixed by `@`)
+In \LLVM bitcode, the \mintinline{cpp}{factorial} function is defined as a global object (prefixed by \texttt{@})
 \marginpar{To distinguish between register values and mutable
 address-taken variables \LLVM use two types of prefixes, \texttt{\%} for register values
 and \texttt{@} for mutable and global values.}
-`@factorial` with return type `i32` (a 32 bit integer) and an argument called `%n`,
-also of type `i32`. In the function implementation we can see almost direct
+\code{@factorial} with return type \code{i32} (a 32 bit integer) and an argument called \code{\%n},
+also of type \code{i32}. In the function implementation we can see almost direct
 correspondence to \Cpp{} code. The function is logically divided into a few basic
-blocks annotated with `<label>` and the name of the basic block (see definition
-\ref{sec:basicblock}). First basic block, also called _entry_ block,
-contains equality comparison (`icmp` instruction) of the input argument `%n`
-and `0`, followed by conditional branching instruction `br`.
+blocks annotated with \code{<label>} and the name of the basic block (see definition~\autoref{def:basicblock}). First basic block, also called \emph{entry} block,
+contains equality comparison (\code{icmp} instruction) of the input argument \code{\%n}
+and \code{0}, followed by conditional branching instruction \code{br}.
 
 The branching instruction connects basic blocks and determines control flow depending
-on the value of register `%1`. Branching jumps to basic block labeled with `%then` if
-the condition `%1` was true, otherwise it jumps to `%else` basic block. Besides
-branching \LLVM uses `br` instructions to represent loops, by jumping
+on the value of register \code{\%1}. Branching jumps to basic block labeled with \code{\%then} if
+the condition \code{\%1} was true, otherwise it jumps to \code{\%else} basic block. Besides
+branching \LLVM uses \code{br} instructions to represent loops, by jumping
 backwards in the control flow graph.
 
-
-```llvm
-<label>:then
+\improvement{ llvm correct minted }
+\begin{minted}{llvm}
+; <label>:then:
   ret i32 1
-<label>:else
+; <label>:else:
   %2 = sub nsw i32 %n, 1
   %3 = call i32 @factorial(i32 %2)
   %4 = mul nsw i32 %n, %3
   ret i32 %4
 }
-```
+\end{minted}
+
 \noindent
-In basic block `%then` one is returned with `ret` instruction. In the `%else` branch,
-besides arithmetic operations (`sub` executing subtraction and `mul` multiplication),
-a recursive call is made using a `call` instruction.
+In basic block \code{\%then} one is returned with \code{ret} instruction. In the \code{\%else} branch,
+besides arithmetic operations (\code{sub} executing subtraction and \code{mul} multiplication),
+a recursive call is made using a \code{call} instruction.
+\end{example}
 
----
-
-### Type system
+\subsection{Type system} \label{subsec:typesystem}
 
 An observant reader may have noticed that \LLVMIR is a strongly typed language.
-Besides the `void` type, \LLVM distinguishes basic single value types, such as
-`iN` where `N` determines bit width of integral type. We have already met `i32`
-as 32-bit integer and `i1` usually used for booleans.
-\LLVM additionally supports floating point types as `float` and `double` and also C like pointer types written as `<type> *`.
+Besides the \code{void} type, \LLVM distinguishes basic single value types, such as
+\code{iN} where \code{N} determines bit width of integral type. We have already met \code{i32}
+as 32-bit integer and \code{i1} usually used for booleans.
+\LLVM additionally supports floating point types as \code{float} and \code{double} and also C like pointer types written as \code{<type>*}.
 
 In order to support aggregate types, \LLVM recognizes array types, struct types
-and vector types [@LLVM:langref]. Similarly as in C, array type represents a consecutive block
-of memory of same types, e.g.&nbsp;to denote array of 10 integers \LLVM writes
-`[10 × i32]`. To represent a collection of data members together in memory \LLVM
+and vector types \cite{LLVM:langref}. Similarly as in C, array type represents a consecutive block
+of memory of same types, e.g.~to denote array of 10 integers \LLVM writes
+\code{[10 × i32]}. To represent a collection of data members together in memory \LLVM
 defines a structure type. \LLVM identifies struct types with given
-identifiers in the global namespace as follows for a structure called `aggregate`
-consisting of `i32` and a pointer to pair of `i32` values:
+identifiers in the global namespace as follows for a structure called \code{aggregate}
+consisting of \code{i32} and a pointer to pair of \code{i32} values:
 
-```llvm
+\begin{minted}{llvm}
 %aggregate = type { i32, { i32, i32 }* }
-```
+\end{minted}
 
-Structures in memory are accessed using `load` and `store` instructions. To
-compute an offset into an aggregate type a `getelementptr` instruction is used.
-Structures in registers are accessed using the `extractvalue` and `insertvalue`
-instructions [@LLVM:langref].
+Structures in memory are accessed using \code{load} and \code{store} instructions. To
+compute an offset into an aggregate type a \code{getelementptr} instruction is used.
+Structures in registers are accessed using the \code{extractvalue} and \code{insertvalue}
+instructions \cite{LLVM:langref}.
 
 In order to cast between types \LLVM provides a variety of casting instructions.
-To be specific, a `bitcast` instruction for explicit type casting, `ptrtoint` and
-`inttoptr` for conversions between pointers and integers and `trunc`, `zext`,
-`sext` for transformation to larger or smaller integer types.
+To be specific, a \code{bitcast} instruction for explicit type casting, \code{ptrtoint} and
+\code{inttoptr} for conversions between pointers and integers and \code{trunc}, \code{zext},
+\code{sext} for transformation to larger or smaller integer types.
 
-### Control flow
+\subsection{Control flow} \label{subsec:controlflow}
 
-As mentioned earlier, \LLVM supports control flow instructions like `br` for
+As mentioned earlier, \LLVM supports control flow instructions like \code{br} for
 conditional and unconditional jumps between basic blocks. To direct control flow
-between functions, \LLVM provides `ret` for returning from functions, `call` and
-`invoke` for calling a function. Except `call`, all control flow instructions
-are always at the end of a basic block, hence they are called _terminator_
+between functions, \LLVM provides \code{ret} for returning from functions, \code{call} and
+\code{invoke} for calling a function. Except \code{call}, all control flow instructions
+are always at the end of a basic block, hence they are called \emph{terminator}
 instructions.
 
 As consequence of branching control flow graph and \SSA form, \LLVM needs to
 support acquisition of value from different basic blocks. For this
-purpose a special instruction is designed -- a `phi` node [@Cytron91].
+purpose a special instruction is designed -- a \code{phi} node \cite{Cytron91}.
 
-```llvm
+\begin{minted}{llvm}
 %v = phi i32 [ %a, %then ], [ %b, %else ]
-```
-As result of `phi` node instruction, `%v` contains either value `%a` or `%b`
+\end{minted}
+
+As result of \code{phi} node instruction, \code{\%v} contains either value \code{\%a} or \code{\%b}
 depending on the direction from which basic block the program execution came.
 
-### Semantics
+\subsection{Semantics} \label{subsec:semantics}
 
 In order to build abstraction over \LLVM bitcode we need to setup a good
 semantics model of instructions set. For this purpose a small-step operational
-semantics [@Plotkin04] is a good candidate.
+semantics \cite{Plotkin04} is a good candidate.
 
 \begin{definition}
 Operational semantics expresses the evaluation of commands as a relation between
@@ -204,26 +199,27 @@ bother by expression semantics. The only state mutators are instructions, which 
 semantically atomic and operates only on existing named values. Moreover
 instructions may mutate at most single value from program state. Hence the
 semantic function with derivation rules can be easily derived from \LLVM
-language reference [@LLVM:langref]. Program state $\sigma$ will basically
+language reference \cite{LLVM:langref}. Program state $\sigma$ will basically
 consists of two parts -- stack frames and memory. Where stack frames represents
 register values, similarly in memory part are stored allocated variables, whose
 size is predetermined by the size of pointer type.
 
-## \LLVM compilation process
+\section{\LLVM compilation process} \label{sec:compilation}
 
-\LLVM compilation tightly depends on on a given _frontend_ compiler that produces
-\LLVMIR, e.g.&nbsp;clang frontend for C/\Cpp{}, see figure \ref{fig:compilation}.
-\LLVM bitcode generated by frontend is then processed and optimized by \LLVM. Optimization is divided into \LLVM _passes_, where each of the passes
+\LLVM compilation tightly depends on on a given \emph{frontend} compiler that produces
+\LLVMIR, e.g.~\clang frontend for C/\Cpp{}, see figure \autoref{fig:compilation}.
+\LLVM bitcode generated by frontend is then processed and optimized by \LLVM.
+Optimization is divided into \LLVM \emph{passes}, where each of the passes
 performs some optimization task or code analysis. Passes can be run directly
-from compiler or they can be run by external tool, e.g.&nbsp; \LLVM
-optimization tool _opt_ [@LLVM:opt]. After optimization \LLVMIR is passed to
+from compiler or they can be run by external tool, e.g.~\LLVM
+optimization tool \emph{opt} \cite{LLVM:opt}. After optimization \LLVMIR is passed to
 appropriate code generator, which generates assembly bitcode for specific
-platform, e.g.&nbsp;`x86` or ARM.
+platform, e.g.~\texttt{x86} or ARM.
 
 \begin{figure}[!ht]
 \centering
 \resizebox{\textwidth}{!}{
-\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
+\begin{tikzpicture}[>=stealth,shorten >=1pt,auto,node distance=4em, <->]
 
     \tikzstyle{component}=[draw, text centered, rounded corners=1pt, minimum height=2.8 em, minimum width=2 cm, text width=1.8 cm]
     \tikzset{>=latex}
@@ -269,10 +265,10 @@ language and producing \LLVMIR in frontend part, optimization of produced
 \label{fig:compilation}
 \end{figure}
 
-## Model checking
+\section{Model checking} \label{sec:mc}
 Model checking is an automated technique that, given a finite-state model of a
 system and a formal property, systematically checks whether this property holds
-for (a given state in) that model [@Baier08]. To define a model checking problem
+for (a given state in) that model \cite{Baier08}. To define a model checking problem
 we need setup a transition system that describes model of a system to be
 verified.
 \begin{definition}\label{def:ts}
@@ -289,7 +285,7 @@ A transition system $TS$ is a tuple $(S, s_0, Act, \longrightarrow, AP, L)$, whe
 \end{itemize}
 \end{definition}
 \noindent
-For readability, we will write $s \xrightarrow[]{a} s'$ insted of $(s, a,s') \in
+For readability, we will write $s \xrightarrow[]{a} s'$ instead of $(s, a, s') \in
 \longrightarrow$. To describe transition system in context of \LLVM program we
 will consider a program state as a configuration of memory and stack variables.
 Change of program state is achieved only by instructions, that modify or
@@ -300,9 +296,12 @@ To check whether state $s$ satisfies property $\varphi$ we want show that a set 
 atomic propositions induced by $L(s)$ satisfies property $\varphi$, i.e.:
 $$ s \models \varphi \iff L(s) \models \varphi.$$
 Now we have everything to setup a model checking problem.
-\begin{definition}\label{def:mc} Let $M$ be a transition system and $\varphi$ a
+
+\begin{definition}\label{def:mc}
+Let $M$ be a transition system and $\varphi$ a
 formula of temporal logic (i.e., the specification). Find all states $s \in M$
-such that $s \models \varphi$ .  \end{definition}
+such that $s \models \varphi$.
+\end{definition}
 
 Since our proposed abstractions of program model should not interfere
 with proposition checking, we will consider model checking only as technique for
@@ -310,18 +309,18 @@ checking error state reachability (safety). From \LLVM point of view error state
 those, that does not satisfy some program assert (i.e., the transition to
 those states were made through unsatisfied assert call).
 
-### Abstraction model checking
+\subsection{Abstraction model checking} \label{subsec:amc}
 
 When the number of states is large, its difficult to determine whether a program
 is correct. To reduce state space size, there was proposed technique of
-abstract model checking in [@Clarke94].
+abstract model checking in \cite{Clarke94}.
 
 Abstract model checking abstracts a given model, taking some concrete state,
 which is $n$-tuple of variables, and producing a $n$-tuple of abstract
 variables. Abstraction of state $s = (s_1,\dots,s_n)$ is then formed by surjections
 $\alpha = (\alpha_1,\dots,\alpha_n)$ that map each $s_1$ to abstract variable $\widehat{s}_1$.
 Applying this transformation to transitions system of a program
-results into a _minimal abstraction_ $\widehat{M}$ of the original program.
+results into a \emph{minimal abstraction} $\widehat{M}$ of the original program.
 
 Formally having concrete domain $C$ we define for a state $s \in C_1 \times \dots \times C_n$
 surjections $\alpha_1,\dots,\alpha_n$, that maps each variable of state to abstract domain
@@ -354,8 +353,8 @@ abstract state $\widehat{s}$ to represent all states from $M$ for which $\alpha(
 \end{definition}
 
 \noindent
-The transition system that has only those transitions required by definition \ref{def:am} is called
-_minimal_.
+The transition system that has only those transitions required by definition \autoref{def:am} is called
+\emph{minimal}.
 
 Once we have abstract transition system $\widehat{M}$, the model checking is
 straight forward. Traversing the abstract state space is done in same manner as
@@ -366,4 +365,4 @@ Hence it may alarm an error even though the error state is not reachable.
 But since abstraction includes original model $M$ we know that if $\widehat{M} \models \varphi$
 then $M \models \varphi$, for some property $\varphi$. If the abstraction satisfies
 also this property $\widehat{M} \not\models \varphi \implies M \not\models \varphi$,
-we are saying that abstraction is _precise_.
+we are saying that abstraction is \emph{precise}.
