@@ -30,7 +30,7 @@ all: thesis.pdf
 # missing file reference and interactively asking you for an alternative.
 
 thesis.pdf: thesis.tex
-	latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode --shell-escape %O %S" thesis.tex
+	latexmk -pdf -pvc -pdflatex="pdflatex -interaction=nonstopmode --shell-escape %O %S" thesis.tex
 
 clean:
 	latexmk -CA
