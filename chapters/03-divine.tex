@@ -1,14 +1,14 @@
 \chapter{DIVINE and friends}\label{ch:divine}
 
-In this chapter we will look under the hood of DIVINE~\cite{Divine17} the model checker.
-And on top of that we will try to tackle problem of handling inputs by
-symbolic model checking as introduced in~\cite{Barnat14}. We will try to emphasize the
+In this chapter we will look under the hood of the DIVINE~\cite{Divine17} the model checker.
+On top of that, we will try to tackle problem of handling inputs by
+symbolic model checking as introduced by Barnat et al.~in~\cite{Barnat14}. We will try to emphasize the
 differences between classical model checking algorithm and symbolic algorithm,
 in order to decompose symbolic part in following chapter.
 
 For purpose of this thesis only minor knowledge of \DIVINE architecture is
-needed. Our interest is mostly in \LLVM interpreter, since its only part that
-interacts with a transformed program. Deeper description of \DIVINE can be found
+needed. Our interest is mostly in the \LLVM interpreter (\DIVM) and exploration algorithm,
+since only they interacts with a transformed program. Deeper description of \DIVINE can be found
 in \cite{Divine17} or on project website
 \href{https://divine.fi.muni.cz/}{divine.fi.muni.cz}.
 
@@ -23,13 +23,13 @@ runtime environment, whose purpose is to give support of language features like
 memory allocation, threads and standard libraries.
 
 The verification and runtime environment are split into several components with
-precisely defined interfaces between them, see figure \autoref{fig:architecture}.
+precisely defined interfaces between them, see \autoref{fig:architecture}.
 
 The runtime part consists of user's program accompanied with necessary
-libraries. For user's program is provided a \Cpp{} standard library and threading
+libraries. For user's program is provided a \Cpp{} standard library and \textsc{posix} threading
 library suited for \DIVINE interpreter. As environment for program is provided
 a \DIVINE operating system (\DIOS) that provides support for thread management
-and scheduling. For communication between program and operating system a set
+and scheduling. For the communication between program and the operating system a set
 of `syscalls` is provided by \DIOS.
 The verification part consists of 2 main components: a \DIVINE virtual machine
 (\DIVM) that interprets \LLVM bitcode and provides a state space generator, and
@@ -56,7 +56,7 @@ verification core that takes care of verification procedure.
 \node [clabel, above = 0cm of input] (renv) {Runtime environment};
 \node [bcomponent, below = 0cm of input] (runtime) {\Cpp{} standard libraries, \texttt{pthreads}};
 \node [fnlabel, right = 1.7cm of runtime] (syslabel) {syscalls};
-\node [left = 2cm of runtime] (divine) {\large\DIVINE};
+\node [color = pruss, left = 2cm of runtime] (divine) {\large\DIVINE};
 \node [bcomponent, below = 0cm of runtime] (dios) {\DIOS};
 
 \node [clabel, below = 0.4cm of dios] (venv) {Verification environment};
@@ -82,18 +82,17 @@ verification core that takes care of verification procedure.
 \end{tikzpicture}
 }
 
-\caption{\DIVINE architecture is divided into two parsts. A runtime environment
+\caption{\DIVINE architecture is divided into two parts. A runtime environment
 represents a \LLVM bitcode that is interpreted by \DIVM. And verification
-component that provides model checking tooling. A communication between
+component that provides model checking tooling. Communication between
 layers is done by \texttt{syscalls} to \DIOS and by \texttt{hypercalls}
-to \DIVM. We may notice that user's program can not call \texttt{hypercalls}
-and communicates only with OS layer.}\label{fig:architecture}
+to \DIVM.}\label{fig:architecture}
 \end{figure}
 
 \subsection{\DIVINE virtual machine (\DIVM)}
 
 A \DIVINE virtual machine aims to provide a bare minimum for \LLVM-based
-model checking. This involves an execution of instructions, memory management,
+model checking. This involves execution of instructions, memory management,
 nondeterministic choice and tracking of atomic sections. A deeper description of
 \DIVM can be found in \cite{RockaiCB17}.
 \marginpar{Nondeterministic choice serves for simulation of threads interleaving
@@ -101,12 +100,12 @@ and potential input generation.}
 
 Side by side of \LLVM bitcode evaluation, \DIVM stores a representation of a
 program state. A snapshot of a state can be passed to verification algorithm
-for safety analysis. And vice versa a verification algorithm may ask \DIVM for
+for safety analysis. And vice versa the verification algorithm may ask \DIVM for
 successors of a given state.
 
-A program state is represented by memory configuration described by graph.
-Nodes of graph represents objects (e.g.~results of allocation, global
-variables) and edges represents pointers between this objects.
+A program state is represented by memory configuration encoded to graph.
+Nodes of the graph represent objects (e.g.~results of allocation, global
+variables) and edges represent pointers between these objects.
 \DIVM stores these states compressed and hashed, and compares the graphs
 directly for state equality.
 
@@ -114,7 +113,7 @@ directly for state equality.
 of \DIVM. This environment is expected to provide a \emph{scheduler}, that is invoked
 by \DIVM during generation of state successors. An interface between \DIVM and
 runtime environment is provided by \emph{hypercalls}, that enable runtime to modify
-memory and create a state space branching by nondeterministic choice.
+memory and create state space branching by nondeterministic choice.
 
 \begin{example}
 A nondeterministic choice provided by \DIVM as \texttt{\_\_vm\_choose} function
@@ -136,27 +135,24 @@ that state space reductions preserve all safety and \LTL properties verified
 by \DIVINE.
 
 In \LLVM, a large subset of instructions have no observable effect for other
-threads. This holds for instructions that manipulates with registers (registers
-are private for the executed function) and those instructions, that manipulates
-only with private memory of a thread.
+threads. This holds for instructions that manipulate registers (registers
+are private for the executed function) and those instructions that manipulate
+only private memory of a thread.
 
-Hence \DIVINE does not need to emit a new state on every imterpreted
-instruction, but only when an observable action is reached. In resulting state
-space, edges correspond to sequences of non observable instructions.
-Alternatively \DIVINE supports atomic blocks and these are interpreted as sequence
-of non observable instructions.
+Hence \DIVINE does not need to emit a new state on every interpreted
+instruction, but only when an observable action is reached. In the resulting state
+space, edges correspond to sequences of non-observable instructions.
 
 In \DIVM, a support for the $\tau$-reduction is implemented by \code{interrupt\_mem}
 and \code{interrupt\_cfl} hypercalls. These calls enables a signalization of an
-observable action to state space generation and forces an interrupt in edge
+observable action to state space generation and may cause an interrupt in edge
 generation. The \code{interrupt\_mem} hypercall signals to \DIVM that a memory
-operation is about to be executed. The \code{interrupt\_cfl} is used for signalization
-of potential loop in the program state space.
-
+operation is about to be executed. For signalization of potential a loop in the
+program state space \code{interrupt\_cfl} hypercall is used.
 \subsection{Verification workflow}
 
-A verification in \DIVINE is split into two phases, see figure
-\autoref{fig:verification}. A preprocessing phase, where an input program is
+Verification in \DIVINE is split into two phases, see \autoref{fig:verification}.
+A preprocessing phase, where an input program is
 transformed into suitable input for \DIVM. In second phase a transformed program
 is processed by \DIVM and some verification algorithm.
 
@@ -169,8 +165,8 @@ verification of programs with weak memory models is done via a transformation
 optimizations like interrupts insertion for faster scheduling.
 
 Transformations are made by external tool named \LART introduced in~\cite{Rockai15}
-as \LLVM Abstraction \& Refinement tool. The main motivation behind \LART is to
-provide a preprocessing for \LLVM -based verification tools, simplifying their
+as LLVM Abstraction \& Refinement tool. The main motivation behind \LART is to
+provide preprocessing for \LLVM -based verification tools, simplifying their
 job by reducing the problem size without compromising soundness of the
 verification.
 
@@ -180,67 +176,68 @@ a core analysis for \LART to be able to inject an arbitrary abstraction into a
 program.
 
 \begin{figure}[!ht]
-\centering
 
+\resizebox{\textwidth}{!}{
 \begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
-
 \tikzset{>=latex}
 
-  \node [color=pruss] (input) {\Cpp{} code};
-  \node [color=pruss, align = center, right = 2.5 cm of input.south, anchor = south, text width = 2.1cm] (prop) {property and options};
+    \tikzstyle{smt}=[fill=ucla!40]
+    \node [component](cc) {\DIVINE compiler};
+    \node [clabel, above = 0.7 cm of cc] (preprocessing) {Preprocessing};
+    \node [component, right = 0.5 cm of cc](lart) {\LART};
+    \node [emptycomponent, dashed, thick, below = 0.6 cm of cc] (dios) {\DIOS and libraries};
 
-  \node [component, text width = 2.7 cm, below = 1 cm of input] (cc) {Compiler};
-  \node [component, text width = 2.7 cm, below = 0.7 cm of cc] (instr) {LART};
-  \node [emptycomponent, dashed, thick, left = 0.5 cm of cc] (runtime) {\DIOS and libraries};
-  \node [clabel, above = 0.1 cm of runtime] (preproc) {Preprocessing};
+    \node [component, right = 0.6 cm of lart, ](interpreter) {Interpreter};
+    \node [component, right = 0.5 cm of interpreter, minimum width=1 cm](generator) {State space generator};
 
-  \node [component, below = 2.5 cm of instr, text width = 2.7cm] (interpreter) {Interpreter};
+    \node [component, below = 0.6 cm of generator, minimum width=1 cm](exploration) {Exploration algorithm};
+    \node [clabel, right = 3 cm of preprocessing] (divine) {DIVINE};
 
-  \node [component, left = 0.5 cm of interpreter, text width = 2.7cm] (gen)
-  {State space generator};
+    \node [right = 0.5 cm of exploration ] (res)
+    {\color{apple}{Valid}\color{pruss}/\color{orioles}{Error}};
 
-  \node [clabel, above = 0.9 cm of gen.west, anchor = west] (divml) {\DIVM};
-  \node[emptycomponent, dashed, fit = (gen) (interpreter) (divml)] (divm) {};
-  \node [component, text width = 3 cm, below = 0.5 cm of gen] (alg) {Verification algorithm};
-  \node [clabel, above = 1.3 cm of divm.west, anchor = west] (verif) {Verification};
+    \node [clabel, above = 0.9 cm of interpreter.west, anchor = west] (divml) {DiVM};
+    \node[emptycomponent, dashed, fit = (interpreter) (generator) (divml)] (divm) {};
 
-  \node [below = 1 cm of alg, text=apple, anchor = west] (valid) {Valid};
-  \node [below = 1 cm of alg, text=orioles, anchor = east] (err) {Error};
+    \begin{pgfonlayer}{background}
+        \node[runtime, outer, fit = (cc) (lart) (preprocessing)(dios)] (prepbox) {};
+    \end{pgfonlayer}
 
-  \begin{pgfonlayer}{background}
-      \node[runtime, outer, fit = (cc) (runtime) (preproc) (instr)] (prepbox) {};
-  \end{pgfonlayer}
+    \begin{pgfonlayer}{background}
+        \node[verification, outer, fit = (interpreter) (generator) (exploration) (divine) (divm) ] (di) {};
+    \end{pgfonlayer}
 
+    \node [left = 1.5 cm of cc, color=pruss] (start) {\Cpp{} program};
+    \node [right = 2 cm of exploration] (end) {};
+    \node [below = 2.3 cm of start, color=pruss, text width = 1.5 cm] (property) {\centering property and\\ options};
 
-  \begin{pgfonlayer}{background}
-      \node[verification, outer, fit = (verif) (interpreter) (alg) (divm) (divml)] (prepbox) {};
-  \end{pgfonlayer}
+    \draw [flow] (cc) -- (lart);
 
-  \draw [flow, dashed] (input) -- (cc);
-  \draw [flow] (cc) -> node [font=\small, left = 0cm, midway] {LLVM IR} (instr);
-  \draw [flow] (runtime) -- (cc);
-  \draw [flow, dashed] (prop) |- (instr);
-  \draw [flow, dashed] (prop) |- (interpreter);
-  \draw [flow] (instr) -> node [font=\small, left = 0cm, near start] {\DIVM IR} (interpreter);
+    \draw [flow] (dios) -- (cc);
 
-  \draw[flow,<->] (interpreter) -- (gen);
-  \draw[flow,<->] (alg) -- (gen);
+    \draw [flow] (lart) -- (interpreter);
 
-  \draw [flow, dashed] (alg.south -| valid.north) -- (valid.north);
-  \draw [flow, dashed] (alg.south -| err.north) -- (err.north);
+    \draw [flow, <->] (interpreter) -- (generator);
+
+    \draw [flow] (generator) -- (exploration);
+
+    \draw [flow, dashed] (start) -- (clang);
+    \draw [flow, dashed] (property) -| (interpreter);
+    \draw [flow, dashed] (property) -| (lart);
+    \draw [flow, dashed] (exploration) -- (res);
 \end{tikzpicture}
-
+}
 \caption{Verification process in \DIVINE consists of preprocessing and
-the mere state space exploration. In preprocessing step an input code is
+state space exploration. In preprocessing step an input code is
 compiled and linked with \DIOS runtime and \DIVINE support
-libraries. Then the bitcode is instrumented by \LART producing a suitable \LLVM bitcode with \DIVM hypercalls (called \DIVM IR). And finally the bitcode is interpreted in \DIVM and the verification result is produced.}\label{fig:verification}
+libraries. Then the bitcode is instrumented by \LART producing a suitable \LLVM bitcode with \DIVM hypercalls. And finally the bitcode is interpreted in \DIVM and the verification result is produced.}\label{fig:verification}
 \end{figure}
 
 \subsection{Symbolic model checking with \SymDIVINE}
 
-Since \DIVINE is an explicit state model checker, its big pitfall are inputs. The
-only way to handle inputs in \DIVINE is to enumerate all possibilities, what
-leads to enormous state space explosion. Hence current \DIVINE is usable only on
+Since \DIVINE is an explicit state model checker, its big disadvantage are inputs. The
+only way to handle inputs in \DIVINE is to enumerate all possibilities, leading to
+enormous state space explosion. Hence current \DIVINE is usable only on
 closed programs (programs without input). As an attempt to solve input problem a
 \SymDIVINE was designed as an extension of \DIVINE. \SymDIVINE is
 a proof-of-concept tool that is based on idea of \emph{control-explicit data-symbolic}
@@ -248,15 +245,15 @@ model checking \cite{Barnat14}.
 
 \subsection{Control-explicit data-symbolic model checking}
 
-In compare to exhaustive enumeration of states by purely explicit approach, a
+In comparison to exhaustive enumeration of states by purely explicit approach, a
 control-explicit data-symbolic approach tries to group states into sets, when
 they differ only in data values but not in control location. In this way \SymDIVINE is able to
 simulate inputs as sets of possible values. These sets, also called \emph{multi states}, are described by explicit control location and symbolic representation of
-data, in our case by quantified \emph{smt} bit-vector formula (for better description see section
+data, in our case by quantified \emph{smt} bit-vector formula (for better description see
 \autoref{sec:multistates}). During model checking a state space exploration
 algorithm works directly with multi states, hence the computation is more
-time-consuming, since some \SMT solver has to be called in order to
-distinguish reachable states. On the other hand symbolic approach may bring
+time-consuming, since an \SMT solver has to be called in order to
+distinguish states. On the other hand symbolic approach may bring
 exponential memory savings and avoid state space explosion caused by inputs.
 
 \subsection{Representation of multi states} \label{sec:multistates}
@@ -269,18 +266,38 @@ representation of symbolic data may be quite challenging. Since \DIVINE aims
 for bit-precise verification a suitable choice is representation of data
 by \emph{smt} bit-vector formulae~\cite{Bauch14}.
 
-\marginpar{ \color{red} TODO introduce \SMT }
+In order to manipulate with bit-vector formulae \SymDIVINE uses a theory over
+\emph{fixed sized bit-vectors}. The theory over fixed sized bit-vectors is a many-sorted
+first-order theory with infinitely many sorts $\sort{n}$ corresponding
+to bit-vectors of length $n$. The only predicate symbols in the BV theory
+are $=$, $\leq_u$, and $\leq_s$, representing
+equality, unsigned inequality of binary-encoded natural numbers, and
+signed inequality of integers in $2$'s complement representation,
+respectively. Functions symbols in the theory are
+$+, \times, \div, \&, \mid, \oplus, \ll, \gg, \cdot, \extract{n}{p}$,
+representing addition, multiplication, unsigned division, bit-wise
+and, bit-wise or, bit-wise exclusive or, left-shift, right-shift,
+concatenation, and extraction of $n$ bits starting from position $p$,
+respectively. For a precise description of the syntax and semantics of the bit-vector
+theory, we refer the reader to Hadarean \cite{Hadarean14}. In this representation,
+the set of represented memory valuations is precisely the set of satisfying assignments
+to the given formula.
 
-\SymDIVINE does not support dynamic memory allocation, hence representation
-of symbolic data becomes much more simpler. In current state representation of
-data is done by quantified bit-vector \SMT formulae. An unambiguous identification
-of symbolic variables is crucial. Therefore \SymDIVINE uses a names given by function
-segment on stack and offset of given variable in the corresponding segment.
+Since \SymDIVINE does not support dynamic memory allocation, representation
+of symbolic data becomes much simpler. In reprensentation via bit-vector
+\SMT formulae, an unambiguous identification of symbolic variables is crucial.
+Therefore \SymDIVINE uses names given by function
+segment on stack and offset of given variable in the corresponding segment. \cite{Mrazek16}.
+Manipulations with symbolic data are represented by corresponding functional symbols.
 
 Besides remembering current values of variables, \SymDIVINE has to keep for
 some variables previous evaluations (also called generations). This happens when
-value of symbolic variable depends on another symbolic variable, see example
-\ref{ex:gen}.
+value of symbolic variable depends on another symbolic variable, see \autoref{ex:gen}. Formally,
+a multi state is a a tuple $(c, m, \varphi)$, where $c$ is an explicit control part, $m$ is an
+explicit memory shape and $\varphi$ is quantifier-free first-order formula over the theory of fixed size
+bit-vectors.
+
+\add{ citation to Honza + Martin na arxiv }
 
 \begin{example}\label{ex:gen}
 Having following C code \SymDIVINE has to store multiple generations of variable
@@ -299,12 +316,12 @@ a = 0;
 A symbolic representation of data is further structured into two parts -- a
 program \emph{path condition} and data \emph{definitions}. The path condition is a
 conjunction of formulae that represents a restriction of the data that have been
-collected during the branching along the path leading to the current location.
+collected during branching along the path leading to the current location.
 Definitions, on the other hand, are made of a set of formulae in the form
 \emph{variable = expression} that describe internal relations among variables.
 Definitions are produced as a result of an assignment or arithmetic
 instructions. The structure of symbolic data representation allows for a
-precise description of what is needed for the model checking, but it lacks the
+precise description of what is needed for model checking, but it lacks the
 canonical representation. As a matter of fact, the equality of multi states
 cannot be performed as a syntax equality, instead, \SymDIVINE employs \SMT
 solver and quantified formulae to check the satisfiability of a path condition
@@ -336,14 +353,14 @@ to be constrained according to comparison condition. For better explanation see
 following example \ref{ex:reduction}.
 
 \begin{example}\label{ex:reduction}
-Let's have a look on impact of set-based reduction on program with input and
-branching. A corresponding \LLVM bitcode is on right side.
+Let's have a look on the impact of set-based reduction on program with input and
+branching. The corresponding \LLVM bitcode is on the right side.
 
 \begin{center}
 \begin{minipage}[t]{.47\textwidth}
 \begin{minted}{cpp}
-unsigned int a = input();
-if (a >= 65535) {
+unsigned int I = input();
+if (I >= 65535) {
     ...
 } else {
     ...
@@ -351,8 +368,8 @@ if (a >= 65535) {
 \end{minipage}\hfill
 \begin{minipage}[t]{.47\textwidth}
 \begin{minted}{llvm}
-%a = call i32 @input()
-%b = icmp uge i32 %a, 65535
+%I = call i32 @input()
+%b = icmp uge i32 %I, 65535
 %br i1 %b, label %t, label %e
 \end{minted}
 \end{minipage}
@@ -360,7 +377,7 @@ if (a >= 65535) {
 
 \bigskip
 \noindent
-In order to precisely verify a program with input \DIVINE, has to generate all
+In order to precisely verify a program with input, \DIVINE has to generate all
 possible evaluations of \code{input} call. Hence the resulting state space suffers
 from great state space explosion. We may notice that state space is branched when
 the input call is executed, but following execution continues in sequential
@@ -376,27 +393,27 @@ manner.
     \node [pc, text width = 1 cm] (s) {$\bot$};
     \node [right = 3cm of s] (mid) {};
 
-    \node [pc, above = -0.25 cm of mid, minimum width=2.7cm] (s65534){a = 65534};
-    \node [pc, below = -0.25 cm of mid, minimum width=2.7cm] (s65535){a = 65535};
+    \node [pc, above = -0.25 cm of mid, minimum width=2.7cm] (s65534){I = 65534};
+    \node [pc, below = -0.25 cm of mid, minimum width=2.7cm] (s65535){I = 65535};
 
     \node [dots, above = 0 cm of s65534] (dots1){\LARGE$\vdots$};
     \node [dots, below = -0.2 cm of s65535] (dots2){\LARGE$\vdots$};
 
-    \node [pc, above = -0.2 cm of dots1, minimum width=2.7cm] (s0) {a = 0};
-    \node [pc, below = 0 cm of dots2, minimum width=2.7cm] (sn) {a = 2\^{}32 - 1};
+    \node [pc, above = -0.2 cm of dots1, minimum width=2.7cm] (s0) {I = 0};
+    \node [pc, below = 0 cm of dots2, minimum width=2.7cm] (sn) {I = 2\^{}32 - 1};
 
     \node [pc, right = 1.5 cm of s65534, minimum width=4.3cm]
-    (s65534_icmp){a = 65534; b = 0};
+    (s65534_icmp){I = 65534; b = 0};
     \node [pc, right = 1.5 cm of s65535, minimum width=4.3cm]
-    (s65535_icmp){a = 65535; b = 1};
+    (s65535_icmp){I = 65535; b = 1};
 
     \node [dots, above = 0.0 cm of s65534_icmp] (dots1_icmp){\LARGE$\vdots$};
     \node [dots, below = -0.2 cm of s65535_icmp] (dots2_icmp){\LARGE$\vdots$};
 
     \node [pc, right = 1.5 cm of s0, minimum width=4.3cm] (s0_icmp)
-    {a = 0; b = 0};
+    {I = 0; b = 0};
     \node [pc, right = 1.5 cm of sn, minimum width=4.3cm] (sn_icmp)
-    {a = 2\^{}32 - 1; b = 1};
+    {I = 2\^{}32 - 1; b = 1};
 
     \node [empty, left  = 1 cm of s]  (start) {};
     \node [empty, right = 1 cm of s0_icmp] (s0end) {};
@@ -427,12 +444,12 @@ manner.
 \bigskip
 
 \noindent
-On the other hand, in \SymDIVINE the `input` call generates single multi state,
-where `a` represents a set of all possible 32-bit values. State space is then
-branched when a comparison instruction `icmp` is executed. In this case, two
-possible scenarios may happen. First, when `a` is smaller then 65535, a multi
-state with `b = 0`, as result of comparison, is generated. Similarly for second case, when
-the condition is satisfied, a state with appropriately constrained `a` is emmited.
+On the other hand, in \SymDIVINE the \code{input} call generates single multi state,
+where \code{a} represents a set of all possible 32-bit values. State space is then
+branched when a comparison instruction \code{icmp} is executed. In this case, two
+possible scenarios may happen. First, when \code{a} is smaller than 65535, a multi
+state with \code{b = 0}, as result of comparison, is generated. Similarly for second case, when
+the condition is satisfied, a state with appropriately constrained \code{a} is generated.
 
 \bigskip
 
@@ -446,14 +463,14 @@ the condition is satisfied, a state with appropriately constrained `a` is emmite
 
     \node [pc, text width = 1cm] (s_sym) {$\bot$};
     \node [pc, text width = 3.7cm, right = 1.5 cm of s_sym, minimum width=2cm] (s_nd_sym)
-    {a = \{0,\dots,2\^{}32 - 1\}};
+    {I = \{0,\dots,2\^{}32 - 1\}};
 
     \node [empty, right = 4cm of s_nd_sym] (mid_sym) {};
 
     \node [pc, text width = 5cm, above = -0.45 cm of mid_sym, minimum width=5cm] (s1_sym)
-    {a = \{0,\dots,65534\}\\b = \{0\}};
+    {I = \{0,\dots,65534\}\\b = \{0\}};
     \node [pc, text width = 5cm, below = -0.45 cm of mid_sym, minimum width=5cm] (s2_sym)
-    {a = \{65535,\dots,2\^{}32 - 1\}\\b = \{1\}};
+    {I = \{65535,\dots,2\^{}32 - 1\}\\b = \{1\}};
 
     \node [empty, left  = 1 cm of s_sym]  (start_sym) {};
     \node [empty, right = 1 cm of s1_sym] (s1end_sym) {};
@@ -473,13 +490,13 @@ the condition is satisfied, a state with appropriately constrained `a` is emmite
 
 \end{example}
 
-uring state space exploration \SymDIVINE employs a \SMT solver for two tasks.
-irstly, in compare to \DIVINE, a detection of already visited state is much
+During state space exploration \SymDIVINE employs a \SMT solver for two tasks.
+Firstly, in compare to \DIVINE, a detection of already visited state is much
 more complicated. Comparison of two multi states is done by comparison of their
 explicit part (i.e.~whether they are in same control location) and symbolic
 part. Equality of symbolic part is achieved by subset comparison, i.e. the
 symbolic parts are equal when one is subset of another and vice versa.
-This subset comparison can be efficiently coded into \SMT formula and given to
+This subset comparison is encoded into \SMT formula and given to
 \SMT solver.
 
 The second use case of \SMT solver is when exploration algorithm needs to
@@ -499,66 +516,70 @@ generator and exploration manager. They behave similarly as their \DIVINE
 counterparts. In extension state space generator communicates with external
 \SMT solver as described before.
 
-%\begin{figure}[!ht]
-%\centering
-%\resizebox{\textwidth}{!}{
-%\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
-%\tikzset{>=latex}
-%
-%    \tikzstyle{smt}=[fill=ucla!40]
-%    \node [component](clang) {clang -emit-llvm};
-%    \node [clabel, above = 0.3 cm of clang] (preprocessing) {Preprocessing};
-%    \node [component, below = 0.5 cm of clang](lart) {LART};
-%
-%    \node [component, right = 0.6 cm of lart, ](interpreter) {\LLVM interpreter};
-%    \node [component, right = 0.5 cm of interpreter, minimum width=1 cm](generator) {State space generator};
-%
-%    \node [component, smt, right = 0.5 cm of generator, minimum width=1 cm, text width=1 cm](smt){\SMT solver};
-%    \node [component, above = 0.5 cm of generator, minimum width=1 cm](exploration) {Exploration algorithm};
-%    \node [clabel, right = 0.5 cm of preprocessing] (symdivine) {SymDIVINE};
-%
-%    \node [right = 0.5 cm of exploration ] (res)
-%    {\color{apple}{Valid}\color{pruss}/\color{orioles}{Error}};
-%
-%    \begin{pgfonlayer}{background}
-%        \node[runtime, outer, fit = (clang) (lart) (preprocessing)] (prepbox) {};
-%    \end{pgfonlayer}
-%
-%    \begin{pgfonlayer}{background}
-%        \node[verification, outer, fit = (interpreter) (generator) (exploration) (symdivine) ] (preprocessing) {};
-%    \end{pgfonlayer}
-%
-%    \node [left = 1.5 cm of clang, color=pruss] (start) {\Cpp{} program};
-%    \node [right = 2 cm of exploration] (end) {};
-%    \node [below = 2.3 cm of start, color=pruss] (property) {property};
-%
-%    \draw [flow] (clang) -- (lart);
-%
-%    \draw [flow] (lart) -- (interpreter);
-%
-%    \draw [flow, <->] (interpreter) -- (generator);
-%
-%    \draw [flow, <->] (smt) -- (generator);
-%
-%    \draw [flow] (generator) -- (exploration);
-%
-%    \draw [flow, dashed] (start) -- (clang);
-%    \draw [flow, dashed] (property) -| (generator);
-%    \draw [flow, dashed] (exploration) -- (res);
-%\end{tikzpicture}
-%}
-%\caption{ \SymDIVINE{}'s verification workflow similar to \DIVINE{}'s. It consists
-%of two steps, a preprocessing part where a suitable \LLVM bitcode is created. In compare to
-%\DIVINE, compilation is done by unmodified compiler and \LART transformations
-%are used only slightly. We would like to note, that only verified program
-%attends a compilation process, since no \SymDIVINE proprietary runtime (as \DIOS) is
-%needed. On the other hand \SymDIVINE needs to simulate scheduling directl in
-%interpreter and state space generator. In compare to \DIVINE a verification part
-%of \SymDIVINE maintains similar architercture. The only big difference is
-%interfce to external \SMT solver.}\label{fig:symdivine}
-%\end{figure}
+\begin{figure}[!ht]
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
+\tikzset{>=latex}
+
+    \tikzstyle{smt}=[fill=ucla!40]
+    \node [component](clang) {clang -emit-llvm};
+    \node [clabel, above = 0.3 cm of clang] (preprocessing) {Preprocessing};
+    \node [component, below = 0.5 cm of clang](lart) {LART};
+
+    \node [component, right = 0.6 cm of lart, ](interpreter) {\LLVM interpreter};
+    \node [component, right = 0.5 cm of interpreter, minimum width=1 cm](generator) {State space generator};
+
+    \node [component, smt, right = 0.5 cm of generator, minimum width=1 cm, text width=1 cm](smt){\SMT solver};
+    \node [component, above = 0.5 cm of generator, minimum width=1 cm](exploration) {Exploration algorithm};
+    \node [clabel, right = 0.5 cm of preprocessing] (symdivine) {SymDIVINE};
+
+    \node [right = 0.5 cm of exploration ] (res)
+    {\color{apple}{Valid}\color{pruss}/\color{orioles}{Error}};
+
+    \begin{pgfonlayer}{background}
+        \node[runtime, outer, fit = (clang) (lart) (preprocessing)] (prepbox) {};
+    \end{pgfonlayer}
+
+    \begin{pgfonlayer}{background}
+        \node[verification, outer, fit = (interpreter) (generator) (exploration) (symdivine) ] (preprocessing) {};
+    \end{pgfonlayer}
+
+    \node [left = 1.5 cm of clang, color=pruss] (start) {\Cpp{} program};
+    \node [right = 2 cm of exploration] (end) {};
+    \node [below = 2.3 cm of start, color=pruss] (property) {property};
+
+    \draw [flow] (clang) -- (lart);
+
+    \draw [flow] (lart) -- (interpreter);
+
+    \draw [flow, <->] (interpreter) -- (generator);
+
+    \draw [flow, <->] (smt) -- (generator);
+
+    \draw [flow] (generator) -- (exploration);
+
+    \draw [flow, dashed] (start) -- (clang);
+    \draw [flow, dashed] (property) -| (generator);
+    \draw [flow, dashed] (exploration) -- (res);
+\end{tikzpicture}
+}
+\caption{ Verification workflow of \SymDIVINE is similar to \DIVINE{}'s. It consists
+of two steps, a preprocessing part where a suitable \LLVM bitcode is created. In compare to
+\DIVINE, compilation is done by unmodified compiler and \LART transformations
+are used only slightly. We would like to note, that only verified program
+attends a compilation process, since no \SymDIVINE proprietary runtime (as \DIOS) is
+needed. On the other hand \SymDIVINE needs to simulate scheduling directl in
+interpreter and state space generator. In compare to \DIVINE a verification part
+of \SymDIVINE maintains similar architercture. The only big difference is
+interfce to external \SMT solver.}\label{fig:symdivine}
+\end{figure}
 
 Even though \SymDIVINE may sound as suitable instrument for verification of open
 programs, it comes with couple of issues.
 
 \add{ symdivine nedostatky }
+
+\add{ sym exploration in DIVINE }
+
+\add{ symbolick formula }

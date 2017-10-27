@@ -6,45 +6,298 @@ choices during model checking process, hence minimize the state space of a
 verified program and speed up a verification (enable model checker to verify
 larger set of programs).
 
-One of the approaches as mentioned in \autoref{ch:divine} is the symbolic model checking.
-From the point of abstractions the symbolic representation forms a precise abstraction
+One of the approaches, as mentioned in \autoref{ch:divine}, is the symbolic model checking.
+From the point of abstractions, symbolic representation forms a precise abstraction
 of program data. In this chapter, we will review how programs are abstracted more generally.
 And thereafter we will present a novel approach to abstractions via transformations
-in preprocessing phase of model checking.
+in the preprocessing phase of model checking.
 
-\section{ Approaches of abstraction }
+\section{Approaches to abstraction}
+
+In common there are two main approaches how to do abstraction of programs.
+Traditionally abstraction engines works as interpreters~\cite{Cousot79}. During
+interpretation the abstraction tool needs to interpret a given code according
+to some semantics (either encoded to tool or given). In similar manner works
+\SymDIVINE.  During interpretation of \LLVM bitcode \SymDIVINE accordingly
+manipulates formula representing the multi states.
+
+The other alternative to do abstraction is to compile the abstraction into the
+program. It means that the program will be transformed in such manner that it will
+manipulates with abstract values instead of concrete ones. For example, in the
+case of symbolic abstraction, the abstracted program manipulates directly with
+formulae, instead of concrete variables. An abstracted program after such
+transformation behaves almost as traditional program. The main difference is
+that the abstracted program may have lost precision, hence it needs to do
+in some cases nondeterministic choices.
+
+When comparing the above mentioned approaches, the interpretation one gives an
+ability to
 
 \add{ There are two main approaches to do abstractions of programs: \newline
     1. interprets \newline
     2. compilers
 }
 \add{ intro to abstractions with some definitions }
+\add{ why to do abstraction in preprocessing in divine }
+\add{ Add pros and cons of both approaches }
+
+\add{ describe aim that we would like to provide machinery in such manner that
+only description of abstract domain is needed, and insertion of domain into
+program is done automatically }
 
 \section{Abstract domains} \label{sec:absdom}
 
-\add{ An abstract domain is an abstract algebra, implemented as a library module,
+When dealing with abstraction of programs, first of all, one has to define an
+abstract domain for program variables and transformers based on operational
+semantics of program. From model checking point of view we want to define an
+abstraction function $\alpha \colon C \to A$ transforming a concrete
+state $C$ to an abstract state $A$, where $C$ corresponds to some memory
+valuation of some tuple of concrete values and $A$ corresponds to tuple
+representing a concrete state in abstract world.  Additionally we have to define
+corresponding abstract transformers to concrete transformers of states (in our
+case abstract equivalents of \LLVM instructions). These transformers induces the
+the transition relation between abstract states. We kindly refer to
+\autoref{subsec:amc}.
+
+\bigskip
+
+\hrule
+
+\bigskip
+\noindent
+\textit{An abstract domain is an abstract algebra, implemented as a library module,
 providing a description of abstract program properties and abstract property
 transformers describing the operational effect of program instructions and
-commands in the abstract. Abstract domains are often complete lattices, an
-abstraction of powersets [@Cousot79] }
+commands in the abstract program. Abstract domains are often complete lattices. --- Cousot \cite{Cousot79} }
+\bigskip
+
+\hrule
+
+\bigskip
+
+To define a concrete domain over \LLVM we have to represent integer types,
+pointer types and aggregate types. For simplicity we will work only with this
+subset of \LLVM types. Moreover we do not permit abstraction of pointers, since
+pointer analysis is beyond the scope of this thesis, but we will permit
+pointers to abstract values.
+
+Generally we define integer types as $C_{i} = \{ \texttt{i}k \mid k
+\in \mathbb{N} \}$, where type $\texttt{i}k$ corresponds to integer of bitwidth $k$.
+Aggregate types $C_a$ are then defined as all finite products of integer types and
+pointer types, and set of pointer types $C_p$ consists of pointers to all integer
+and aggregate types. The whole type system of concrete domain is
+then defined as $C = C_i \cup C_a \cup C_p$. We will denote set of possible
+concrete values by $V_C$.
+
+Defining an abstract domain $A$ over the \LLVM type system requires a representation of
+abstract variables, definition of the type transformation function $\alpha_A \colon C \to A$
+and function for values abstraction $\textit{lift} \colon V_C \to V_A$.
+Similarly the transformation from abstract domain is defined as
+$\textit{lower} \colon V_A \to {V_C}$. We will remark that elements of $V_C$ and
+$V_A$ are sets of possible values.
+
+Since we do not permit abstract pointers, the $\alpha$ function for pointer types and will be
+always defined as transformation from concrete pointer type to abstract pointer
+type with corresponding abstracted base type. Similarly the transformation of
+aggregate types may be done in per value manner. Hence only the definition of
+integer types transformation is needed. Similar reasoning applies to
+\textit{lift} and \textit{lower} functions, where only transformation of integer
+values is needed to by specified.
+
+As example of simple domain we may define a three value domain $D_z$ where only
+one type exists with following possible values:
+\[ V_{D_z} = \{ \textit{zero}, \textit{nonzero}, \textit{unknown} \}\]
+The values represent whether the abstracted variable is zero, non-zero or that we do
+not know the precise value of the variable. Since we have only one type
+$\alpha_{D_z}$ maps all integer types to single possible type.
+The definition of $\textit{lift}$ and $\textit{lower}$ for integer
+types in $D_z$ domain is straightforward:
+
+\[
+  lift(c) = \left.
+  \begin{cases}
+    \textit{zero}    & \text{if } \{0\} = c, \\
+    \textit{nonzero} & \text{if } 0 \not \in c, \\
+    \textit{unknown} & \text{else.}
+  \end{cases}
+\]
+
+\noindent
+Since lower depends on resulting concrete type $\texttt{i}k$ we define separate
+function for each bitwidth.
+
+\[
+  lower_{\texttt{i}k}(a) = \left.
+  \begin{cases}
+    \{0\}    & \text{if } a = \textit{zero},\\
+    \{-2^{k-1}, 2^{k - 1} - 1\} \setminus \{0\} & \text{if } a = \textit{nonzero}, \\
+    \{-2^{k-1}, 2^{k - 1} - 1\} & \text{else}. \\
+  \end{cases}
+\]
+
+Our main goal is to allow the domain to be specified in some common higher-level
+language and consequently compiled it into the verified program. For this purpose,
+we have chosen \Cpp{} language. The representation of the $D_z$ domain in
+\Cpp{} may be achieved through simple enumeration type:
+\begin{minted}{cpp}
+struct Zero {
+    enum Domain { ZeroValue, NonzeroValue, Unknown }
+    Domain value;
+};
+\end{minted}
+
+\add{ description of transformers }
+
+\add{ reference to appendix where the whole domain will be defined + add domain
+to attachments }
+
+\section{Tristate domain}
+
+\add{ purpose of tristate domain + uses }
 
 \section{Symbolic domain}
 
+\add{ representation of symbolic value -the tree description of fromula }
 
-\add{ Add pros and cons of both approaches }
-
-\section{ Abstraction via program transformation }
+\section{Abstraction via program transformation}
 
 - information lossless transformation
 
 - Transformation objectives:
 \add{ add citation to objectives }
 
+\begin{figure}[!ht]
+
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
+\tikzset{>=latex}
+
+\tikzstyle{every node}=[align=center, minimum width=1.25cm, minimum height=0.6cm]
+\tikzset{empty/.style = {minimum width=0cm,minimum height=1cm, text width = 2
+    cm, color = pruss}}
+\tikzset{pass/.style = {
+    draw,
+    inner sep=3pt,
+    rounded corners= 3pt,
+    minimum width = 0cm,
+    minimum height = 1.5cm,
+    text width = 3cm,
+    node distance = 4cm,
+    text centered,
+    color=pruss,
+    fill=pruss!10
+}}
+
+\node [pass] (DFA) {Data flow analysis};
+\node [pass, right of = DFA] (AI) {Abstraction of instructions};
+\node [pass, right of = AI] (BCP) {Constraint propagation};
+\node [pass, fill=vivid!40, right of = BCP] (DI) {Domain insertion};
+
+\node [empty, left = 0.5 cm of DFA]  (in) {bitcode};
+\node [empty, right = 0.5 cm of DI]  (out) {abstracted bitcode};
+
+\draw [flow] (in) -- (DFA);
+\draw [flow] (DFA) -- (AI);
+\draw [flow] (AI) -- (BCP);
+\draw [flow] (BCP) -- (DI);
+\draw [flow] (DI) -- (out);
+\end{tikzpicture}
+}
+
+\end{figure}
+
+
+
+
+A whole chapter running example.
+\begin{minted}{cpp}
+int function() {
+    __symbolic__ int x;
+    int y = 0;
+    if ( x < 10 ) {
+        y = x + 4;
+    }
+    return y;
+}
+\end{minted}
+
+\begin{minted}{llvm}
+define i32 @function() {
+entry:
+  %x = alloca i32
+  %y = alloca i32
+  call void @llvm.var.annotation(...)
+  store i32 0, i32* %y
+  %0 = load i32, i32* %x
+  %cmp = icmp slt i32 %0, 10
+  br i1 %cmp, label %if.then, label %if.end
+if.then:
+  %1 = load i32, i32* %x
+  %add = add nsw i32 %1, 4
+  store i32 %add, i32* %y
+  br label %if.end
+if.end:
+  %2 = load i32, i32* %y
+  ret i32 %2
+}
+
+\end{minted}
 \subsection{Data flow analysis}
     - annotation propagations
 
+\begin{minted}{llvm}
+define %lart.sym.i32 @function() {
+entry:
+  call void @__vmutil_interrupt()
+  %0 = call %lart.sym.i32* @lart.sym.alloca.i32()
+  %1 = call %lart.sym.i32* @lart.sym.alloca.i32()
+  %3 = call %lart.sym.i32 @lart.sym.lift.i32(i32 0)
+  call void @lart.sym.store.i32(%lart.sym.i32 %3, %lart.sym.i32* %1)
+  %4 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %0)
+  %5 = call %lart.sym.i32 @lart.sym.lift.i32(i32 10)
+  %6 = call %lart.sym.i1 @lart.sym.icmp_slt.i32(%lart.sym.i32 %4, %lart.sym.i32 %5)
+  %7 = call %lart.tristate @lart.sym.bool_to_tristate(%lart.sym.i1 %6)
+  %8 = call i1 @lart.tristate.lower(%lart.tristate %7)
+  br i1 %8, label %if.then, label %if.end
+if.then:
+  %9 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %0)
+  %10 = call %lart.sym.i32 @lart.sym.lift.i32(i32 4)
+  %11 = call %lart.sym.i32 @lart.sym.add.i32(%lart.sym.i32 %9, %lart.sym.i32 %10)
+  call void @lart.sym.store.i32(%lart.sym.i32 %11, %lart.sym.i32* %1)
+  br label %if.end
+if.end:
+  %12 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %1)
+  ret %lart.sym.i32 %12
+}
+\end{minted}
+
+
 \subsection{Data type determination}
     - intrinsics creation
+
+
+\begin{centering}
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
+\tikzset{>=latex}
+\tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
+    \node [llvm] (declx) { int\textsubscript{sym} x };
+    \node [llvm, below = 0.5 cm of declx] (decly) { int y = 0 };
+    \node [llvm, below = 0.5 cm of decly] (declz) { int z = 0 };
+    \node [br, below = 0.5 cm of declz] (br) { x < 10 };
+    \node [llvm, below left = 0.5 cm of br] (brtrue) { y = x + 4 };
+    \node [llvm, below right = 0.5 cm of br] (brfalse) { y = call(z) };
+    \node [llvm, below = 1.5 cm of br] (ret) { return y };
+
+    \node [empty, fit = (declx) (decly) (declz)] (bb1) {};
+    \node [empty, fit = (brtrue)] (bb2) {};
+    \node [empty, fit = (brfalse)] (bb3) {};
+    \node [empty, fit = (ret)] (bb4) {};
+
+    \node [fun, fit = (bb1) (bb2) (bb3) (bb4)] (fn) {};
+\end{tikzpicture}
+}
+\end{centering}
 
 \subsection{Approximate invariant assertions}
     - bcp + assumes
@@ -53,3 +306,5 @@ abstraction of powersets [@Cousot79] }
     - substitution
 
 \section{ Other domains }
+
+\section{ Symbolic algorithm }
