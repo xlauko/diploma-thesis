@@ -89,7 +89,7 @@ layers is done by \texttt{syscalls} to \DIOS and by \texttt{hypercalls}
 to \DIVM.}\label{fig:architecture}
 \end{figure}
 
-\subsection{\DIVINE virtual machine (\DIVM)}
+\section{\DIVINE virtual machine}
 
 A \DIVINE virtual machine aims to provide a bare minimum for \LLVM-based
 model checking. This involves execution of instructions, memory management,
@@ -233,7 +233,7 @@ compiled and linked with \DIOS runtime and \DIVINE support
 libraries. Then the bitcode is instrumented by \LART producing a suitable \LLVM bitcode with \DIVM hypercalls. And finally the bitcode is interpreted in \DIVM and the verification result is produced.}\label{fig:verification}
 \end{figure}
 
-\subsection{Symbolic model checking with \SymDIVINE}
+\section{Symbolic model checking with \SymDIVINE}\label{sub:symdivine}
 
 Since \DIVINE is an explicit state model checker, its big disadvantage are inputs. The
 only way to handle inputs in \DIVINE is to enumerate all possibilities, leading to

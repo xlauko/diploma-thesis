@@ -25,7 +25,7 @@ The other alternative to do abstraction is to compile the abstraction into the
 program. It means that the program will be transformed in such manner that it will
 manipulates with abstract values instead of concrete ones. For example, in the
 case of symbolic abstraction, the abstracted program manipulates directly with
-formulae, instead of concrete variables. An abstracted program after such
+formulae, instead of concrete variables. The abstracted program after such
 transformation behaves almost as traditional program. The main difference is
 that the abstracted program may have lost precision, hence it needs to do
 in some cases nondeterministic choices.
@@ -86,15 +86,38 @@ Generally we define integer types as $C_{i} = \{ \texttt{i}k \mid k
 Aggregate types $C_a$ are then defined as all finite products of integer types and
 pointer types, and set of pointer types $C_p$ consists of pointers to all integer
 and aggregate types. The whole type system of concrete domain is
-then defined as $C = C_i \cup C_a \cup C_p$. We will denote set of possible
+then defined as $C = C_i \cup C_a \cup C_p$. We will denote set of all possible
 concrete values by $V_C$.
 
 Defining an abstract domain $A$ over the \LLVM type system requires a representation of
 abstract variables, definition of the type transformation function $\alpha_A \colon C \to A$
 and function for values abstraction $\textit{lift} \colon V_C \to V_A$.
 Similarly the transformation from abstract domain is defined as
-$\textit{lower} \colon V_A \to {V_C}$. We will remark that elements of $V_C$ and
-$V_A$ are sets of possible values.
+$\textit{lower} \colon V_A \to {V_C}$. We remark that elements of $V_C$
+are sets of possible values.
+
+%\marginpar{A well defined abstract domain traditionally forms a complete lattice.
+%Hence the operations over the abstract values may be defined in the notion of
+%lattice operations (meet and join).
+%
+%\bigskip
+%\resizebox{\marginparwidth}{!}{
+%\begin{tikzpicture}
+%    \node [label = \textit{unknown}] (u) {\textbullet};
+%    \node [label ={165:\textit{zero}}, below left = 0.5 cm of u ] (z) {\textbullet};
+%    \node [label ={15:\textit{nonzero}}, below right = 0.5 cm of u] (n) {\textbullet};
+%    \node [below = 1.1 cm of u] (b) {$\bot$};
+%    \draw (u) -- (z);
+%    \draw (z) -- (b);
+%    \draw (u) -- (n);
+%    \draw (n) -- (b);
+%\end{tikzpicture}
+%}
+%
+%A complete lattice of $D_z$ domain contains also a $\bot$ element. Which
+%represents a value in unspecified state. This state will be not reachable in
+%our $D_z$ domain so we will not consider it in domain implementation.
+%\label{fig:lattice}}
 
 Since we do not permit abstract pointers, the $\alpha$ function for pointer types and will be
 always defined as transformation from concrete pointer type to abstract pointer
@@ -107,6 +130,8 @@ values is needed to by specified.
 As example of simple domain we may define a three value domain $D_z$ where only
 one type exists with following possible values:
 \[ V_{D_z} = \{ \textit{zero}, \textit{nonzero}, \textit{unknown} \}\]
+
+
 The values represent whether the abstracted variable is zero, non-zero or that we do
 not know the precise value of the variable. Since we have only one type
 $\alpha_{D_z}$ maps all integer types to single possible type.
@@ -114,7 +139,7 @@ The definition of $\textit{lift}$ and $\textit{lower}$ for integer
 types in $D_z$ domain is straightforward:
 
 \[
-  lift(c) = \left.
+  lift(c) =
   \begin{cases}
     \textit{zero}    & \text{if } \{0\} = c, \\
     \textit{nonzero} & \text{if } 0 \not \in c, \\
@@ -124,10 +149,10 @@ types in $D_z$ domain is straightforward:
 
 \noindent
 Since lower depends on resulting concrete type $\texttt{i}k$ we define separate
-function for each bitwidth.
+function for each bit width.
 
 \[
-  lower_{\texttt{i}k}(a) = \left.
+  lower_{\texttt{i}k}(a) =
   \begin{cases}
     \{0\}    & \text{if } a = \textit{zero},\\
     \{-2^{k-1}, 2^{k - 1} - 1\} \setminus \{0\} & \text{if } a = \textit{nonzero}, \\
@@ -136,7 +161,7 @@ function for each bitwidth.
 \]
 
 Our main goal is to allow the domain to be specified in some common higher-level
-language and consequently compiled it into the verified program. For this purpose,
+language and consequently compiled into the verified program. For this purpose,
 we have chosen \Cpp{} language. The representation of the $D_z$ domain in
 \Cpp{} may be achieved through simple enumeration type:
 \begin{minted}{cpp}
@@ -145,26 +170,143 @@ struct Zero {
     Domain value;
 };
 \end{minted}
+In this way we are able to leverage the existing type system of \LLVM and
+encode an abstract values as \LLVM scalars.
 
-\add{ description of transformers }
+Additionally to domain specification a corresponding transformers have to be
+defined. In concrete domain the set of transformers is formed by \LLVM
+instructions. Concretely binary arithmetic operations, bitwise binary
+operations, memory accesses, conversion operations and comparison instructions.
 
-\add{ reference to appendix where the whole domain will be defined + add domain
-to attachments }
+For abstract domains we have to define equivalent operations over the abstract
+values. Implementation of operations may be provided as \Cpp{} functions over
+the defined abstract types. For example an abstract equivalent of \texttt{add}
+instruction in $D_z$ domain may be implemented as follows. \footnote{The whole
+\texttt{zero} domain implementation can be found in thesis attachments, with
+only minor technical differences.}
+\begin{minted}{cpp}
+Zero __abstract_zero_add( Zero a, Zero b ) {
+    if ( a.value == Zero::Domain::ZeroValue )
+        return b.value;
+    if ( b.value == Zero::Domain::ZeroValue )
+        return a.value;
+    return Zero::Domain::Unknown;
+}
+\end{minted}
 
-\section{Tristate domain}
+Generally the binary bitwise, arithmetic and comparison operations are of
+type $D_z \times D_z \to D_z$. Moreover we define cast operations of type $D_z \to D_z$,
+and operations for memory accesses \code{alloca}, \code{store} and \code{load} \LLVM
+instructions. The abstract \code{alloca} instruction allocates a new \code{Zero}
+variable and returns a pointer to it. The \code{load}, \code{store} access memory as expected.
 
-\add{ purpose of tristate domain + uses }
+\subsection{Domain interactions} \label{sec:interactions}
+In cases when different concrete domains interact, a special care needs to be
+taken. We will concern about two major types of interactions. First one occurs
+with casting operations (bit-casting, width extension truncation etc.), when
+values are transformed from one concrete domain to another. The second
+interaction between domains occurs during comparisons, where \LLVM produces from
+some predicate over various values in some concrete domain, a result in boolean
+concrete domain.
 
-\section{Symbolic domain}
+These interactions cannot be solved separately for each domain. Dealing with
+boolean domain we have decided to fix it as tristate domain (\emph{true, false, maybe}),
+and enforce all abstract domains to define a transformer from their abstract
+boolean to tristate domain. We will refer to it as \texttt{bool\_to\_tristate}
+operation.
 
-\add{ representation of symbolic value -the tree description of fromula }
+To handle cast interactions is much more tricky, generally a combinatorial
+amount of code is required for transformation between abstract domains. The
+simplest way is to treat bit-casts as a way of aliasing and enforce both
+variables to be abstracted into the same abstract domain \cite{Rockai15}.
+
+
+\subsection{Control flow of abstract programs}
+When a branch is taken due to a \emph{maybe} result of some boolean expression,
+the effect of the branch can be , in addition to its usual concrete semantics,
+to restrict the values of some abstracted variables. Abstract interpreters
+naturally take advantage of this fact, by building up a path condition
+\cite{Rockai15}.
+
+In transformation based approach we can take advantage of same principle, by
+restricting values on which the branch has been taken. For this purpose we
+facilitate \code{assume} operation provided by abstract domain. The
+\code{assume} operation has to be able to compute a new value for constrained
+variable from given \LLVM predicate, such as \code{icmp}, and actual result of
+that predicate (i.e.~\emph{true} or \emph{false}).
+
+\section{Symbolic domain}\label{sec:sym}
+
+In compare to simple $D_z$ domain, symbolic domain brings a few complications.
+First of all appears a question, how to define a symbolic data, and consequently
+implement manipulations over them. In \SymDIVINE algorithm the data were
+described by two parts \emph{data definitions} and \emph{path condition} (see
+\autoref{sub:symdivine}). We would like to bring this notion of separation of data
+and path condition also to the abstracted program.
+
+From already settled abstraction framework we may conclude that abstract
+transformers corresponding \LLVM instructions will facilitate on data
+definitions and path condition will be created by \code{assume} operations.
+
+Since symbolic data are meant to be represented as bit-vector formulae,
+a common sense brings us to solution, where abstract data will carry their
+definitions in the way of some representation of formulae. A common formula
+representation are formula trees. For example having the following program the
+data representation at the end of program by formula tress will be as on picture bellow.
+\begin{minted}{cpp}
+int x = input();
+int y = input();
+int a = x + y;
+int b = a * x;
+\end{minted}
+
+\begin{center}
+\begin{minipage}{.4\textwidth}
+\begin{tikzpicture}[->,>=stealth',level/.style={sibling distance = 2cm/#1, level
+    distance = 1cm}]
+    \node [ftreenode, label={a}] {$+$}
+        child{ node [ftreenode] {$x$} }
+        child{ node [ftreenode] {$y$} }
+    ;
+\end{tikzpicture}
+\end{minipage}
+\begin{minipage}{.4\textwidth}
+\begin{tikzpicture}[->,>=stealth',level/.style={sibling distance = 2cm/#1, level
+    distance = 1cm}]
+    \node [ftreenode, label={b}] {$*$}
+        child{ node [ftreenode] {$a$} }
+        child{ node [ftreenode] {$x$} }
+    ;
+\end{tikzpicture}
+\end{minipage}
+\end{center}
+
+You may have noticed that the image lacks the representation of $x$ and $y$
+variables, it is because there are no restrictions on input variables so we will
+consider them as free variables in formula. Another observation is that the tree
+roots correspond to values produced by \SSA form of the program.
+
+These trees are then easily transformed to formulae and given \SMT solver during
+the run of symbolic exploration. The further details on creation of path
+condition and symbolic algorithm will be described in \autoref{sec:symbolic}.
 
 \section{Abstraction via program transformation}
 
-- information lossless transformation
+In following sections we will describe the actual implementation of domain
+injection into the program. By providing the common set of analysis we aim for
+much easier implementation of new abstract domains. Furthermore we want to
+create the transformation in such manner, that the resulting program will be a
+runnable binary, provided the nondeterministic choice implementation (random
+value or bit-vector of choices). Hence the abstracted program should be
+analyzable by arbitrary tool, not just by \DIVINE. Moreover to preserve
+the soundness of further analysis we have to define the transformation in
+information lossless manner.
 
-- Transformation objectives:
-\add{ add citation to objectives }
+Ergo, we have chosen the transformation to be done on the \LLVM bit-code level to
+mimic the logic of original program as precisely as possible. The whole
+transformation is done in successive standalone \LLVM passes, producing the
+abstracted \LLVM bitcode. Further described in following sections, and put
+together in \autoref{fig:transformation}.
 
 \begin{figure}[!ht]
 
@@ -188,123 +330,806 @@ to attachments }
     fill=pruss!10
 }}
 
-\node [pass] (DFA) {Data flow analysis};
-\node [pass, right of = DFA] (AI) {Abstraction of instructions};
+\node [pass] (VPA) {Value propagation};
+\node [pass, right of = VPA] (AI) {Abstraction of instructions};
 \node [pass, right of = AI] (BCP) {Constraint propagation};
 \node [pass, fill=vivid!40, right of = BCP] (DI) {Domain insertion};
 
-\node [empty, left = 0.5 cm of DFA]  (in) {bitcode};
+    \node [empty, left = 0.5 cm of VPA]  (in) {bitcode \\ + \\ domains};
 \node [empty, right = 0.5 cm of DI]  (out) {abstracted bitcode};
 
-\draw [flow] (in) -- (DFA);
-\draw [flow] (DFA) -- (AI);
+\draw [flow] (in) -- (VPA);
+\draw [flow] (VPA) -- (AI);
 \draw [flow] (AI) -- (BCP);
 \draw [flow] (BCP) -- (DI);
 \draw [flow] (DI) -- (out);
 \end{tikzpicture}
 }
 
+\caption{Abstraction of program is done in four major steps. Firstly the
+analysis of abstract values propagation through program is done. After that,
+abstraction of instructions into intermediate \LART instructions is done.
+Thereafter the \code{assume} calls are inserted to program and the given
+constraints are propagated through bitcode. And finally the intermediate
+abstract representation is replaced by appropriate operations in given domain.}
+\label{fig:transformation}
 \end{figure}
 
 
-
-
-A whole chapter running example.
+Providing the program and used domains implementations, one has
+to annotate which variables should be abstracted in which domain. As in
+following example the variable \code{x} is annotated as symbolic.
 \begin{minted}{cpp}
-int function() {
-    __symbolic__ int x;
+int foo(int a, int b) {
+    _SYM int x;
     int y = 0;
-    if ( x < 10 ) {
+    if ( x < a ) {
         y = x + 4;
+    } else {
+        y = bar(a, b);
     }
+    y = bar(a, y);
     return y;
 }
 \end{minted}
+Through the following exploration of program abstraction we will work with this
+simple \Cpp{} program. For readability we will not expose the corresponding \LLVM
+bitcode and will work schematically on control flow diagrams, on which the
+mapping to actual \LLVM should be easily done. But for curious reader we attach the
+concrete \LLVM transformation results in the Appendix.
+\add{ add margin note about annotations in C }
 
-\begin{minted}{llvm}
-define i32 @function() {
-entry:
-  %x = alloca i32
-  %y = alloca i32
-  call void @llvm.var.annotation(...)
-  store i32 0, i32* %y
-  %0 = load i32, i32* %x
-  %cmp = icmp slt i32 %0, 10
-  br i1 %cmp, label %if.then, label %if.end
-if.then:
-  %1 = load i32, i32* %x
-  %add = add nsw i32 %1, 4
-  store i32 %add, i32* %y
-  br label %if.end
-if.end:
-  %2 = load i32, i32* %y
-  ret i32 %2
-}
+\add{ Add llvm bitcode to appendix }
 
-\end{minted}
-\subsection{Data flow analysis}
-    - annotation propagations
+The corresponding control flow graph for example program is displayed in
+\autoref{fig:exampleprogram}.
 
-\begin{minted}{llvm}
-define %lart.sym.i32 @function() {
-entry:
-  call void @__vmutil_interrupt()
-  %0 = call %lart.sym.i32* @lart.sym.alloca.i32()
-  %1 = call %lart.sym.i32* @lart.sym.alloca.i32()
-  %3 = call %lart.sym.i32 @lart.sym.lift.i32(i32 0)
-  call void @lart.sym.store.i32(%lart.sym.i32 %3, %lart.sym.i32* %1)
-  %4 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %0)
-  %5 = call %lart.sym.i32 @lart.sym.lift.i32(i32 10)
-  %6 = call %lart.sym.i1 @lart.sym.icmp_slt.i32(%lart.sym.i32 %4, %lart.sym.i32 %5)
-  %7 = call %lart.tristate @lart.sym.bool_to_tristate(%lart.sym.i1 %6)
-  %8 = call i1 @lart.tristate.lower(%lart.tristate %7)
-  br i1 %8, label %if.then, label %if.end
-if.then:
-  %9 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %0)
-  %10 = call %lart.sym.i32 @lart.sym.lift.i32(i32 4)
-  %11 = call %lart.sym.i32 @lart.sym.add.i32(%lart.sym.i32 %9, %lart.sym.i32 %10)
-  call void @lart.sym.store.i32(%lart.sym.i32 %11, %lart.sym.i32* %1)
-  br label %if.end
-if.end:
-  %12 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %1)
-  ret %lart.sym.i32 %12
-}
-\end{minted}
+Having the annotated program we need to examine all the reachable instructions
+from annotated variables. Further we will call them \emph{roots} of abstraction.
+The examination of the reachable instructions is done by \emph{value propagation
+analysis} (VPA).
+In future this part can be extend to alias analysis as described in
+\cite{Rockai15}.
 
+In order to generalize the further process and enable additional analysis we
+postpone the abstract domain insertion until the whole program is analyzed and
+transformed to suitable state.
 
-\subsection{Data type determination}
-    - intrinsics creation
+Hence in the second step after VPA we introduce an intermediate representation of
+abstract instructions. These instructions do not provide any implementation and
+are represented in simillar manner as \LLVM intrinsic functions
+\cite{LLVM:langref}. During this phase (abstraction of instructions) we
+\emph{lift} the reached instructions provided by VPA into the abstract form. The
+only purpose of this intrinsics is to carry the domain information for further
+analysis and eliminate analysis of domain implementation (since there is no need
+to look into implementation od domains operations). Additionally the \LLVM
+toolset can be used in this step for correct typechecking.
 
+In following analysis the \code{assume} calls are inserted and corresponding
+backwards constraint propagation is executed. After all these analysis the
+intermediate representation of abstract operations is replaced by proper domain
+implementation.
 
+\begin{figure}[!ht]
 \begin{centering}
 \resizebox{\textwidth}{!}{
 \begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
 \tikzset{>=latex}
 \tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
-    \node [llvm] (declx) { int\textsubscript{sym} x };
-    \node [llvm, below = 0.5 cm of declx] (decly) { int y = 0 };
-    \node [llvm, below = 0.5 cm of decly] (declz) { int z = 0 };
-    \node [br, below = 0.5 cm of declz] (br) { x < 10 };
+    \node [llvm] (declx) {\_SYM i32 x };
+    \node [llvm, below = 0.5 cm of declx] (decly) { i32 y};
+    \node [br, below = 0.5 cm of decly] (br) { x < a };
     \node [llvm, below left = 0.5 cm of br] (brtrue) { y = x + 4 };
-    \node [llvm, below right = 0.5 cm of br] (brfalse) { y = call(z) };
-    \node [llvm, below = 1.5 cm of br] (ret) { return y };
+    \node [llvm, below right = 0.5 cm of br] (brfalse) { y = bar(a, b) };
+    \node [llvm, below = 1.5 cm of br] (retcall) { y = bar(a, y) };
+    \node [llvm, below = 0.5 cm of retcall] (ret) { ret y };
 
-    \node [empty, fit = (declx) (decly) (declz)] (bb1) {};
-    \node [empty, fit = (brtrue)] (bb2) {};
-    \node [empty, fit = (brfalse)] (bb3) {};
-    \node [empty, fit = (ret)] (bb4) {};
+    \begin{pgfonlayer}{background}
+        \node [bb, fit = (declx) (decly)] (bb1) {};
+        \node [bb, fit = (brtrue)] (bb2) {};
+        \node [bb, fit = (brfalse)] (bb3) {};
+        \node [bb, fit = (ret) (retcall)] (bb4) {};
+        \node [fun, label={ i32 foo(i32 a, i32 b)}, fit = (bb1) (bb2) (bb3) (bb4)] (fn) {};
+    \end{pgfonlayer}
 
-    \node [fun, fit = (bb1) (bb2) (bb3) (bb4)] (fn) {};
+    \draw [flow, very thick] (decly) -- (br);
+    \draw [flow, very thick] (br.west) -| (brtrue.north) node [near start, above = 5pt] {true};
+    \draw [flow, very thick] (br.east) -| (brfalse.north) node [near start, above = 5 pt] {false};
+    \draw [flow, very thick] (brtrue.south) |- (retcall.west);
+    \draw [flow, very thick] (brfalse.south) |- (retcall.east);
 \end{tikzpicture}
 }
 \end{centering}
+    \caption{Control flow graph of example program. The gray
+    boxes corresponds to \LLVM basic blocks and yellow diamond to conditional branching
+    and corresponding boolean expression.}
 
-\subsection{Approximate invariant assertions}
-    - bcp + assumes
+    \label{fig:exampleprogram}
+\end{figure}
+
+\subsection{Value propagation analysis}
+First of all, the analysis of reachable instructions have to be done. This
+involves the analysis through calls and simple alias analysis for dealing with
+pointers, output parameters and aggregate types. As a result of VPA a list of
+functions with corresponding abstract roots is created.
+
+\begin{example}\label{ex:vpa}
+When analyzing the \code{foo} function, we compute the reachable set of
+instructions using DFS from root \code{x} through all uses
+\cite{LLVM:langref}. We investigate all instructions where x appears on the
+left hand side (marked green on the left picture of \autoref{fig:vpa}).
+Since the analysis found \code{store} (i.e.~\code{y = x + 4}) to variable
+\code{y}, \code{y} is added to set of roots of the function \code{foo} and
+marked with same domain as \code{x} is. Further the analysis is repeated
+from the new root.
+
+During the propagation analysis of \code{y} we found that \code{y} is an
+argument \code{bar} function, hence we will need to analyze the \code{bar}
+function and compute the roots for it. Note that even though the \code{bar}
+function in the bottom basic block is called with an abstract argument we want
+the call to \code{bar} in the \code{else} branch to remain explicit.
+
+Another reached instruction worth mentioning is \code{ret}, since it means that
+we will need to change the signature of \code{foo} function in further
+instruction abstraction phase.
+
+Since we did not found any \code{store} to some new local variable (marked on
+the right of the \autoref{fig:vpa}) the analysis of \code{foo} function is
+finished with set of roots $\{x, y\}$.
+
+\begin{figure} [!ht]
+\begin{center}
+\resizebox{0.49\textwidth}{!}{
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
+\tikzset{>=latex}
+\tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
+    \node [llvm, fill = apple!40] (declx) {\_SYM i32 x };
+    \node [llvm, below = 0.5 cm of declx] (decly) {i32 y};
+    \node [br, below = 0.5 cm of decly] (br) { x < a };
+    \node [llvm, fill = apple!40, below left = 0.5 cm of br] (brtrue) { y = x + 4 };
+    \node [llvm, below right = 0.5 cm of br] (brfalse) { y = bar(a, b) };
+    \node [llvm, below = 1.5 cm of br] (retcall) { y = bar(a, y) };
+    \node [llvm, below = 0.5 cm of retcall] (ret) { ret y };
+
+    \begin{pgfonlayer}{background}
+        \node [bb, fit = (declx) (decly)] (bb1) {};
+        \node [bb, fit = (brtrue)] (bb2) {};
+        \node [bb, fit = (brfalse)] (bb3) {};
+        \node [bb, fit = (ret) (retcall)] (bb4) {};
+        \node [fun, label={ i32 foo(i32 a, i32 b)}, fit = (bb1) (bb2) (bb3) (bb4)] (fn) {};
+    \end{pgfonlayer}
+
+    \draw [flow, very thick] (decly) -- (br);
+    \draw [flow, very thick] (br.west) -| (brtrue.north) node [near start, above = 5pt] {true};
+    \draw [flow, very thick] (br.east) -| (brfalse.north) node [near start, above = 5pt] {false};
+    \draw [flow, very thick] (brtrue.south) |- (retcall.west);
+    \draw [flow, very thick] (brfalse.south) |- (retcall.east);
+\end{tikzpicture}
+}
+\resizebox{0.49\textwidth}{!}{
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
+\tikzset{>=latex}
+\tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
+    \node [llvm, fill = apple!40] (declx) {\_SYM i32 x };
+    \node [llvm, fill = apple!40, below = 0.5 cm of declx] (decly) { i32 y};
+    \node [br, below = 0.5 cm of decly] (br) { x < a };
+    \node [llvm, fill = apple!40, below left = 0.5 cm of br] (brtrue) { y = x + 4 };
+    \node [llvm, below right = 0.5 cm of br] (brfalse) { y = bar(a, b) };
+    \node [llvm, fill = apple!40, below = 1.5 cm of br] (retcall) { y = bar(a, y) };
+    \node [llvm, fill = apple!40, below = 0.5 cm of retcall] (ret) { ret y };
+
+    \begin{pgfonlayer}{background}
+        \node [bb, fit = (declx) (decly)] (bb1) {};
+        \node [bb, fit = (brtrue)] (bb2) {};
+        \node [bb, fit = (brfalse)] (bb3) {};
+        \node [bb, fit = (ret) (retcall)] (bb4) {};
+        \node [fun, label={ i32 foo(i32 a, i32 b)}, fit = (bb1) (bb2) (bb3) (bb4)] (fn) {};
+    \end{pgfonlayer}
+
+    \draw [flow, very thick] (decly) -- (br);
+    \draw [flow, very thick] (br.west) -| (brtrue.north) node [near start, above = 5pt] {true};
+    \draw [flow, very thick] (br.east) -| (brfalse.north) node [near start, above = 5pt] {false};
+    \draw [flow, very thick] (brtrue.south) |- (retcall.west);
+    \draw [flow, very thick] (brfalse.south) |- (retcall.east);
+\end{tikzpicture}
+}
+\end{center}
+\caption{Value propagation analysis of \code{foo} function.}\label{fig:vpa}
+\end{figure}
+\end{example}
+
+As described in \autoref{ex:vpa}, the value propagation analysis, besides
+the analysis of reachable instructions, has to step into the function calls with
+abstract arguments, marking the arguments as roots of the reached function.
+
+Since the stepped-in function may have some annotated values we will distinguish
+two types of roots, the annotation dependent and the argument dependent. Better
+to show the meaning of distinction of roots on some example.
+
+\begin{example} \label{ex:roots} Let's have following two functions.
+
+\begin{minted}{cpp}
+int bar(int arg) {
+    _SYM int y;
+    int b = arg;
+    if (b < y)
+        return b;
+    else
+        return 42;
+}
+
+int foo() {
+    _SYM int x;
+    int val = 0;
+    int res1 = bar(x);
+    int res2 = bar(val);
+}
+\end{minted}
+    We can see that variable \code{x} is root for the function \code{foo} and
+    \code{y} is the root for the function \code{bar}. Since \code{bar} is called
+    with an abstract argument from \code{foo}, we want to add \code{arg} to
+    roots of \code{bar}. But in further analysis we do not want to consider
+    \code{bar} to be always called with an abstract value.
+
+    Hence we distinguish two sets of roots for the \code{bar} function. One, when
+    the function is called with a concrete value, including the single root
+    $\{y\}$. For the case when the argument is abstract, the propagation
+    results into a set $\{y, arg, b\}$. Since $\{y\}$ is always present in the
+    set we represent the resulting roots as union of annotation dependent roots
+    (i.e.~$y$) and argument dependent roots (i.e.~$arg, b$).
+\end{example}
+
+As described in the \autoref{ex:roots}, the result of value propagation analysis
+is for each function computed a set of annotation dependent roots and sets of
+argument dependent roots.
+
+Additionally to the example, you may have noticed that depending on
+argument, the result of the \code{bar} function can be abstract. To record this
+information we also add the resulting value \code{res1} to annotation dependent
+roots of the \code{foo} function, since the abstract call was made from the
+propagation of annotation roots.
+
+Because we need to precisely determine thr return type of function, we utilize
+the \code{UnifyFunctionExitNodes} pass, provided by \LLVM toolset, to unify all
+exit nodes to single one. Hence in the case
+when the \code{bar} function returns abstract value, we need to \emph{lift} the
+value \code{42}, since the returning of it is also possible.
+
+Besides of propagation 'downwards' (in the direction of control flow), we need
+to handle the backwards propagation. This case occurs when some abstract value is
+stored into the nonabstract output argument (pointer or reference) of the function,
+illustarted below.
+
+\begin{minted}{cpp}
+void init(int *x) {
+    _SYM int v;
+    *x = v;
+}
+
+int main() {
+    int x;
+    init(&x);
+}
+
+\end{minted}
+
+To handle the propagation backwards we mark the output argument as root of the
+function, and examine all the locations from where the function is called. From
+the call locations we compute the origin of the argument and mark it by the
+domain that was stored to it (i.e. variable \code{x} is marked as symbolic root
+in the \code{main} function).
+
+Last of all we need to handle abstraction of aggregate types. Since we enable
+only annotation of scalar types, abstract elements in aggregates may occur
+only by storing to them. The problem to be solved is how to mark domins of
+particular element of the aggregate. For this purpose we introduce tree-like
+structure, that mimics the structure of aggregate type and stores domains of
+its scalar elements (shown in \autoref{ex:fieldtrie}).
+
+\begin{example} \label{ex:fieldtrie}
+Let's have a nested structure represented in \LLVMIR:
+\begin{minted}{llvm}
+%Widget = type { i32, %Store* }
+%Store = type { i32, i32, i32 }
+\end{minted}
+In \LLVM, when an aggregate is created by \code{alloca} instruction, we get
+a pointer to the base aggregate. In order to access the elements we need to
+\code{load} from the pointer to the aggregate. The concrete element is then
+accessed by \code{getelementptr} instruction, which for given sequence of
+indices computes an offset to the structure.
+
+We have utilized this indexation strategy to create tree-like representation
+of types. For example representation of \code{Widget} as tree is shown on the
+left picture. The edges of the tree represent the access operation type
+(i.e \code{load} operation or index in \code{getelementptr} instruction)
+\cite{LLVM:langref}.
+
+Since we work only with abstraction of scalar types, we need to focus only on
+the leafs of the tree structure. To mark a domain we assign the type of the
+abstraction to the leaf. Beacause we just need an information about abstract
+elements, we do not store the rest of the leafs. Example abstract structure
+with multiple domains is on the right picture.
+
+\begin{center}
+\begin{minipage}[t]{.47\textwidth}
+\begin{tikzpicture}[->,>=stealth',level/.style={sibling distance = 2cm, level
+    distance = 1cm}]
+    \tikzstyle{fieldnode} = [
+        ftreenode,
+        minimum width = 0.2cm,
+        minimum height = 0.2cm
+    ];
+    \node [fieldnode, label=180:{\small\code{Widget*}}] {}
+        child { node [fieldnode, label=180:{\small\code{Widget}}] {}
+            child{ node [fieldnode] {}
+                child{ node [fieldnode, label=180:{\small\code{i32}}] {}
+                edge from parent node [left, above=1pt] {\small\code{0}} }
+                child{ node [fieldnode, label=0:{\small\code{Store*}}] {}
+                    child{ node [fieldnode, label=0:{\small\code{Store}}] {}
+                        child{ node [fieldnode] {}
+                            child{ node [fieldnode, label=180:{\small\code{i32}}] {}
+                            edge from parent node [left, above=1pt] {\small\code{0}} }
+                            child{ node [fieldnode, label=180:{\small\code{i32}}] {}
+                            edge from parent node [left] {\small\code{1}} }
+                            child{ node [fieldnode, label=180:{\small\code{i32}}] {}
+                            edge from parent node [right, above=1pt] {\small\code{2}} }
+                        edge from parent node [left] {\small\code{0}}
+                        }
+                    edge from parent node [left] {\small\code{load}}
+                    }
+                edge from parent node [right, above = 1pt] {\small\code{1}}
+                }
+            edge from parent node [left] {\small\code{0}}
+            }
+        edge from parent node [left] {\small\code{load}}
+        }
+    ;
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[t]{.47\textwidth}
+\begin{tikzpicture}[->,>=stealth',level/.style={sibling distance = 2cm, level
+    distance = 1cm}]
+    \tikzstyle{fieldnode} = [
+        ftreenode,
+        minimum width = 0.2cm,
+        minimum height = 0.2cm
+    ];
+    \node [fieldnode, label=180:{\small\code{Widget*}}] {}
+        child { node [fieldnode, label=180:{\small\code{Widget}}] {}
+            child{ node [fieldnode] {}
+                child{ node [fieldnode, label=180:{\color{orioles}zero}] {}
+                edge from parent node [left, above=1pt] {\small\code{0}} }
+                child{ node [fieldnode, label=0:{\small\code{Store*}}] {}
+                    child{ node [fieldnode, label=0:{\small\code{Store}}] {}
+                        child{ node [fieldnode] {}
+                            child{ node [fieldnode, label=0:{\color{orioles}symbolic}] {}
+                            edge from parent node [left] {\small\code{1}} }
+                        edge from parent node [left] {\small\code{0}}
+                        }
+                    edge from parent node [left] {\small\code{load}}
+                    }
+                edge from parent node [right, above = 1pt] {\small\code{1}}
+                }
+            edge from parent node [left] {\small\code{0}}
+            }
+        edge from parent node [left] {\small\code{load}}
+        }
+    ;
+\end{tikzpicture}
+\end{minipage}
+\end{center}
+
+%\begin{center}
+%\begin{minipage}[t]{.47\textwidth}
+%\begin{minted}{cpp}
+%struct Store {
+%    int a, b, c;
+%};
+%
+%struct Widget {
+%    int data;
+%    Store *store;
+%};
+%
+%void foo() {
+%    Widget w;
+%    Store s;
+%
+%    w.store = &s;
+%
+%    _SYM int sym;
+%    _ZERO int zero;
+%
+%    w.data = sym;
+%    w.store->b = zero;
+%    w.store->c = sym;
+%}
+%\end{minted}
+%\end{minipage}\hfill
+%\begin{minipage}[t]{.47\textwidth}
+%\begin{minted}{llvm}
+%%Widget = type { i32, %Store* }
+%%Store = type { i32, i32, i32 }
+%
+%define void @foo() {
+%  %w = alloca %Widget
+%  %s = alloca %Store
+%  %sym = alloca i32
+%  %zero = alloca i32
+%  ... ;incialization and annotations
+%  %1 = load i32, i32* %sym
+%  %2 = getelementptr %Widget, %Widget* %w, i32 0, i32 0
+%  store i32 %1, i32* %2
+%  %3 = load i32, i32* %zero
+%  %4 = getelementptr %Widget, %Widget* %w, i32 0, i32 1
+%  %5 = load %Store*, %Store** %4
+%  %6 = getelementptr %Store, %Store* %5, i32 0, i32 1
+%  store i32 %3, i32* %6
+%  %7 = getelementptr %Widget, %Widget* %w, i32 0, i32 1
+%  %8 = load %Store*, %Store** %7
+%  %9 = getelementptr %Store, %Store* %8, i32 0, i32 2
+%  store i32 %1, i32* %9
+%}
+%\end{minted}
+%\end{minipage}
+%\end{center}
+%\add{ extend code border to the marginpar }
+\end{example}
+
+During the value propagation analysis, we store these trees for each variable.
+To be consistent we represent the scalar types the same way (i.e. they are
+represented as single node). For pointer types the trees look like a chain of
+\code{load} edges.
+
+In the future the tree-like representation may be easily used for alias analysis as proposed
+in \cite{Rockai15}.
+
+\subsection{Lifting of instructions}
+Having the abstraction roots computed from value propagation analysis, we can
+start program transformation. In this \LLVM pass we want all the instructions
+working with the abstract values to be replaced by abstract intrinsics.
+Additionally all the needed function prototypes have to be created, and
+appropriate abstract implementation inserted into them.
+
+From the abstraction roots computed in VPA we can do the transformation per
+function.  But fist of all, the function prototypes are created. This is done
+because during the transformation we may need to call some abstract function,
+that has not been abstracted yet, but to call the function the prototype is
+sufficient.  This approach also elegantly deals with the recursive calls.
+
+Function prototypes are created according to the abstraction roots. Basically
+the transformation iterates over all the sets of argument dependent roots and
+the prototype is created based on the arguments included in the given set.
+Moreover the return type is deduced from the reachability of the \code{ret} instruction
+from the roots.
+
+During this phase and further the transformation pass builds a mapping between
+concrete types and abstract types. The abstract types is a \LLVM structure
+expressing the abstracted concrete type and the domain. For example an integer
+in symbolic domain is represented as follows.
+
+\begin{minted}{llvm}
+%lart.sym.i32 = type { i32 }
+\end{minted}
+
+Abstract types are always prefixed by \code{lart} abbreviation, followed by
+domain name and finished by concrete \LLVM type name.
+
+By this type system we can create desired prototypes for the functions from our
+example program (\autoref{fig:exampleprogram}). Expecting that the \code{foo}
+does not take any abstract value we need only to change to return type of the
+signature. For the \code{bar} function there are two cases one does not take any
+abstract value and second one have one abstract argument. After prototype
+creation the resulting \LLVM declarations looks like this.
+\begin{minted}{llvm}
+declare %lart.sym.i32 @foo.2(i64, i32)
+declare %lart.sym.i32 @bar.2(i32, %lart.sym.i32)
+\end{minted}
+Since \LLVM requires distinct names of the functions, the indexes are added in
+the order of prototypes creation. The transformation is done per function,
+concretely for each set of roots separately.
+
+From the given roots we compute the reached set of instructions and sequentially
+transform them. The transformation is done in reverse postorder manner, in order
+to have all the instructions transformed before they are used further in the
+function.
+
+We will represent abstract operations as function calls, with similar naming
+conventions as \LLVM-native intrinsic operations \cite{LLVM:langref}. The
+operations still needs to track the domain type and the base \LLVM instruction.
+For example for \code{add} operation we creates an abstract equivalent:
+\begin{minted}{llvm}
+%res = call %lart.sym.i32
+            @lart.sym.add.i32(%lart.sym.i32 %a,
+                              %lart.sym.i32 %b)
+\end{minted}
+
+When an instructions takes both concrete and abstract arguments we need to
+transform the concrete value into correct domain. This is done by \code{lift}
+operation which creates an abstract constant (described in
+\autoref{sec:absdom}).
+
+\marginpar{More unpleasant way exists, where combinatorial amount of abstract
+operations is generated. For obvious reasons we did not take this path.}
+
+Besides in domain transformations we need to solve inter-domain interactions. As
+mentioned in \autoref{sec:interactions}, we need to transform in-domain booleans
+into tristate manipulations. This has to be done to unify the control flow
+handling, when dealing with multiple domains. Let's consider the following condition
+to be abstracted.
+\begin{minted}{llvm}
+%cond = icmp sgt i32 %a, %b
+br i1 %cond, label %then, label %else
+\end{minted}
+Since we do not know without further analysis whether the resulting value of \code{icmp}
+is used in control flow determination, we prefer the result to remain in the
+abstract domain. Only when we found a use of abstract boolean in some control flow
+instruction (i.e. branching), we inserts conversion operation from abstract
+boolean to tristate. Subsequently we lower the tristate into concrete boolean in
+order to preserve explicit control flow:
+\begin{minted}{llvm}
+%cond = call %lart.sym.i1
+             @lart.sym.icmp_sgt.i32(%lart.sym.i32 %a,
+                                    %lart.sym.i32 %b)
+%tris = call %lart.tristate
+             @lart.sym.bool_to_tristate(%lart.sym.i1 %cond)
+
+%bool = call i1 @lart.tristate.lower(%lart.tristate %tris)
+br i1 %bool, label %then, label %else
+\end{minted}
+
+\begin{figure}
+\begin{example}
+With created prototypes the whole transformation of our example program from
+\autoref{fig:exampleprogram}:
+
+\bigskip
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
+\tikzset{>=latex}
+\tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
+    \node [llvm] (declx) {i32\textsubscript{sym} \textoverline{x}};
+    \node [llvm, below = 0.2 cm of declx] (decly) {i32\textsubscript{sym}
+    \textoverline{y}};
+    \node [llvm, below = 0.2 cm of decly] (lifta) {\textoverline{a} = lift\textsubscript{sym}(a)};
+    \node [llvm, below = 0.2 cm of lifta] (cond) { \textoverline{cond} = \textoverline{x} <\textsubscript{sym}
+    \textoverline{a} };
+    \node [br, below = 0.5 cm of cond] (br) { lower(\textoverline{cond}) };
+    \node [llvm, below left = 0.5 cm of br] (lift4) { \textoverline{4} =
+    lift\textsubscript{sym}(4) };
+    \node [llvm, below = 0.2 cm of lift4] (brtrue) { \textoverline{y} =
+    \textoverline{x} +\textsubscript{sym} \textoverline{4} };
+    \node [llvm, below right = 0.5 cm of br] (liftbar) { y = bar(a, b) };
+    \node [llvm, below = 0.2 cm of liftbar] (brfalse) { \textoverline{y} =
+    lift\textsubscript{sym}(y) };
+    \node [llvm, below = 2.5 cm of br] (retcall) { \textoverline{y} =
+    \textoverline{bar}(a, \textoverline{y}) };
+    \node [llvm, below = 0.2 cm of retcall] (ret) { ret \textoverline{y} };
+
+    \begin{pgfonlayer}{background}
+        \node [bb, fit = (declx) (decly) (lifta) (cond)] (bb1) {};
+        \node [bb, fit = (brtrue) (lift4)] (bb2) {};
+        \node [bb, fit = (brfalse) (liftbar)] (bb3) {};
+        \node [bb, fit = (ret) (retcall)] (bb4) {};
+        \node [fun, label={ i32\textsubscript{sym} foo(i32 a, i32 b)}, fit = (bb1) (bb2) (bb3) (bb4)] (fn) {};
+    \end{pgfonlayer}
+
+    \draw [flow, very thick] (cond) -- (br);
+    \draw [flow, very thick] (br.west) -| (lift4.north) node [near start, above = 5pt] {true};
+    \draw [flow, very thick] (br.east) -| (liftbar.north) node [near start, above = 5pt] {false};
+    \draw [flow, very thick] (brtrue.south) |- (retcall.west);
+    \draw [flow, very thick] (brfalse.south) |- (retcall.east);
+\end{tikzpicture}
+}
+\bigskip
+
+In the picture, symbolic values are represented by bar over them.
+A notable change in the program are points where concrete values have to be
+lifted to symbolic domain. Besides that a transformation of conditional
+branching occur, with explicit branch over the lowered tristate. Lastly the
+correct symbolic form of \code{bar} function has to be called. We can observe that call
+with concrete arguments remains untouched.
+\end{example}
+\end{figure}
+
+When dealing with aggregate or pointer types, we now that they are not
+abstract, so we do not need to create abstract operations with them. Hence the
+original instructions manipulating with aggregates remain untouched, except the
+instructions that extract or inserts scalars to them.
+\add{ reformulovat predchadzajuci odstavec, je desny}
+In those situations, we take the use of results from the value propagation analysis.
+Knowing which elements of aggregate are abstract, when the program tries to
+reach to some of them (through some pointer) we just simply bitcast
+the resulting concrete pointer to pointer to an abstract element. We can afford
+to this because we know that the particular memory location an abstract value is
+stored.
+
+However this approach has its limitations, since the abstract representation has
+to fit into the size of original type. As consequence we are not currently able
+to store a pointer to representation of abstract type into smaller types then
+pointer type (i.e. \code{i64} on 64-bit architecture)\marginnote{In \DIVINE is a
+preparation in process to be able to store an additional data into shadow
+memory.}.
+
+But as a big advantage of this approach is that we do not need to create an
+abstract aggregate types and handcraft the whole structures. This way we also
+can preserve the pointer arithmetic operations, since the offsets to the
+aggregates do not change.
+
+\subsection{Backwards constraint propagation and value restriction}
+When a branch is taken due to a lowered tristate, we need to restrict the values
+engaged in the condition. Consider that branch is taken, based on comparison $a
+> 10$, where $a$ is an abstract value. If we do not have any restriction on $a$
+yet and branch was taken nondeterministically, as consequence the value of $a$
+has to be greater than 10. However, when the branch was not taken,
+the value has to be 10 or less. We will utilize this fact, to restrict the value
+right after the branch was taken.
+
+We can compute the value restrictions independently of the abstract domain, as
+long as the abstract domain provides a right set of primitives. Concretely we
+need to be able to infer a restricted value from a given value and some predicate
+instruction on which we want to base the restriction, along with an actual
+result of the predicate evaluation. For this purpose we have established
+an \code{assume} operation:
+\begin{minted}{llvm}
+%x = call %lart.sym.i32
+          @lart.sym.assume(%lart.sym.i32 %a,
+                           %lart.tristate %cond,
+                           i1 true)
+\end{minted}
+Meaning that value \code{\%x} carries the restricted value of \code{\%a}
+according to the satisfied condition \code{\%cond}.
+
+The insertion of assumes in two steps, first of all we restrict only the
+tristates that are directly lowered and used in unconditional branching. By this
+transformation we simply mark which path is taken based on the nondeterministic
+choice.
+
+Further we proceed in restriction of variables that are engaged in the condition
+predicate. It may seem reasonable to carry on backwards in the program history to
+provide more precise restriction, but backwards constraint propagation has some
+limitations.
+
+\add{ constrain propagation example }
+
+Since the whole computation has to be done statically it is not clear how far the
+backwards look up should proceed. The other limitation is that, the propagation
+can only sufficiently analyze only the local static scope, and cannot infer
+information from function arguments and global state.
+
+Consequently we need to make trade-off between work given to domain
+implementation and simple constrain analysis. Since the symbolic domain is
+capable to acquire the implications resulting from simple restriction over the
+branch condition we have decided to retain only simple assume insertion
+algorithm for this thesis.
+
+The symbolic domain can simply collect the restrictions as path condition and
+restricts the possible variable evaluations based on the whole path
+(in detail description of utilization of assumes in symbolic domain will be
+described in \autoref{sec:symbolic}).
+
+In addition to backwards analysis, assumes insertion demands a few minor
+modifications to bitcode. When control flow of restricted value merges with
+control flow from another restriction or original definition, we need to insert
+appropriate $\varphi$ nodes.
+
+For simpler dependency analysis and $\varphi$ nodes insertion, we have decided
+to insert the restrictions on the edge between restricting branch and consequent
+basic block. The insertion is implemented as creation of a new basic block
+between two blocks redirection of the branch (illustrated in the
+\autoref{ex:assumes}).
+
+\begin{figure}
+\begin{example} \label{ex:assumes}
+Analyzing the example program, we need to restrict values depending on one
+conditional branching.
+\autoref{fig:exampleprogram}:
+
+\bigskip
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
+\tikzset{>=latex}
+\tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
+    \node [llvm] (declx) {i32\textsubscript{sym} \textoverline{x}};
+    \node [llvm, below = 0.2 cm of declx] (decly) {i32\textsubscript{sym}
+    \textoverline{y}};
+    \node [llvm, below = 0.2 cm of decly] (lifta) {\textoverline{a} = lift\textsubscript{sym}(a)};
+    \node [llvm, below = 0.2 cm of lifta] (cond) { \textoverline{cond} =
+    \textoverline{x} <\textsubscript{sym} \textoverline{a} };
+    \node [br, below = 0.5 cm of cond] (br) { lower(\textoverline{cond}) };
+    \node [llvm, fill=apple!40, below left = 0.5 cm of br] (asstrue)
+    {\textoverline{x} = assume(\textoverline{x} <\textsubscript{sym} \textoverline{a})};
+    \node [llvm, below = 0.5 cm of asstrue] (lift4) { \textoverline{4} =
+    lift\textsubscript{sym}(4) };
+    \node [llvm, below = 0.2 cm of lift4] (brtrue) { \textoverline{y} =
+    \textoverline{x} +\textsubscript{sym} \textoverline{4} };
+    \node [llvm, fill=apple!40, below right = 0.5 cm of br] (assfalse)
+    {\textoverline{x} = assume(\textoverline{x} >=\textsubscript{sym}
+    \textoverline{a})};
+    \node [llvm, below = 0.5 cm of assfalse] (liftbar) { y = bar(a, b) };
+    \node [llvm, below = 0.2 cm of liftbar] (brfalse) { \textoverline{y} =
+    lift\textsubscript{sym}(y) };
+    \node [llvm, below = 4 cm of br] (retcall) { \textoverline{y} =
+    \textoverline{bar}(a, \textoverline{y}) };
+    \node [llvm, below = 0.2 cm of retcall] (ret) { ret \textoverline{y} };
+
+    \begin{pgfonlayer}{background}
+        \node [bb, fit = (declx) (decly) (lifta) (cond)] (bb1) {};
+        \node [bb, fit = (brtrue) (lift4)] (bb2) {};
+        \node [bb, fit = (brfalse) (liftbar)] (bb3) {};
+        \node [bb, fit = (asstrue)] (bbt) {};
+        \node [bb, fit = (assfalse)] (bbf) {};
+        \node [bb, fit = (ret) (retcall)] (bb4) {};
+        \node [fun, label={ i32\textsubscript{sym} foo(i32 a, i32 b)}, fit = (bb1) (bb2) (bb3) (bb4)] (fn) {};
+    \end{pgfonlayer}
+
+    \draw [flow, very thick] (cond) -- (br);
+    \draw [flow, very thick] (asstrue) -- (lift4);
+    \draw [flow, very thick] (assfalse) -- (liftbar);
+    \draw [flow, very thick] (br.west) -| (asstrue.north) node [near start, above = 5pt] {true};
+    \draw [flow, very thick] (br.east) -| (assfalse.north) node [near start, above = 5pt] {false};
+    \draw [flow, very thick] (brtrue.south) |- (retcall.west);
+    \draw [flow, very thick] (brfalse.south) |- (retcall.east);
+\end{tikzpicture}
+}
+\bigskip
+
+In this simple case, proper assumes are inserted on the edges between branching
+and consequent basic blocks. Remark that separate basic blocks were created for
+the assumes. Creation of new basic blocks does not make any diffence in this
+program, but for more complicated functions with loops edge splitting needs
+to be done in order to enable $\varphi$ nodes creation.
+
+We may see, that assumes return a new value for restricted variable, that is
+used in following code. After an inspection we may notice that assume in
+\emph{false} branch is unnecessery since the value of restricted
+\code{\textoverline{x}} never used afterwards, but we don't do any optimizations
+in this case.
+\end{example}
+\end{figure}
 
 \subsection{ Domain manipulations insertion }
-    - substitution
+
+After all the analysis and transformations are finished, we can proceed to actual
+domain insertion. Since we now know all the instructions that have to be
+transformed with relevant information about the domain, we do the substitution
+per instruction without any further analysis.
+
+Similarly as in the abstraction of instructions from the second phase we proceed in
+the reverse postorder, to have all the operations substituted before they are
+used further in the bitcode. When processing an optimization, we look on the
+domain tag (in the name of the abstract intrinsic) and accordingly choose the
+appropriate implementation. In current setting the abstract intrinsics are
+replaced by calls to functions implementing the domain transformers. This may
+optimized in the future as inlining of block of code or direct replacing by single
+instruction (possible for simpler domain operations), to minimize the number of
+call the bitcode.
+
+From the domain implementation point of view, there are two things to be
+provided. First, the implementation of transformers over the domain, including
+the special ones --- \code{assume}, \code{lift} and \code{bool\_to\_tristate}.
+And secondly, the implementation of lowering function, that given an abstract
+\LART intrinsic and its arguments, produces a corresponding call to domain
+transformer.
+
+The limitation of whole transformation is that the abstract values must have
+run-time representation using scalar values from concrete domain. This is not a
+problem for simpler domains like $D_z$, but for symbolic abstraction the value
+representation has to be tweaked. As proposed in \autoref{sec:sym}, the data
+have to be represented by tree-like structure. This representation can be then
+stored behind a pointer, and stored on program heap. But by this approach we
+introduce leaks to transformed bitcode. The other way is to copy symbolic
+representation on every taken operation, what is quite inefficient in actual
+bitcode runtime. Due to this we have used a non-leaking pointers in \DIVINE,
+hence during the verification \DIVINE will distinguish the pointers to symbolic
+values and conceal the memory leak.
 
 \section{ Other domains }
+    \add{ maybe add predicate abstraction ? }
 
-\section{ Symbolic algorithm }
+\section{ Symbolic algorithm } \label{sec:symbolic}
+
+    \add{ what have to be done after transformation }
+    \add{ creation of path condition }
+    \add{ formula extraction from state representation }
+    \add{ state equality + algorithm }

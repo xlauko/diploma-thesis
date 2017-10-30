@@ -116,8 +116,8 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Def.}[section]
 \newtheorem{example}{Example}[section]
-\newcommand{\definitionautorefname}{Def.}
-\newcommand{\exampleautorefname}{Ex.}
+\newcommand{\definitionautorefname}{Definition}
+\newcommand{\exampleautorefname}{Example}
 
 % ********************************************************************
 % General useful packages
@@ -128,6 +128,7 @@
 \usepackage{scrhack} % fix warnings when using KOMA with listings package
 \usepackage{xspace} % to get the spacing after macros right
 \usepackage{mparhack} % get marginpar right
+\usepackage{marginnote}
 \PassOptionsToPackage{printonlyused,smaller}{acronym}
 \usepackage{acronym} % nice macros for handling all acronyms in the thesis
 %\renewcommand*{\acsfont}[1]{\textsc{#1}}
@@ -269,20 +270,42 @@
 \newcommandx{\improvement}[2][1=]{\todo[inline,linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
 \newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
 
+\makeatletter
+\newcommand*{\textoverline}[1]{$\overline{\hbox{#1}}\m@th$}
+\makeatother
+
 \usetikzlibrary{shapes, arrows, automata, shadows, positioning, calc, shapes.geometric, fit, backgrounds, decorations.pathmorphing}
 
 \tikzset{
+    treenode/.style= {
+        align = center,
+        inner sep = 0pt,
+        text=pruss,
+        minimum width = 0.75cm,
+        minimum height = 0.75cm,
+        text centered,
+        prefix after command= {
+            \pgfextra{\tikzset{every label/.style={
+            color=pruss,
+            font=\ttfamily
+        }}}}
+    },
+    ftreenode/.style = {
+        treenode,
+        circle,
+        fill=apple!40
+    },
     data/.style={
         rounded corners = 2mm,
         minimum height = 1cm,
-        text width = 3.2cm,
+        text width = 3.7cm,
         inner sep =5pt,
         align = center,
         text=pruss
     },
     llvm/.style={
         data,
-        fill=orioles!40,
+        fill=vivid!40,
         font = \ttfamily,
     },
     pc/.style={
