@@ -102,6 +102,8 @@ Side by side of \LLVM bitcode evaluation, \DIVM stores a representation of a
 program state. A snapshot of a state can be passed to verification algorithm
 for safety analysis. And vice versa the verification algorithm may ask \DIVM for
 successors of a given state.
+\add{ this is not how it works }
+
 
 A program state is represented by memory configuration encoded to graph.
 Nodes of the graph represent objects (e.g.~results of allocation, global
@@ -110,15 +112,15 @@ variables) and edges represent pointers between these objects.
 directly for state equality.
 
 \DIVM in \DIVINE is accompanied by runtime environment, which is executed on top
-of \DIVM. This environment is expected to provide a \emph{scheduler}, that is invoked
+of it. This environment is expected to provide a \emph{scheduler}, that is invoked
 by \DIVM during generation of state successors. An interface between \DIVM and
 runtime environment is provided by \emph{hypercalls}, that enable runtime to modify
 memory and create state space branching by nondeterministic choice.
 
 \begin{example}
 A nondeterministic choice provided by \DIVM as \texttt{\_\_vm\_choose} function
-gives an ability to branch a state space. For example following nondeterministic
-choice branches state space for each \texttt{n} from a given \texttt{range}.
+gives an ability to create a branching in the state space. For example following nondeterministic
+choice creates a successor state for each \texttt{n} from a given \texttt{range}.
 
 \begin{minted}{cpp}
 int n  = __vm_choose( range );
@@ -147,7 +149,9 @@ In \DIVM, a support for the $\tau$-reduction is implemented by \code{interrupt\_
 and \code{interrupt\_cfl} hypercalls. These calls enables a signalization of an
 observable action to state space generation and may cause an interrupt in edge
 generation. The \code{interrupt\_mem} hypercall signals to \DIVM that a memory
-operation is about to be executed. For signalization of potential a loop in the
+operation is about to be executed.
+\add{ check divm papre for precise definition }
+For signalization of potential a loop in the
 program state space \code{interrupt\_cfl} hypercall is used.
 \subsection{Verification workflow}
 
@@ -260,7 +264,7 @@ exponential memory savings and avoid state space explosion caused by inputs.
 
 A challenging part of symbolic model checking is how to define a suitable
 representation of states. Representation of control location (explicit part of
-multistate) is straightforward. A model checker just needs to store
+multi state) is straightforward. A model checker just needs to store
 a program location for each thread. On the other hand coming up with a good
 representation of symbolic data may be quite challenging. Since \DIVINE aims
 for bit-precise verification a suitable choice is representation of data
@@ -284,7 +288,7 @@ the set of represented memory valuations is precisely the set of satisfying assi
 to the given formula.
 
 Since \SymDIVINE does not support dynamic memory allocation, representation
-of symbolic data becomes much simpler. In reprensentation via bit-vector
+of symbolic data becomes much simpler. In representation via bit-vector
 \SMT formulae, an unambiguous identification of symbolic variables is crucial.
 Therefore \SymDIVINE uses names given by function
 segment on stack and offset of given variable in the corresponding segment. \cite{Mrazek16}.
@@ -292,8 +296,8 @@ Manipulations with symbolic data are represented by corresponding functional sym
 
 Besides remembering current values of variables, \SymDIVINE has to keep for
 some variables previous evaluations (also called generations). This happens when
-value of symbolic variable depends on another symbolic variable, see \autoref{ex:gen}. Formally,
-a multi state is a a tuple $(c, m, \varphi)$, where $c$ is an explicit control part, $m$ is an
+a value of symbolic variable depends on another symbolic variable, see \autoref{ex:gen}. Formally,
+a multi state is a tuple $(c, m, \varphi)$, where $c$ is an explicit control part, $m$ is an
 explicit memory shape and $\varphi$ is quantifier-free first-order formula over the theory of fixed size
 bit-vectors.
 
@@ -301,7 +305,7 @@ bit-vectors.
 
 \begin{example}\label{ex:gen}
 Having following C code \SymDIVINE has to store multiple generations of variable
-\code{a}, because after evaluation of all statements \SymDIVINE needs to know
+\code{a}, because after the evaluation of all statements \SymDIVINE needs to know
 that, \code{b} is equal to \code{a} from first line (first generation of
 \code{a}) and \code{a} (in second generation) is equal to $0$.
 
@@ -347,9 +351,9 @@ The only event that splits a state space of multi states is a control flow branc
 that depends on a symbolic value. This happens when a symbolic value is used in
 some comparison (in \LLVM an \code{icmp} instruction). Consequently a pair of
 multi states has to be generated, one that corresponds to state when the
-comparison result was true and second when the result was false. Additionall
+comparison result was true and second when the result was false. Additionally,
 according to comparison result corresponding values in multi states have
-to be constrained according to comparison condition. For better explanation see
+to be constrained based on comparison condition. For better explanation see
 following example \ref{ex:reduction}.
 
 \begin{example}\label{ex:reduction}
@@ -368,8 +372,8 @@ if (I >= 65535) {
 \end{minipage}\hfill
 \begin{minipage}[t]{.47\textwidth}
 \begin{minted}{llvm}
-%I = call i32 @input()
-%b = icmp uge i32 %I, 65535
+%i = call i32 @input()
+%b = icmp uge i32 %i, 65535
 %br i1 %b, label %t, label %e
 \end{minted}
 \end{minipage}
@@ -393,27 +397,27 @@ manner.
     \node [pc, text width = 1 cm] (s) {$\bot$};
     \node [right = 3cm of s] (mid) {};
 
-    \node [pc, above = -0.25 cm of mid, minimum width=2.7cm] (s65534){I = 65534};
-    \node [pc, below = -0.25 cm of mid, minimum width=2.7cm] (s65535){I = 65535};
+    \node [pc, above = -0.25 cm of mid, minimum width=2.7cm] (s65534){i = 65534};
+    \node [pc, below = -0.25 cm of mid, minimum width=2.7cm] (s65535){i = 65535};
 
     \node [dots, above = 0 cm of s65534] (dots1){\LARGE$\vdots$};
     \node [dots, below = -0.2 cm of s65535] (dots2){\LARGE$\vdots$};
 
-    \node [pc, above = -0.2 cm of dots1, minimum width=2.7cm] (s0) {I = 0};
-    \node [pc, below = 0 cm of dots2, minimum width=2.7cm] (sn) {I = 2\^{}32 - 1};
+    \node [pc, above = -0.2 cm of dots1, minimum width=2.7cm] (s0) {i = 0};
+    \node [pc, below = 0 cm of dots2, minimum width=2.7cm] (sn) {i = 2\^{}32 - 1};
 
     \node [pc, right = 1.5 cm of s65534, minimum width=4.3cm]
-    (s65534_icmp){I = 65534; b = 0};
+    (s65534_icmp){i = 65534; b = 0};
     \node [pc, right = 1.5 cm of s65535, minimum width=4.3cm]
-    (s65535_icmp){I = 65535; b = 1};
+    (s65535_icmp){i = 65535; b = 1};
 
     \node [dots, above = 0.0 cm of s65534_icmp] (dots1_icmp){\LARGE$\vdots$};
     \node [dots, below = -0.2 cm of s65535_icmp] (dots2_icmp){\LARGE$\vdots$};
 
     \node [pc, right = 1.5 cm of s0, minimum width=4.3cm] (s0_icmp)
-    {I = 0; b = 0};
+    {i = 0; b = 0};
     \node [pc, right = 1.5 cm of sn, minimum width=4.3cm] (sn_icmp)
-    {I = 2\^{}32 - 1; b = 1};
+    {i = 2\^{}32 - 1; b = 1};
 
     \node [empty, left  = 1 cm of s]  (start) {};
     \node [empty, right = 1 cm of s0_icmp] (s0end) {};
@@ -445,11 +449,11 @@ manner.
 
 \noindent
 On the other hand, in \SymDIVINE the \code{input} call generates single multi state,
-where \code{a} represents a set of all possible 32-bit values. State space is then
+where '\code{i}' represents a set of all possible 32-bit values. State space is then
 branched when a comparison instruction \code{icmp} is executed. In this case, two
-possible scenarios may happen. First, when \code{a} is smaller than 65535, a multi
+possible scenarios may happen. First, when '\code{i}' is smaller than 65535, a multi
 state with \code{b = 0}, as result of comparison, is generated. Similarly for second case, when
-the condition is satisfied, a state with appropriately constrained \code{a} is generated.
+the condition is satisfied, a state with appropriately constrained '\code{i}' is generated.
 
 \bigskip
 
@@ -463,14 +467,14 @@ the condition is satisfied, a state with appropriately constrained \code{a} is g
 
     \node [pc, text width = 1cm] (s_sym) {$\bot$};
     \node [pc, text width = 3.7cm, right = 1.5 cm of s_sym, minimum width=2cm] (s_nd_sym)
-    {I = \{0,\dots,2\^{}32 - 1\}};
+    {i = \{0,\dots,2\^{}32 - 1\}};
 
     \node [empty, right = 4cm of s_nd_sym] (mid_sym) {};
 
     \node [pc, text width = 5cm, above = -0.45 cm of mid_sym, minimum width=5cm] (s1_sym)
-    {I = \{0,\dots,65534\}\\b = \{0\}};
+    {i = \{0,\dots,65534\}\\b = \{0\}};
     \node [pc, text width = 5cm, below = -0.45 cm of mid_sym, minimum width=5cm] (s2_sym)
-    {I = \{65535,\dots,2\^{}32 - 1\}\\b = \{1\}};
+    {i = \{65535,\dots,2\^{}32 - 1\}\\b = \{1\}};
 
     \node [empty, left  = 1 cm of s_sym]  (start_sym) {};
     \node [empty, right = 1 cm of s1_sym] (s1end_sym) {};
@@ -506,6 +510,46 @@ represented by following formula: $x > 0 \wedge x < 0$, state is unreachable,
 because formula is unsatisfiable. As a consequence \SymDIVINE does
 not generate a given unreachable successor.
 
+\subsection{Multi state equality check}
+
+To distinguish two states in explicit model checking we just need to compare values of
+given states explicitly, but in \SymDIVINE we need to determine whether the
+multi states represents the same set of concrete states. For this purpose \SymDIVINE
+uses a power of \SMT solver.
+
+Let $s_1$ and $s_2$ are multi states with same explicit part. That is, when $s_1
+= (c, m, \varphi)$ and $s_2 = (c, m, \psi)$ for control part $c$ and
+memory shape $m$ and formulae $\varphi$ and $\psi$. Let $\free{\varphi} = \{x_1,
+\dots, x_n\}$ and
+$\free{\psi} = \{ y_1, \dots, y_m\}$ denote free variables of $\varphi$ and
+$\psi$. Moreover, we denote the set of program variables at the control location
+$c$ as $\pVars{c}$. The for each program variable $p$ exists a variable $x^p$ in
+$\varphi$ that represents the last generation of the program  variable $p$ in
+the multi state $s_1$. Analogously, the last generation of the program variable
+$p$ in $s_2$ is represented by a variable $y^p$ in $\psi$.
+
+To decide whether the sets of concrete states represented by $s_1$ and $s_2$ are
+equal, \SymDIVINE uses a formula $\notsubseteq(s_1, s_2)$, which is satisfiable
+precisely if there is a state represented by $s_1$ that is not represented by
+$s_2$:
+
+\[
+  \notsubseteq(s_1, s_2) \defeq \varphi~\land~ \forall y_1 \ldots y_m
+  \, \Big ( \psi \Rightarrow \bigvee_{p \in \pVars{c}} (x^p \not =
+  y^p) \Big)
+\]
+
+The equality of two multi states is then decided by using an \SMT solver:
+the states $s_1$ and $s_2$ are equal precisely if both of
+formulas $\notsubseteq(s_1, s_2)$ and $\notsubseteq(s_2, s_1)$ are
+unsatisfiable, i.e. there is no memory valuation that is represented
+only by one of the multi-states. However, the equality check requires
+a quantified \SMT query, which is usually more expensive than the
+quantifier-free one.
+
+\add{ add citation of Symdivine paper }
+
+\subsection{Architecture of \SymDIVINE}
 Talking about \SymDIVINE overall architecture, it mimics design of \DIVINE.
 Generally a verification workflow consists of preprocessing part, where
 generation of \LLVM bitcode and minor optimizations are done. In compare to
@@ -569,17 +613,62 @@ of two steps, a preprocessing part where a suitable \LLVM bitcode is created. In
 \DIVINE, compilation is done by unmodified compiler and \LART transformations
 are used only slightly. We would like to note, that only verified program
 attends a compilation process, since no \SymDIVINE proprietary runtime (as \DIOS) is
-needed. On the other hand \SymDIVINE needs to simulate scheduling directl in
+needed. On the other hand \SymDIVINE needs to simulate scheduling directly in
 interpreter and state space generator. In compare to \DIVINE a verification part
-of \SymDIVINE maintains similar architercture. The only big difference is
-interfce to external \SMT solver.}\label{fig:symdivine}
+of \SymDIVINE maintains similar architecture. The only big difference is
+interface to external \SMT solver.}\label{fig:symdivine}
 \end{figure}
 
+
+\subsection{Drawbacks of \SymDIVINE}
 Even though \SymDIVINE may sound as suitable instrument for verification of open
-programs, it comes with couple of issues.
+programs, it comes with couple of issues. First of all, since \SymDIVINE was
+designed only as prototype tool, it does not provide full \Cpp{} language support
+(i.e.~verification of program with exceptions). As consequence \SymDIVINE does
+not provide support for \Cpp{} standard library. Moreover, \SymDIVINE aims only
+for symbolic manipulation with integers, hence it does not provide full support
+of \LLVM instruction set, especially memory manipulations, symbolic indices and
 
-\add{ symdivine nedostatky }
+As drawback of unsupported operations is also that \SymDIVINE can not interpret
+programs even with explicit memory manipulations. Another drawback that emerges
+from monolithic architecture of \SymDIVINE is, that it is not easily expendable.
+Consequently it is hard to maintain the core of the tool correct when adding the
+new features. Lastly, since \SymDIVINE is only prototype tool, it was never
+fully optimized, hence it was not capable to verify simple programs in reasonable
+time.
 
-\add{ sym exploration in DIVINE }
+We believe that, including the \SymDIVINE approach into the \DIVINE can get rid
+of most of these drawbacks. Especially it enables full support of \LLVM and
+\Cpp{} exceptions. Moreover, the explicit data can be handled explicitly by
+tunned \DIVINE interpreter, hence the support for explicit memory can be
+maintained.
 
-\add{ symbolick formula }
+\section{State of the art tools}
+
+In addition to \SymDIVINE a symbolic model checking is known technique for a few
+decades \cite{McMillan93}. There are well known symbolic model checkers such as
+NuSMV -- a tool based on combination of \SMT and \BDD technique
+\cite{Cimatti20}, or PRISM providing large variety of symbolic algorithms
+\cite{Kwiatkowska20}.
+
+A big disadvantage of these tools is that they do not accept a \Cpp{} as form of
+an input model. Hence providing a symbolic algorithm for tool aimed on \Cpp{} is a
+reasonable effort, also from the model checking community point of view.
+
+But since this technique is widely known we would like to bring a new approach
+of dealing with symbolic values. As it will be described in
+\autoref{ch:abstraction}, we may approach to symbolic model checking from two
+sides. In classical design the symbolic model checker interprets the program
+in symbolic manner (i.e.~manipulates with symbolic representation of data). This
+is the approach of \SymDIVINE and tools mentioned earlier. In the other approach
+we may transform a program in such manner that it will behave symbolically (i.e.
+the operations and data in program will directly represent the symbolic
+manipulations), the transformed program is then processed by explicit
+model-checker or another tool of our choice.
+
+The similar approach to transformation was introduced by Khurshid et al.
+\cite{Khurshid03} as approach to symbolic execution. They have instrumented a
+Java code in such manner that the resulting code behaves as its variables were
+symbolic, this code is then processed by Java PathFinder \cite{Havelund20}. We
+have designed a similar approach, an abstraction via program transformation for
+\LLVM programs in the \autoref{ch:abstraction}.

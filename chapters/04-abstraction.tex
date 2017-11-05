@@ -1,25 +1,23 @@
 \chapter{Abstractions}\label{ch:abstraction}
 
-Finally we are coming to main chapter of this thesis, where we will try to tackle
-handling of inputs in model checking. We would like to minimize nondeterministic
-choices during model the checking process, hence minimize the state space of a
-verified program and speed up a verification (enable model checker to verify
-larger set of programs in reasonable time and space).
+In this chapter, we will propose a novel approach to tackle
+handling of program inputs in the model checking. We aim to provide a tooling to
+enable abstraction of inputs, with only minor modifications to model checker.
 
-One of the approaches, as mentioned in \autoref{ch:divine}, is the symbolic model checking.
-From the point of abstractions, symbolic representation forms a precise abstraction
+One of the approaches, as mentioned in \autoref{ch:divine}, is symbolic model checking.
+From the point of abstractions, symbolic representation forms an exact abstraction
 of program data. In this chapter, we will review how programs are abstracted more generally.
-And thereafter we will present a novel approach to abstractions via transformations
+Thereafter we will present an approach to abstractions via transformations
 in the preprocessing phase of model checking.
 
 \section{Approaches to abstraction}
 
 In common there are two main approaches how to do abstraction of programs.
-Traditionally abstraction engines works as interpreters~\cite{Cousot79}. During
-interpretation the abstraction tool needs to interpret a given code according
-to some semantics (either encoded to tool or given). In similar manner works
-\SymDIVINE.  During the interpretation of \LLVM bitcode \SymDIVINE accordingly
-manipulates formula representing the multi states.
+Traditionally, abstraction engines work as interpreters~\cite{Cousot79}. During
+interpretation, the abstraction tool needs to interpret given code according
+to some semantics (either encoded in the tool or given). In similar manner works
+\SymDIVINE. During the interpretation of \LLVM bitcode \SymDIVINE accordingly
+manipulates formula representing the multi states, see \autoref{sub:symdivine}.
 
 The other alternative to do abstraction is to compile the abstraction into the
 program. It means that the program will be transformed in such manner that it will
@@ -30,16 +28,31 @@ transformation behaves almost as a traditional program. The main difference is
 that the abstracted program may have lost precision, hence it needs to do
 in some cases nondeterministic choices.
 
-When comparing the above mentioned approaches, the interpretation one gives an
-ability to TODO
+When comparing the above mentioned approaches, each of them comes with its pros
+and cons. The transformation approach does not complicate the design of the
+verification tool since it is used before the very verification process. Hence
+minimize the probability of bringing a bug into the verification tool itself.
 
-\add{ Add pros and cons of both approaches }
+Bonus of doing the verification over the transformed program is also that,
+besides verifying the sole program, the verification tool checks the
+correctness of the abstract transformers, since they are encoded into the
+program. This is not possible in interpretation approach, because the
+transformers are part of the very interpreter.
 
-\add{ Why to do abstraction in preprocessing of divine }
+Additionally the transformation approach enables reuse of the transformation
+with multiple verification tools. Also the program needs to be transformed only
+once, and thereafter it can be reused, in compare to interpretation where the
+analysis has to be done each time.
 
-\add{ describe aim that we would like to provide machinery in such manner that
-only description of abstract domain is needed, and insertion of domain into
-program is done automatically }
+The both approaches enables pluggable abstract domains, by generalizing their
+common analysis, as it will be shown in this chapter.
+
+But on the other hand, the transformation approach requires more complicated
+design, since the computation has to be done statically. Also the sole
+verification of transformed program may potentially become slower, since the
+abstract operations have to be interpreted by the verification tool, what may
+require nontrivial time in compare to direct interpretation in abstract
+interpreters.
 
 As long as \DIVINE is strong foundation for the explicit model checking, we have
 decided not to complicate the precisely crafted interpreter, and take the path of
@@ -47,7 +60,7 @@ the second approach. We expect the program transformation approach to generalize
 the common analysis used for the abstraction, hence provide a toolset that will be
 easily extended to other abstractions.
 
-Besides having the symbolic abstraction as main goal, during the implementation
+Besides having the symbolic abstraction as a main goal, during the implementation
 we have realized that the core of transformation is usable for arbitrary
 abstraction, as will be shown in this chapter.
 
@@ -60,23 +73,18 @@ Since the transformation of this kind is not known to be done by any other
 \LLVM based tool, we consider this as broadening of field knowledge and hope for
 usable results.
 
-The only similar research has been done in ... \add{ add citation and small
-description }
-
 \section{Abstract domains} \label{sec:absdom}
 
 When dealing with abstraction of programs, first of all, one has to define an
 abstract domain for program variables and transformers based on operational
 semantics of a program. From model checking point of view we want to define an
-abstraction function $\alpha \colon C \to A$ transforming a concrete
-state $C$ to an abstract state $A$, where $C$ corresponds to some memory
-valuation of some tuple of concrete values and $A$ corresponds to tuple
-representing a concrete state in abstract world. \add{ Add reference to section
-2} Additionally we have to define
-corresponding abstract transformers of the states (in our
-case abstract equivalents of \LLVM instructions). These transformers induces
-the transition relation between abstract states. We kindly refer to
-\autoref{subsec:amc}.
+abstraction function $\alpha \colon C \to A$ transforming a concrete state $C$
+to an abstract state $A$, where $C$ corresponds to some memory valuation of some
+tuple of concrete values and $A$ corresponds to tuple representing a concrete
+state in abstract world, see \autoref{subsec:amc}. Additionally we have to
+define corresponding abstract transformers of the states (in our case abstract
+equivalents of \LLVM instructions). These transformers induces the transition
+relation between abstract states. We kindly refer to \autoref{subsec:amc}.
 
 \bigskip
 
@@ -100,8 +108,8 @@ subset of \LLVM types. Moreover we do not permit abstraction of pointers, since
 pointer analysis is beyond the scope of this thesis, but we will permit
 pointers to abstract values.
 
-Generally we define integer types as $C_{i} = \{ \texttt{i}k \mid k
-\in \mathbb{N} \}$, where type $\texttt{i}k$ corresponds to integer of bitwidth $k$.
+Generally we define integer types as set $C_{i}$ containg all \LLVM integer
+types (i.e.~a type for each bitwidth).
 Aggregate types $C_a$ are then defined as all finite products of integer types and
 pointer types, and set of pointer types $C_p$ consists of pointers to all integer
 and aggregate types. The whole type system of concrete domain is
@@ -110,9 +118,10 @@ set of all the possible concrete values by $V_C$.
 
 Defining an abstract domain $A$ over the \LLVM type system requires a representation of
 abstract variables, definition of the type transformation function $\alpha_A \colon C \to A$
-and function for values abstraction $\textit{lift} \colon V_C \to V_A$.
+and a function for values abstraction $\textit{lift} \colon \mathcal{P}(V_C) \to
+V_A$, where $\mathcal{P}(V_C)$ denotes a potential set of $V_C$.
 Similarly the transformation from abstract domain is defined as
-$\textit{lower} \colon V_A \to {V_C}$. We remark that elements of $V_C$
+$\textit{lower} \colon V_A \to \mathcal{P}(V_C)$. We remark that elements of $V_C$
 are sets of possible values.
 
 %\marginpar{A well defined abstract domain traditionally forms a complete lattice.
@@ -133,9 +142,9 @@ are sets of possible values.
 %\end{tikzpicture}
 %}
 %
-%A complete lattice of $D_z$ domain contains also a $\bot$ element. Which
+%A complete lattice of $Z$ domain contains also a $\bot$ element. Which
 %represents a value in unspecified state. This state will be not reachable in
-%our $D_z$ domain so we will not consider it in domain implementation.
+%our $Z$ domain so we will not consider it in domain implementation.
 %\label{fig:lattice}}
 
 Since we do not permit abstract pointers, the $\alpha$ function for pointer types and will be
@@ -146,16 +155,16 @@ integer types transformation is interesting. Similar reasoning applies to
 \textit{lift} and \textit{lower} functions, where only transformation of the
 integer values is needed to by specified.
 
-As example of simple domain we may define a three value domain $D_z$ where only
+As example of simple domain we may define a three value domain $Z$ where only
 one type exists with following possible values:
-\[ V_{D_z} = \{ \textit{zero}, \textit{nonzero}, \textit{unknown} \}\]
+\[ V_{Z} = \{ \textit{zero}, \textit{nonzero}, \textit{unknown} \}\]
 
 
 The values represent whether the abstracted variable is zero, non-zero or that we do
 not know the precise value of the variable. Since we have only one type
-$\alpha_{D_z}$ maps all integer types to single possible type.
+$\alpha_{Z}$ maps all integer types to single possible type.
 The definition of $\textit{lift}$ and $\textit{lower}$ for integer
-types in $D_z$ domain is straightforward:
+types in $Z$ domain is straightforward:
 
 \[
   lift(c) =
@@ -167,21 +176,21 @@ types in $D_z$ domain is straightforward:
 \]
 
 \noindent
-Because lower depends on resulting concrete type $\texttt{i}k$ we define separate
-function for each bit width.
+Because lower depends on resulting concrete integer type $\texttt{i}k$ we define separate
+function for each bitwidth.
 
 \[
   lower_{\texttt{i}k}(a) =
   \begin{cases}
-    \{0\}    & \text{if } a = \textit{zero},\\
-    \{-2^{k-1}, 2^{k - 1} - 1\} \setminus \{0\} & \text{if } a = \textit{nonzero}, \\
-    \{-2^{k-1}, 2^{k - 1} - 1\} & \text{else}. \\
+    \{0\}      & \text{if } a = \textit{zero},\\
+    \{1, 2^k\} & \text{if } a = \textit{nonzero}, \\
+    \{0, 2^k\} & \text{else}. \\
   \end{cases}
 \]
 
 Our main goal is to allow the domain to be specified in some common higher-level
 language and consequently compiled into the verified program. For this purpose,
-we have chosen \Cpp{} language. To represent the $D_z$ domain in
+we have chosen \Cpp{} language. To represent the $Z$ domain in
 \Cpp{} we have created a simple enumeration type:
 \begin{minted}{cpp}
 struct Zero {
@@ -200,7 +209,7 @@ operations, memory accesses, conversion operations and comparison instructions.
 For abstract domains we have to define equivalent operations over the abstract
 values. Implementation of the operations may be provided as \Cpp{} functions over
 the defined abstract types. For example an abstract equivalent of \texttt{add}
-instruction in $D_z$ domain may be implemented as follows. \footnote{The whole
+instruction in $Z$ domain may be implemented as follows. \footnote{The whole
 \texttt{zero} domain implementation can be found in thesis attachments, with
 only minor technical differences.}
 \begin{minted}{cpp}
@@ -214,32 +223,38 @@ Zero __abstract_zero_add( Zero a, Zero b ) {
 \end{minted}
 
 Generally the binary bitwise, arithmetic and comparison operations are of
-type $D_z \times D_z \to D_z$. Moreover we define cast operations of type $D_z \to D_z$,
+type $Z \times Z \to Z$. Moreover we define cast operations of type $Z \to Z$,
 and operations for memory accesses \code{alloca}, \code{store} and \code{load}. The abstract \code{alloca} instruction allocates a new \code{Zero}
 variable and returns a pointer to it. The \code{load} and \code{store} access memory as expected.
 
 \subsection{Domain interactions} \label{sec:interactions}
 In cases when different concrete domains interact, a special care needs to be
 taken. We will concern about two major types of interactions. First one occurs
-with casting operations (bit-casting, width extension truncation etc.), when
-values are transformed from one concrete domain to another. The second
+with casting operations (bit-casting, width extension, truncation, etc.), when
+values are transformed from one domain to another. The second
 interaction between domains occurs during comparisons, where \LLVM produces from
-some predicate over various values in some concrete domain, a result in boolean
-concrete domain.
+some predicate over various values a boolean result. On the boolean result
+usually depends some branching, which needs to take concrete value. Hence the
+abstract result from comparison needs to produce a concrete value. But since the
+result of the comparison may be uncertain, we need to do a nondeterministic
+choice to produce either \emph{true} or \empf{false}.
 
-These interactions cannot be solved separately for each domain. Dealing with
-boolean domain we have decided to fix it as tristate domain (\emph{true, false, maybe}),
+To unify this interaction with control flow between domains, we introduce
+a tristate domain (\emph{true, false, maybe}),
 and enforce all abstract domains to define a transformer from their abstract
 boolean to tristate domain. We will refer to it as \texttt{bool\_to\_tristate}
-operation.
+operation. Hence before each branching on the abstract value we may transform it
+to generalized form of tristate and according to value of tristate decide to do
+the nondeterministic choice. The abstract control flow will be further described
+in \autoref{subsec:cf}.
 
-To handle cast interactions is much more tricky, generally a combinatorial
+Handling of cast interactions is much more tricky, generally a combinatorial
 amount of code is required for transformation between abstract domains. The
 simplest way is to treat bit-casts as a way of aliasing and enforce both
 variables to be abstracted into the same abstract domain \cite{Rockai15}.
 
 
-\subsection{Control flow of abstract programs}
+\subsection{Control flow of abstract programs} \label{subsec:cf}
 When a branch is taken due to a \emph{maybe} result of some boolean expression,
 the effect of the branch can be, in addition to its usual concrete semantics,
 to restrict the values of some abstracted variables. Abstract interpreters
@@ -256,7 +271,7 @@ programs is further examined in \autoref{sec:bcp}.
 
 \section{Symbolic domain}\label{sec:sym}
 
-In compare to simple $D_z$ domain, symbolic domain brings a few complications.
+In compare to simple domain $Z$, symbolic domain brings a few complications.
 First of all appears a question, how to define a symbolic data, and consequently
 implement manipulations over them. In \SymDIVINE algorithm, the data were
 described by two parts \emph{data definitions} and \emph{path condition} (see
@@ -264,14 +279,18 @@ described by two parts \emph{data definitions} and \emph{path condition} (see
 and path condition also to the abstracted program.
 
 From already settled abstraction framework we may conclude that abstract
-transformers corresponding \LLVM instructions will facilitate on data
-definitions and path condition will be created by \code{assume} operations.
+transformers corresponding to \LLVM instructions will facilitate on data
+definitions, i.e.~the symbolic definitions are creted either via symbolic
+\code{alloca} or as results of symbolic instructions. The path condition should
+reflect the already taken path in the program, hence it will be described by
+assumes that were encountered during the interpretation (i.e.~constraints given
+by branching).
 
 Since symbolic data are meant to be represented as bit-vector formulae,
 a common sense brings us to solution, where abstract data will carry their
 definitions in the way of some representation of formulae. A common formula
 representation are formula trees. For example having the following program the
-data representation at the end of program by formula tress will be as on picture bellow.
+data representation at the end of program by formula trees will be as on picture bellow.
 \begin{minted}{cpp}
 int x = input();
 int y = input();
@@ -622,7 +641,7 @@ when the \code{bar} function returns abstract value, we need to \emph{lift} the
 value \code{42}, since the returning of it is also possible.
 
 Besides of propagation 'downwards' (in the direction of control flow), we need
-to handle the backwards propagation. This case occurs when some abstract value is
+to handle backwards propagation. This case occurs when some abstract value is
 stored into the nonabstract output argument (pointer or reference) of the function,
 illustrated below.
 
@@ -655,8 +674,8 @@ its scalar elements (shown in \autoref{ex:fieldtrie}).
 \begin{example} \label{ex:fieldtrie}
 Let's have a nested structure represented in \LLVMIR:
 \begin{minted}{llvm}
-%Widget = type { i32, %Store* }
-%Store = type { i32, i32, i32 }
+%Widget = type { i64, %Store* }
+%Store = type { i64, i64, i64 }
 \end{minted}
 In \LLVM, when an aggregate is created by \code{alloca} instruction, we get
 a pointer to the aggregate base. In order to access the elements we need to
@@ -664,7 +683,7 @@ a pointer to the aggregate base. In order to access the elements we need to
 accessed by \code{getelementptr} instruction, which for given sequence of
 indices computes an offset to the structure.
 
-We have utilized this indexation strategy to create tree-like representation
+We have utilized this indexing strategy to create tree-like representation
 of types. For example representation of \code{Widget} as tree is shown on the
 left picture. The edges of the tree represent the access operation type
 (i.e \code{load} operation or index in \code{getelementptr} instruction)
@@ -688,16 +707,16 @@ with multiple domains is on the right picture.
     \node [fieldnode, label=180:{\small\code{Widget*}}] {}
         child { node [fieldnode, label=180:{\small\code{Widget}}] {}
             child{ node [fieldnode] {}
-                child{ node [fieldnode, label=180:{\small\code{i32}}] {}
+                child{ node [fieldnode, label=180:{\small\code{i64}}] {}
                 edge from parent node [left, above=1pt] {\small\code{0}} }
                 child{ node [fieldnode, label=0:{\small\code{Store*}}] {}
                     child{ node [fieldnode, label=0:{\small\code{Store}}] {}
                         child{ node [fieldnode] {}
-                            child{ node [fieldnode, label=180:{\small\code{i32}}] {}
+                            child{ node [fieldnode, label=180:{\small\code{i64}}] {}
                             edge from parent node [left, above=1pt] {\small\code{0}} }
-                            child{ node [fieldnode, label=180:{\small\code{i32}}] {}
+                            child{ node [fieldnode, label=180:{\small\code{i64}}] {}
                             edge from parent node [left] {\small\code{1}} }
-                            child{ node [fieldnode, label=180:{\small\code{i32}}] {}
+                            child{ node [fieldnode, label=180:{\small\code{i64}}] {}
                             edge from parent node [right, above=1pt] {\small\code{2}} }
                         edge from parent node [left] {\small\code{0}}
                         }
@@ -818,10 +837,10 @@ Additionally all the needed function prototypes have to be created, and
 appropriate abstract implementation inserted into them.
 
 From the abstraction roots computed in VPA we can do the transformation per
-function. But fist of all, the function prototypes are created. This is done
+function. But first of all, the function prototypes are created. This is done
 because during the transformation we may need to call some abstract function,
 that has not been abstracted yet, but to call the function the prototype is
-sufficient. This approach also elegantly deals with the recursive calls.
+sufficient. This approach also elegantly deals with recursive calls.
 
 Function prototypes are created according to the abstraction roots. Basically
 the transformation iterates over all the sets of argument dependent roots and
@@ -848,7 +867,7 @@ signature. For the \code{bar} function there are two cases one does not take any
 abstract value and second one have one abstract argument. After prototype
 creation the resulting \LLVM declarations looks like this.
 \begin{minted}{llvm}
-declare %lart.sym.i32 @foo.2(i64, i32)
+declare %lart.sym.i32 @foo.2(i32, i32)
 declare %lart.sym.i32 @bar.2(i32, %lart.sym.i32)
 \end{minted}
 Since \LLVM requires distinct names of the functions, the indexes are added in
@@ -856,9 +875,8 @@ the order of prototypes creation. The transformation is done per function,
 concretely for each set of roots separately.
 
 From the given roots we compute the reached set of instructions and sequentially
-transform them. The transformation is done in reverse postorder manner, in order
-to have all the instructions transformed before they are used further in the
-function.
+transform them. In order to have all the instructions transformed before their
+result is used further in the function, we transform them in reverse postorder manner.
 
 We will represent abstract operations as function calls, with similar naming
 conventions as \LLVM-native intrinsic operations \cite{LLVM:langref}. The
@@ -887,12 +905,15 @@ to be abstracted.
 %cond = icmp sgt i32 %a, %b
 br i1 %cond, label %then, label %else
 \end{minted}
-Since we do not know without further analysis whether the resulting value of \code{icmp}
-is used in control flow determination, we prefer the result to remain in the
-abstract domain. Only when we found a use of abstract boolean in some control flow
-instruction (i.e. branching), we inserts conversion operation from abstract
-boolean to tristate. Subsequently we lower the tristate into concrete boolean in
-order to preserve explicit control flow:
+Since we do not know without further analysis whether the resulting value of
+\code{icmp} is used in control flow determination, we prefer the result to
+remain in the abstract domain. Only when we found a use of abstract boolean in
+some control flow instruction (i.e. branching), we inserts conversion operation
+from abstract boolean to tristate (described in \autoref{sec:interactions}).
+Subsequently we lower the tristate into concrete boolean in order to preserve
+explicit control flow:
+\marginpar{During the execution, the lowering of tristate may call a non
+deterministic choice if its value is uncertain i.e.~\emph{maybe}.}
 \begin{minted}{llvm}
 %cond = call %lart.sym.i1
              @lart.sym.icmp_sgt.i32(%lart.sym.i32 %a,
@@ -958,7 +979,7 @@ with concrete arguments remains untouched.
 \end{example}
 \end{figure}
 
-When dealing with aggregate or pointer types, we now that they are not
+When dealing with aggregate or pointer types, we know that they are not
 abstract, so we do not need to create abstract operations with them. Hence the
 original instructions manipulating with aggregates remain untouched, except the
 instructions that extract or inserts scalars to them.
@@ -967,15 +988,15 @@ In those situations, we take the use of results from the value propagation analy
 Knowing which elements of aggregate are abstract, when the program tries to
 reach to some of them (through some pointer) we just simply bitcast
 the resulting concrete pointer to pointer to an abstract element. We can afford
-to this because we know that the particular memory location an abstract value is
+to this because we know that in the particular memory location, an abstract value is
 stored.
 
 However this approach has its limitations, since the abstract representation has
 to fit into the size of original type. As consequence we are not currently able
 to store a pointer to representation of abstract type into smaller types then
-pointer type (i.e. \code{i64} on 64-bit architecture)\marginnote{In \DIVINE is a
-preparation in process to be able to store an additional data into shadow
-memory.}.
+pointer type (i.e. \code{i64} on 64-bit architecture)\marginpar{In \DIVINE is a
+preparation in process, to be able to store an additional data into 'shadow'
+memory. With it, \DIVINE will be able to maintain a pointer in the smaller type.}.
 
 But as a big advantage of this approach is that we do not need to create an
 abstract aggregate types and handcraft the whole structures. This way we also
@@ -1123,14 +1144,14 @@ transformed with relevant information about the domain, we do the substitution
 per instruction without any further analysis.
 
 Similarly as in the abstraction of instructions from the second phase we proceed in
-the reverse postorder, to have all the operations substituted before they are
-used further in the bitcode. When processing an optimization, we look on the
-domain tag (in the name of the abstract intrinsic) and accordingly choose the
-appropriate implementation. In current setting the abstract intrinsics are
-replaced by calls to functions implementing the domain transformers. This may
-optimized in the future as inlining of block of code or direct replacing by single
-instruction (possible for simpler domain operations), to minimize the number of
-call the bitcode.
+the order, to have all the operations substituted before they are
+used further in the bitcode (reverse postorder). When processing an
+instruction, we look on the domain tag (in the name of the abstract intrinsic)
+and accordingly choose the appropriate implementation. In current setting the
+abstract intrinsics are replaced by calls to functions implementing the domain
+transformers. This may optimized in the future as inlining of block of code or
+direct replacing by single instruction (possible for simpler domain operations),
+to minimize the number of call the bitcode.
 
 From the domain implementation point of view, there are two things to be
 provided. First, the implementation of transformers over the domain, including
@@ -1141,22 +1162,22 @@ transformer.
 
 The limitation of whole transformation is that the abstract values must have
 run-time representation using scalar values from concrete domain. This is not a
-problem for simpler domains like $D_z$, but for symbolic abstraction the value
+problem for simpler domains like $Z$, but for symbolic abstraction the value
 representation has to be tweaked. As proposed in \autoref{sec:sym}, the data
 have to be represented by tree-like structure. This representation can be then
 stored behind a pointer, and stored on program heap. But by this approach we
-introduce leaks to transformed bitcode. The other way is to copy symbolic
+introduce memory leaks to transformed bitcode. The other way is to copy symbolic
 representation on every taken operation, what is quite inefficient in actual
-bitcode runtime. Due to this we have used a non-leaking pointers in \DIVINE,
-hence during the verification \DIVINE will distinguish the pointers to symbolic
+bitcode runtime. Due to this we have used a special pointers provided by
+\DIVINE (weak pointer), which \DIVINE recognize as non leaking. These pointers
+are then maintained by \DIVM in simillar fashion as garbage collectors do.
+Hence during the verification \DIVINE will distinguish the pointers to symbolic
 values and conceal the memory leak.
 
-\section{ Other domains }
-    \add{ maybe add predicate abstraction ? }
-
 \section{ Symbolic algorithm } \label{sec:symbolic}
-
     \add{ what have to be done after transformation }
     \add{ creation of path condition }
     \add{ formula extraction from state representation }
     \add{ state equality + algorithm }
+
+    \add{ add insertion of vm interupts }
