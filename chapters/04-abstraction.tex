@@ -829,6 +829,8 @@ represented as single node). For pointer types the trees look like a chain of
 In the future the tree-like representation may be easily used for alias analysis as proposed
 in \cite{Rockai15}.
 
+\add{ add wrap up of the section }
+
 \subsection{Lifting of instructions}
 Having the abstraction roots computed from value propagation analysis, we can
 start program transformation. In this \LLVM pass we want all the instructions
@@ -1003,6 +1005,8 @@ abstract aggregate types and handcraft the whole structures. This way we also
 can preserve the pointer arithmetic operations, since the offsets to the
 aggregates do not change.
 
+\add{ add wrap up of the section }
+
 \subsection{Backwards constraint propagation and value restriction}
 \label{sec:bcp}
 When a branch is taken due to a lowered tristate, we need to restrict the values
@@ -1136,7 +1140,9 @@ in this case.
 \end{example}
 \end{figure}
 
-\subsection{ Domain manipulations insertion }
+\add{ add wrap up of the section }
+
+\subsection{Domain manipulations insertion}
 
 After all the analysis and transformations are finished, we can proceed to actual
 domain insertion. Since we now know all the instructions that have to be
@@ -1174,10 +1180,123 @@ are then maintained by \DIVM in simillar fashion as garbage collectors do.
 Hence during the verification \DIVINE will distinguish the pointers to symbolic
 values and conceal the memory leak.
 
-\section{ Symbolic algorithm } \label{sec:symbolic}
-    \add{ what have to be done after transformation }
-    \add{ creation of path condition }
-    \add{ formula extraction from state representation }
-    \add{ state equality + algorithm }
+\add{ add wrap up of the section }
 
-    \add{ add insertion of vm interupts }
+\section{Symbolic state space exploration} \label{sec:symbolic}
+When the program transformation is finished, abstracted program is given to
+\DIVINE for model checking phase. Since the equality and reachability check
+of the symbolic states cannot be done in only explicit manner, we need to employ
+a similar exploration algorithm as \SymDIVINE (see \autoref{sub:symdivine}).
+
+As described in previous sections, symbolic data in abstracted program are
+described by data definitions (that are created by symbolic operations) and
+path condition (that is defined by assumes taken during the program execution).
+Then during the interpretation we need to check whether the state is
+reachable, this is done by query on \SMT solver, whether the already taken
+path condition is satisfiable. And secondly we need to distinguish whether we
+have already seen the reachable state, that is done via equality check. Now we will
+describe both queries in higher detail.
+
+\subsection{Exploration algorithm}
+The symbolic exploration algorithm, similarly as explicit algorithm, uses \DIVM
+to interpret the \LLVM instructions. During the interpretation, abstracted
+operations manipulates with symbolic values, according to the inserted implementation of
+symbolic domain (i.e.~they operates on formula trees, see \autoref{sec:sym}).
+Note that \DIVM has no clue about the symbolic representation and interprets
+program as ordinary \LLVM bitcode.
+
+The data definitions are currently represented as global data structure, that
+keeps all the references to the formula trees. This structure has to be global
+for abstract operations to be able to access it.
+
+In order to create path condition, program needs to track constraints over the
+symbolic values. This is achieved with \code{assume} calls inserted after the
+control flow branching. Let's have a program with some branches:
+\begin{minted}[linenos]{cpp}
+__SYM int x;
+if (x < 10) {
+    if (x > 5) {
+        ...
+    }
+}
+\end{minted}
+In the program above on the 4.~line we need to ensure that value of \code{x} is
+between 5 and 10. This has to be done because the comparison on symbolic values
+does not restrict the original value, only creates a nondeterministic choice
+whether the branch is taken or not, hence value of \code{x} is arbitrary even if
+we have decided that it is smaller then 10 in the first condition.
+
+The restriction is achieved, right away after the branch is taken, by
+\code{assume} call. To maintain the restrictions a path condition is stored in
+some global data structure. Then, when the \code{assume} call is executed a
+restriction is appended to the path condition. This is done in the
+implementation of the \code{assume} call in the symbolic domain
+(i.e.~manipulation with path codition is interpreted by \DIVM). Looking back to
+the example, the path condition on the 4.~line is represented by two
+restrictions: $(x < 10)$ and $(x > 5)$.
+
+When a new state is generated we need to check whether the state is reachable,
+this is done similarly as in \SymDIVINE, by checking the satisfiability of the
+path condition. The path condition for \SMT query is created as conjunction of
+all restrictions taken so far, i.e.~for line 4, the path condition looks like:
+$(x < 10) \wedge (x > 5)$.
+
+Since the path condition is changed only when the \code{assume} call is
+interpreted, it is not necessary to check reachability for every state, but only
+for those when the path condition changes, i.e.~after the \code{assume} call.
+
+\subsection{Equality check}
+
+Similarly as in \SymDIVINE (see \autoref{subsec:equality}), we will firstly
+compare the explicit part of the states and then the symbolic part using the
+\SMT solver.
+
+Let's have two states $s_1$ and $s_2$, in the same control flow location, with
+the same memory shape. This is when $s_1 = (c, m, d_1, \varphi)$ and $s_2 = (c,
+m, d_2, \psi)$ for control location $c$, memory shape $m$, symbolic
+definitions $d_1$, $d_2$ and path conditions $\varphi$ and $\psi$.
+
+For example representing the memory configuration of two states it may look like
+this:
+
+\add{ pridat obrazok }
+
+
+
+\bigskip
+
+We will denote symbolic variables of state $s_1$ by the $v_1, \dots, v_2$
+and $\widehat{v}_1, \dots, \widehat{p}_2$ for the state $s_2$. These variables
+may have arbitrary value, hence they will be represented in the formula as
+\emph{free} variables.
+
+The values $p_1, \dots, p_k$ in the state $s_1$ and $\widehat{p}_1, \dots,
+\widehat{p}_k$ in state $s_2$ are results of transformers over the symbolic
+values (described by formula trees). From the logic point we consider them as
+nullary functions, these functions return predicates over the symbolic values.
+
+For example TODO
+\add{ nularne fukcie na hodnoty }
+
+Comparing these states in same control flow location, we compare the explicit
+values (i.e.~$c_i = \widehat{c}_i$ for all the explicit values of the states).
+When explicit part is the same we need to compare the symbolic part. To decide
+whether the sets of concrete states represented by $s_1$ and $s_2$ are equal, we
+define a formula $equals(s_1, s_2)$. The comparison is done via \SMT query:
+\begin{equation*}
+\begin{aligned}
+equals(s_1, s_2) \defeq & ~(\varphi \iff \psi) \wedge \varphi \implies \\
+                        & \forall~v_1,\dots, v_n (p_1 = \widehat{p}_1 \wedge \dots \wedge p_k = \widehat{p}_k )
+\end{aligned}
+\end{equation*}
+The query says, that the states are equal when the path conditions are
+equivalent and also satisfiable then the data definitions have to describe same
+set. When the path conditions are equivalent, it does not matter which one we
+check for satisfiability.
+
+When path conditions are satisfied, we check for equality of data
+definitions. We couple the corresponding symbolic values defined by nullary
+functions and compare them for equality. These equalities have to be satisfied
+for all free variables (symbolic inputs).
+
+\add{ add chapter summary }
