@@ -237,7 +237,7 @@ some predicate over various values a boolean result. On the boolean result
 usually depends some branching, which needs to take concrete value. Hence the
 abstract result from comparison needs to produce a concrete value. But since the
 result of the comparison may be uncertain, we need to do a nondeterministic
-choice to produce either \emph{true} or \empf{false}.
+choice to produce either \emph{true} or \emph{false}.
 
 To unify this interaction with control flow between domains, we introduce
 a tristate domain (\emph{true, false, maybe}),
@@ -269,7 +269,7 @@ variable from given \LLVM predicate, such as \code{icmp}, and actual result of
 that predicate (i.e.~\emph{true} or \emph{false}). Control flow of abstract
 programs is further examined in \autoref{sec:bcp}.
 
-\section{Symbolic domain}\label{sec:sym}
+\subsection{Symbolic domain}\label{sec:sym}
 
 In compare to simple domain $Z$, symbolic domain brings a few complications.
 First of all appears a question, how to define a symbolic data, and consequently
@@ -331,6 +331,19 @@ condition and symbolic algorithm will be described in \autoref{sec:symbolic}.
 The transformers in symbolic domain can be then easily defined as operations on
 the tree representation (i.e.~each register returning operation creates a new
 tree representing the operation with arguments as leafs).
+
+\begin{summary}
+In this section we have defined what is an abstract domain in context of program
+transformations. We have established a representation of the abstract domain in
+the higher level programing language, accompanied with abstract transformers. In
+addition to abstract \LLVM instructions we have introduced a \code{lift} and a
+\code{lower} for transformation between concrete and abstract domain. We have
+examined interactions between domains, as casting between domains and
+transformation to tristate domain. Consequently we have analyzed a control flow
+of abstract program, that brings a nondeterministic choices into the
+branching. Lastly we have settled a representation of symbolic domain via formula
+trees.
+\end{summary}
 
 \section{Abstraction via program transformation}
 
@@ -831,6 +844,17 @@ in \cite{Rockai15}.
 
 \add{ add wrap up of the section }
 
+\begin{summary}
+In summary, the value propagation analysis takes annotated \LLVM bitcode and
+returns roots of abstraction. Roots are those \LLVM values that introduce an
+abstract value in context of a single function. We have divided roots into two
+kinds. The annotation dependent, that are dependent on annotated values
+directly in the function, and the argument dependent, that are dependent
+on the abstracted arguments of the function. At the end of the section we
+have shown how to analyze aggregate types with multiple domains using a tree
+representation of the structures.
+\end{summary}
+
 \subsection{Lifting of instructions}
 Having the abstraction roots computed from value propagation analysis, we can
 start program transformation. In this \LLVM pass we want all the instructions
@@ -1005,7 +1029,16 @@ abstract aggregate types and handcraft the whole structures. This way we also
 can preserve the pointer arithmetic operations, since the offsets to the
 aggregates do not change.
 
-\add{ add wrap up of the section }
+\begin{summary}
+Given the roots of abstraction, we have shown how to transform program into
+abstract intermediate form. Firstly we have constructed prototypes of functions
+with abstract signature (either has some abstract argument or returns abstract value).
+Further we have transformed all instructions reachable from the abstraction
+roots into abstrct intrisics. Accordingly we have introduced representation of
+abstract types. During the transformation process we have also dealed with an
+interaction with control flow using transformation to tristate and consequent
+lowering to \LLVM boolean.
+\end{summary}
 
 \subsection{Backwards constraint propagation and value restriction}
 \label{sec:bcp}
@@ -1140,7 +1173,14 @@ in this case.
 \end{example}
 \end{figure}
 
-\add{ add wrap up of the section }
+\begin{summary}
+When abstract program takes nondeterministic conditional branching, it needs to
+constrain abstract values that appeard in the condition of branching. For this
+purpose we have introduced \code{assume} calls. Given abstract value, condition
+predicate, and result of the predicate, \code{assume} call computes the
+constrained value. In the section we have also introduced backwards constraint
+propagation, that provides more precise restrictions.
+\end{summary}
 
 \subsection{Domain manipulations insertion}
 
@@ -1176,11 +1216,17 @@ introduce memory leaks to transformed bitcode. The other way is to copy symbolic
 representation on every taken operation, what is quite inefficient in actual
 bitcode runtime. Due to this we have used a special pointers provided by
 \DIVINE (weak pointer), which \DIVINE recognize as non leaking. These pointers
-are then maintained by \DIVM in simillar fashion as garbage collectors do.
+are then maintained by \DIVM in similar fashion as garbage collectors do.
 Hence during the verification \DIVINE will distinguish the pointers to symbolic
 values and conceal the memory leak.
 
-\add{ add wrap up of the section }
+\begin{summary}
+In this section we have shown, how the actual domain is inserted into the
+program. Insertion is done in per instruction manner, where given an abstract
+instruction (intermediate intrinsic call) we replace it by corresponding code
+that implements manipulation in given domain.
+    \add{finish summary }
+\end{summary}
 
 \section{Symbolic state space exploration} \label{sec:symbolic}
 When the program transformation is finished, abstracted program is given to
@@ -1252,41 +1298,93 @@ compare the explicit part of the states and then the symbolic part using the
 \SMT solver.
 
 Let's have two states $s_1$ and $s_2$, in the same control flow location, with
-the same memory shape. This is when $s_1 = (c, m, d_1, \varphi)$ and $s_2 = (c,
-m, d_2, \psi)$ for control location $c$, memory shape $m$, symbolic
-definitions $d_1$, $d_2$ and path conditions $\varphi$ and $\psi$.
+the same memory shape. This is when $s_1 = (c, m, \varphi)$ and $s_2 = (c,
+m, \psi)$ for control location $c$, memory shape $m$ and path conditions $\varphi$ and $\psi$.
 
-For example representing the memory configuration of two states it may look like
-this:
+For example representation of the memory configuration of compared states (in
+the same control location) may look like this:
 
-\add{ pridat obrazok }
+\begin{center}
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[->,>=stealth',level/.style={sibling distance = 1.3cm, level
+    distance = 1cm}]
 
+    \tikzset{state/.style = {draw, inner sep = 5pt,rectangle split, rectangle split horizontal,
+    rectangle split parts=6}, minimum height = 0.8cm}
+    \node [state, label={$s_1$}] (s1)
+        {$c_1$
+         \nodepart{two} \dots
+         \nodepart{three} $p_1$
+         \nodepart{four}~~~~\dots~~~~
+         \nodepart{five} $p_2$
+         \nodepart{six} \dots};
+    \node [state, right = 1 cm of s1, label={$s_2$}] (s2)
+        {$\widehat{c}_1$
+         \nodepart{two} \dots
+         \nodepart{three} $\widehat{p}_1$
+         \nodepart{four} ~~~~\dots~~~~
+         \nodepart{five} $\widehat{p}_2$
+         \nodepart{six} \dots};
+    \node [below = 0.5 cm of s1.three south, ftreenode] (t1) {$+$}
+        child{ node [ftreenode] {$v_1$} }
+        child{ node [ftreenode] {$1$} }
+    ;
 
+    \node [below = 0.5 cm of s1.five south, ftreenode] (t2) {$*$}
+        child{ node [ftreenode] {$v_2$} }
+        child{ node [ftreenode] {$v_3$} }
+    ;
 
-\bigskip
+    \node [below = 0.5 cm of s2.three south, ftreenode] (t3) {$+$}
+        child{ node [ftreenode] {$+$}
+            child { node [ftreenode] {$v_1$} }
+            child { node [ftreenode] {$1$} }
+        }
+        child{ node [ftreenode] {$1$} }
+    ;
 
-We will denote symbolic variables of state $s_1$ by the $v_1, \dots, v_2$
-and $\widehat{v}_1, \dots, \widehat{p}_2$ for the state $s_2$. These variables
-may have arbitrary value, hence they will be represented in the formula as
-\emph{free} variables.
+    \node [below = 0.5 cm of s2.five south, ftreenode] (t4) {$*$}
+        child{ node [ftreenode] {$v_2$} }
+        child{ node [ftreenode] {$v_3$} }
+    ;
 
-The values $p_1, \dots, p_k$ in the state $s_1$ and $\widehat{p}_1, \dots,
+    \draw [->] (s1.three south) -- (t1);
+    \draw [->] (s1.five south) -- (t2);
+    \draw [->] (s2.three south) -- (t3);
+    \draw [->] (s2.five south) -- (t4);
+\end{tikzpicture}
+}
+\end{center}
+
+States in the same control location, do not differ in the memory shape. We can
+see that concrete values ($c_1$, $\widehat{c}_1$) and symbolic values
+($p_1, p_2, \widehat{p}_1, \widehat{p}_2$) occupy the same memory locations in
+both states. Symbolic values are represented by formula trees, as described in
+\autoref{sec:sym}. In the leafs of trees we maintain constants or symbolic
+variables. We kindly remark that, even though symbolic values are represented by
+tree, we do not consider them in the memory shape comparison. Only the position
+of symbolic values $p_k$ is considered in the comparison.
+
+We will denote symbolic variables of both states as $v_1, \dots, v_n$. The
+values $p_1, \dots, p_k$ in the state $s_1$ and $\widehat{p}_1, \dots,
 \widehat{p}_k$ in state $s_2$ are results of transformers over the symbolic
-values (described by formula trees). From the logic point we consider them as
-nullary functions, these functions return predicates over the symbolic values.
+values. From the logic point we consider them as nullary functions, these
+functions return predicates over the symbolic values. For example $p_1$ defines
+a nullary function $v_1 + 1$.
 
-For example TODO
-\add{ nularne fukcie na hodnoty }
-
-Comparing these states in same control flow location, we compare the explicit
-values (i.e.~$c_i = \widehat{c}_i$ for all the explicit values of the states).
-When explicit part is the same we need to compare the symbolic part. To decide
-whether the sets of concrete states represented by $s_1$ and $s_2$ are equal, we
-define a formula $equals(s_1, s_2)$. The comparison is done via \SMT query:
+Comparing these states , we compare the explicit values directly (i.e.~$c_i =
+\widehat{c}_i$ for all the explicit values of the states).  When explicit parts
+are same we need to compare the symbolic parts.
+\add{ rewrite description}
+To decide whether the sets of
+concrete states represented by $s_1$ and $s_2$ are equal, we define a formula
+$equals(s_1, s_2)$. The comparison is done via \SMT query:
 \begin{equation*}
 \begin{aligned}
-equals(s_1, s_2) \defeq & ~(\varphi \iff \psi) \wedge \varphi \implies \\
-                        & \forall~v_1,\dots, v_n (p_1 = \widehat{p}_1 \wedge \dots \wedge p_k = \widehat{p}_k )
+    pc_{eq}(\varphi, \psi) \defeq & ~(\varphi \iff \psi) \\
+    val_{eq}(s_1, s_2) \defeq & ~\varphi \implies (p_1 = \widehat{p}_1 \wedge \dots \wedge p_k = \widehat{p}_k ) \\
+    equals(s_1, s_2) \defeq & ~\forall~v_1,\dots, v_n (pc_{eq}(\varphi, \psi)
+    \wedge val_{eq}(s_1, s_2))
 \end{aligned}
 \end{equation*}
 The query says, that the states are equal when the path conditions are
@@ -1298,5 +1396,11 @@ When path conditions are satisfied, we check for equality of data
 definitions. We couple the corresponding symbolic values defined by nullary
 functions and compare them for equality. These equalities have to be satisfied
 for all free variables (symbolic inputs).
+
+From the example, we investigate whether $p_1 = \widehat{p}_1 \wedge p_2 =
+\widehat{p}_2$ for all possible values of symbolic variables. Expanding nullary
+functions we get $(v_1 + 1) = ((v_1 + 1) + 1) \wedge (v_2 * v_3) = (v_2 * v_3)$. Hence
+we ask the \SMT solver whether this formula is satisfiable for all possible
+values of $v_1, v_2, v_3$.
 
 \add{ add chapter summary }
