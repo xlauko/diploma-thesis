@@ -280,7 +280,7 @@ and path condition also to the abstracted program.
 
 From already settled abstraction framework we may conclude that abstract
 transformers corresponding to \LLVM instructions will facilitate on data
-definitions, i.e.~the symbolic definitions are creted either via symbolic
+definitions, i.e.~the symbolic definitions are created either via symbolic
 \code{alloca} or as results of symbolic instructions. The path condition should
 reflect the already taken path in the program, hence it will be described by
 assumes that were encountered during the interpretation (i.e.~constraints given
@@ -1225,7 +1225,6 @@ In this section we have shown, how the actual domain is inserted into the
 program. Insertion is done in per instruction manner, where given an abstract
 instruction (intermediate intrinsic call) we replace it by corresponding code
 that implements manipulation in given domain.
-    \add{finish summary }
 \end{summary}
 
 \section{Symbolic state space exploration} \label{sec:symbolic}
@@ -1372,13 +1371,11 @@ values. From the logic point we consider them as nullary functions, these
 functions return predicates over the symbolic values. For example $p_1$ defines
 a nullary function $v_1 + 1$.
 
-Comparing these states , we compare the explicit values directly (i.e.~$c_i =
-\widehat{c}_i$ for all the explicit values of the states).  When explicit parts
-are same we need to compare the symbolic parts.
-\add{ rewrite description}
-To decide whether the sets of
+Comparing these states, we compare the explicit values directly (i.e.~$c_i =
+\widehat{c}_i$ for all the explicit values in the states).  When explicit parts
+are same we need to compare the symbolic parts. To decide whether the sets of
 concrete states represented by $s_1$ and $s_2$ are equal, we define a formula
-$equals(s_1, s_2)$. The comparison is done via \SMT query:
+$equals(s_1, s_2)$:
 \begin{equation*}
 \begin{aligned}
     pc_{eq}(\varphi, \psi) \defeq & ~(\varphi \iff \psi) \\
@@ -1387,15 +1384,22 @@ $equals(s_1, s_2)$. The comparison is done via \SMT query:
     \wedge val_{eq}(s_1, s_2))
 \end{aligned}
 \end{equation*}
-The query says, that the states are equal when the path conditions are
-equivalent and also satisfiable then the data definitions have to describe same
-set. When the path conditions are equivalent, it does not matter which one we
-check for satisfiability.
+The formula says, that states are equal when the path conditions are
+equivalent (defined by $pc_{eq}$) and data definitions describe the same set
+of data valuations (defined by $val_{eq}$). We check for data equality only in
+the case when path conditions are satisfiable. Since the path conditions must
+be equivalent, it does not matter which one we check for satisfiability.
 
-When path conditions are satisfied, we check for equality of data
-definitions. We couple the corresponding symbolic values defined by nullary
-functions and compare them for equality. These equalities have to be satisfied
-for all free variables (symbolic inputs).
+\marginpar{In reality when we check for equality of two states, we just need to
+find proof of that there exists an evaluation that distinguishes both states.
+This is done easily by querying the \SMT solver for $\neg equals(s_1, s_2)$.
+Hence we have simplified the work for solver, because it has to find a proof only
+for existential quantifier used in negated formula instead of universal from
+original formula.}
+Equality of data valuations is defined in per value manner. We couple the
+corresponding symbolic values defined by nullary functions and compare them for
+equality. These equalities have to be satisfied for all free variables (symbolic
+inputs).
 
 From the example, we investigate whether $p_1 = \widehat{p}_1 \wedge p_2 =
 \widehat{p}_2$ for all possible values of symbolic variables. Expanding nullary
@@ -1403,4 +1407,11 @@ functions we get $(v_1 + 1) = ((v_1 + 1) + 1) \wedge (v_2 * v_3) = (v_2 * v_3)$.
 we ask the \SMT solver whether this formula is satisfiable for all possible
 values of $v_1, v_2, v_3$.
 
+Hence to check whether \DIVINE encounters a new state $s$, we query the \SMT solver
+for equality with all already reached states in the same control location with the same memory shape.
+
+\add{ comparison to symdivine }
+
 \add{ add chapter summary }
+
+

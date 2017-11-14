@@ -99,11 +99,9 @@ nondeterministic choice and tracking of atomic sections. A deeper description of
 and potential input generation.}
 
 Side by side of \LLVM bitcode evaluation, \DIVM stores a representation of a
-program state. A snapshot of a state can be passed to verification algorithm
-for safety analysis. And vice versa the verification algorithm may ask \DIVM for
-successors of a given state.
-\add{ this is not how it works }
-
+program state. The verification algorithm may ask \DIVM for
+successors of a given state. During the generation of edge \DIVM checks for
+potential property violation.
 
 A program state is represented by memory configuration encoded to graph.
 Nodes of the graph represent objects (e.g.~results of allocation, global
@@ -149,8 +147,8 @@ In \DIVM, a support for the $\tau$-reduction is implemented by \code{interrupt\_
 and \code{interrupt\_cfl} hypercalls. These calls enables a signalization of an
 observable action to state space generation and may cause an interrupt in edge
 generation. The \code{interrupt\_mem} hypercall signals to \DIVM that a memory
-operation is about to be executed.
-\add{ check divm papre for precise definition }
+operation was executed.
+
 For signalization of potential a loop in the
 program state space \code{interrupt\_cfl} hypercall is used.
 \subsection{Verification workflow}
@@ -189,7 +187,7 @@ program.
     \node [component](cc) {\DIVINE compiler};
     \node [clabel, above = 0.7 cm of cc] (preprocessing) {Preprocessing};
     \node [component, right = 0.5 cm of cc](lart) {\LART};
-    \node [emptycomponent, dashed, thick, below = 0.6 cm of cc] (dios) {\DIOS and libraries};
+    \node [emptycomponent, dashed, thick, below = 0.6 cm of cc] (dios) {DiOS and libraries};
 
     \node [component, right = 0.6 cm of lart, ](interpreter) {Interpreter};
     \node [component, right = 0.5 cm of interpreter, minimum width=1 cm](generator) {State space generator};
@@ -200,7 +198,8 @@ program.
     \node [right = 0.5 cm of exploration ] (res)
     {\color{apple}{Valid}\color{pruss}/\color{orioles}{Error}};
 
-    \node [clabel, above = 0.9 cm of interpreter.west, anchor = west] (divml) {DiVM};
+    \node [clabel, above = 0.9 cm of interpreter.west, anchor = west] (divml)
+    {DiVM};
     \node[emptycomponent, dashed, fit = (interpreter) (generator) (divml)] (divm) {};
 
     \begin{pgfonlayer}{background}
@@ -339,7 +338,7 @@ these states differ only in a single value, but they occupy same control flow
 location. Hence a same sequence of instructions is applied to them.
 
 \marginpar{Nondeterministic input values for \SymDIVINE are introduced by
-\texttt{\_\_VERIFIER\_nondet\_\{type\}}, where \texttt{\{type\}} defines type of
+\code{\_\_VERIFIER\_nondet\_\{type\}}, where \code{\{type\}} defines type of
 input value.}
 
 On the other hand a symbolic approach emits only one multi state. We may look at
@@ -363,8 +362,8 @@ branching. The corresponding \LLVM bitcode is on the right side.
 \begin{center}
 \begin{minipage}[t]{.47\textwidth}
 \begin{minted}{cpp}
-unsigned int I = input();
-if (I >= 65535) {
+unsigned int i = input();
+if (i >= 65535) {
     ...
 } else {
     ...
