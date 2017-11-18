@@ -1,39 +1,46 @@
-\chapter{DIVINE and friends}\label{ch:divine}
+\chapter{DIVINE and its friends}\label{ch:divine}
 
-In this chapter we will look under the hood of the DIVINE~\cite{Divine17} the model checker.
-On top of that, we will try to tackle problem of handling inputs by
-symbolic model checking as introduced by Barnat et al.~in~\cite{Barnat14}. We will try to emphasize the
-differences between classical model checking algorithm and symbolic algorithm,
-in order to decompose symbolic part in following chapter.
+In this chapter, we will look under the hood of the \DIVINE model
+checker~\cite{Divine17}.  On top of that, we will try to tackle the problem of
+handling inputs by using symbolic model checking as introduced by Barnat et
+al.~in~\cite{Barnat14}. We will try to emphasize the differences between the
+classical explicit-state model checking algorithm and the symbolic algorithm.
 
-For purpose of this thesis only minor knowledge of \DIVINE architecture is
-needed. Our interest is mostly in the \LLVM interpreter (\DIVM) and exploration algorithm,
-since only they interacts with a transformed program. Deeper description of \DIVINE can be found
-in \cite{Divine17} or on project website
+For the purpose of this thesis, only minimal knowledge of the architecture of
+\DIVINE is needed. Our interest is mostly in the \LLVM interpreter (\DIVM) and
+the exploration algorithm, since only they interacts with a transformed program.
+Hence we will omit broader technicalities.  Deeper description of \DIVINE can be
+found in \cite{Divine17} or on the project website
 \href{https://divine.fi.muni.cz/}{divine.fi.muni.cz}.
+
+At the end of the chapter we shortly summarize approaches of other verification
+tools, that use symbolic representation. And compare them to our approach.
 
 \section{Model checking with \DIVINE}
 
 \marginpar{Described architecture is of latest release \DIVINE 4.0.}
 
-\DIVINE is a modular platform for verification of real world programs.
-Overall architecture can be divided into 2 parts: a verification environment
-that provides tools for \LLVM interpretation and state space exploration, and a
+\DIVINE is a modular platform for verification of real world programs.  The
+overall architecture can be divided into 2 parts: a verification core that
+provides tools for \LLVM interpretation and state space exploration, and a
 runtime environment, whose purpose is to give support of language features like
-memory allocation, threads and standard libraries.
+memory allocation, threads and standard libraries. The 2 parts are further split
+into several components, with precisely defined interfaces between them, see
+\autoref{fig:architecture}.
 
-The verification and runtime environment are split into several components with
-precisely defined interfaces between them, see \autoref{fig:architecture}.
+The runtime environment consists of user's program accompanied with necessary
+libraries. For user's program \DIVINE provides a \Cpp{} standard library and
+\textsc{posix} threading library suited for \DIVINE interpreter. To simulate the
+real world conditions, user's program is executed on top of \DIVINE
+operating system (\DIOS). Besides error handling, the main purpose of \DIOS is
+to manage threads and their scheduling. The communication between program and
+the \DIOS is done through a set of `syscalls` that are implemented by \DIOS.
 
-The runtime part consists of user's program accompanied with necessary
-libraries. For user's program is provided a \Cpp{} standard library and \textsc{posix} threading
-library suited for \DIVINE interpreter. As environment for program is provided
-a \DIVINE operating system (\DIOS) that provides support for thread management
-and scheduling. For the communication between program and the operating system a set
-of `syscalls` is provided by \DIOS.
-The verification part consists of 2 main components: a \DIVINE virtual machine
+The verification core consists of 2 main components: a \DIVINE virtual machine
 (\DIVM) that interprets \LLVM bitcode and provides a state space generator, and
-verification core that takes care of verification procedure.
+verification algorithm that defines how the the generated state space is
+explored. For communication with \DIVM we will distinguish \code{hypercalls},
+further described in next section.
 
 \begin{figure}[!ht]
 
@@ -59,10 +66,10 @@ verification core that takes care of verification procedure.
 \node [color = pruss, left = 2cm of runtime] (divine) {\large\DIVINE};
 \node [bcomponent, below = 0cm of runtime] (dios) {\DIOS};
 
-\node [clabel, below = 0.4cm of dios] (venv) {Verification environment};
-\node [fnlabel, left = 2.7cm of venv] (hyplabel) {hypercalls};
+\node [clabel, below = 0.4cm of dios] (venv) {Verification core};
+\node [fnlabel, left = 3.2cm of venv] (hyplabel) {hypercalls};
 \node [bcomponent, below = 0cm of venv] (divm) {\DIVM};
-\node [bcomponent, below = 0cm of divm] (vc) {Verification core};
+\node [bcomponent, below = 0cm of divm] (vc) {Verification algorithm};
 
 
 \begin{pgfonlayer}{background}
@@ -82,42 +89,40 @@ verification core that takes care of verification procedure.
 \end{tikzpicture}
 }
 
-\caption{\DIVINE architecture is divided into two parts. A runtime environment
-represents a \LLVM bitcode that is interpreted by \DIVM. And verification
-component that provides model checking tooling. Communication between
-layers is done by \texttt{syscalls} to \DIOS and by \texttt{hypercalls}
-to \DIVM.}\label{fig:architecture}
+\caption{Layout of \DIVINE architecture.}\label{fig:architecture}
 \end{figure}
 
 \section{\DIVINE virtual machine}
 
-A \DIVINE virtual machine aims to provide a bare minimum for \LLVM-based
-model checking. This involves execution of instructions, memory management,
-nondeterministic choice and tracking of atomic sections. A deeper description of
-\DIVM can be found in \cite{RockaiCB17}.
+The \DIVINE virtual machine aims to provide a bare minimum for \LLVM-based
+model checking. This involves execution of instructions, memory management and
+support for nondeterministic choice. A deeper description of
 \marginpar{Nondeterministic choice serves for simulation of threads interleaving
 and potential input generation.}
+\DIVM can be found in \cite{RockaiCB17}.
 
-Side by side of \LLVM bitcode evaluation, \DIVM stores a representation of a
+Besides interpretation of \LLVM bitcode, \DIVM stores a representation of a
 program state. The verification algorithm may ask \DIVM for
 successors of a given state. During the generation of edge \DIVM checks for
 potential property violation.
 
-A program state is represented by memory configuration encoded to graph.
+A program state is represented by memory configuration encoded as a graph.
 Nodes of the graph represent objects (e.g.~results of allocation, global
 variables) and edges represent pointers between these objects.
 \DIVM stores these states compressed and hashed, and compares the graphs
 directly for state equality.
 
-\DIVM in \DIVINE is accompanied by runtime environment, which is executed on top
-of it. This environment is expected to provide a \emph{scheduler}, that is invoked
-by \DIVM during generation of state successors. An interface between \DIVM and
-runtime environment is provided by \emph{hypercalls}, that enable runtime to modify
-memory and create state space branching by nondeterministic choice.
+In \DIVINE, verification core is accompanied by the runtime environment, which
+is executed on top of it. This environment is expected to provide a
+\emph{scheduler}, that is invoked by \DIVM during generation of state
+successors. A communication between \DIVM and the runtime environment is made by
+\emph{hypercalls}, that enable the runtime to modify memory and branch the state
+space by nondeterministic choice.
 
 \begin{example}
-A nondeterministic choice provided by \DIVM as \texttt{\_\_vm\_choose} function
-gives an ability to create a branching in the state space. For example following nondeterministic
+A hypercall for nondeterministic choice in \DIVM is called \code{\_\_vm\_choose}.
+It gives an ability to branch the state space by enumerating all possible values
+from a given range. Following nondeterministic
 choice creates a successor state for each \texttt{n} from a given \texttt{range}.
 
 \begin{minted}{cpp}
@@ -130,51 +135,53 @@ int n  = __vm_choose( range );
 In order to enable verification of real world programs \DIVINE needs to employ
 some state space reduction technique. For this purpose a so called
 $\tau$-reduction is implemented, to eliminate superfluous intermediate states,
-and heap symmetry-based reduction \cite{Rockai13} \cite{RockaiCB17}. It is demanded
-that state space reductions preserve all safety and \LTL properties verified
-by \DIVINE.
+and heap symmetry-based reduction \cite{Rockai13} \cite{RockaiCB17}. It is
+demanded that state space reductions preserve all safety and \LTL properties
+verified by \DIVINE.
 
 In \LLVM, a large subset of instructions have no observable effect for other
-threads. This holds for instructions that manipulate registers (registers
-are private for the executed function) and those instructions that manipulate
-only private memory of a thread.
+threads. This holds for instructions that manipulate registers (registers are
+private for the executed function) and those instructions that manipulate only
+private memory of a thread.
 
 Hence \DIVINE does not need to emit a new state on every interpreted
-instruction, but only when an observable action is reached. In the resulting state
-space, edges correspond to sequences of non-observable instructions.
+instruction, but only when an observable action is reached. In the resulting
+state space, edges correspond to sequences of non-observable instructions.
 
-In \DIVM, a support for the $\tau$-reduction is implemented by \code{interrupt\_mem}
-and \code{interrupt\_cfl} hypercalls. These calls enables a signalization of an
-observable action to state space generation and may cause an interrupt in edge
-generation. The \code{interrupt\_mem} hypercall signals to \DIVM that a memory
-operation was executed.
+In \DIVM, a support for the $\tau$-reduction is implemented by
+\code{interrupt\_mem} and \code{interrupt\_cfl} hypercalls. These calls enable
+signalization of an observable action to the state space generator and may cause
+an interrupt in edge generation. The \code{interrupt\_mem} hypercall signals to
+\DIVM that a memory operation was executed.
 
-For signalization of potential a loop in the
-program state space \code{interrupt\_cfl} hypercall is used.
+For signalization of potential a loop in the program state space, the
+\code{interrupt\_cfl} hypercall is used.
+
 \subsection{Verification workflow}
 
-Verification in \DIVINE is split into two phases, see \autoref{fig:verification}.
-A preprocessing phase, where an input program is
-transformed into suitable input for \DIVM. In second phase a transformed program
-is processed by \DIVM and some verification algorithm.
+Verification in \DIVINE is split into two phases, see
+\autoref{fig:verification}.  A preprocessing phase, where an input program is
+transformed into suitable a form suitable for \DIVM. In the second phase, the
+transformed program is processed by \DIVM and some verification algorithm.
 
-Since most of this thesis extends the preprocessing part, let's have a closer
-look into program transformations. The transformations are similar to \LLVM
-optimization passes (they work in \LLVM -to-\LLVM manner). They modify an input
-program in order to extend a model checker capabilities. For example a
-verification of programs with weak memory models is done via a transformation
-\cite{Still16}, verification of programs with exceptions \cite{Still17} and minor
-optimizations like interrupts insertion for faster scheduling.
+Since most of this thesis extends the preprocessing part, let us have a closer
+look on the program transformations. The transformations are similar to \LLVM
+optimization passes (they work in an \LLVM -to-\LLVM manner). They modify an
+input program in order to extend the capabilities of the model checker. For
+example, verification of programs with weak memory models is done via a
+transformation \cite{Still16}, verification of programs with exceptions
+\cite{Still17} and minor optimizations like interrupt insertion for faster
+scheduling.
 
-Transformations are made by external tool named \LART introduced in~\cite{Rockai15}
-as LLVM Abstraction \& Refinement tool. The main motivation behind \LART is to
-provide preprocessing for \LLVM -based verification tools, simplifying their
-job by reducing the problem size without compromising soundness of the
-verification.
+Transformations are done by a stand-alone tool named \LART, introduced
+in~\cite{Rockai15} as \emph{\LLVM} \emph{abstraction \& refinement tool}. The main
+motivation behind \LART is to provide preprocessing for \LLVM -based
+verification tools, simplifying their job by reducing the problem size without
+compromising soundness of verification.
 
-As abstraction tool \LART was never fully implemented and till this thesis it
-was meant only as a proof-of-concept. The main aim of this thesis is to provide
-a core analysis for \LART to be able to inject an arbitrary abstraction into a
+An abstraction tool, \LART was never fully implemented and till this thesis it
+was meant only as a proof of concept. The main aim of this thesis is to provide
+a core analysis for \LART to be able to inject arbitrary abstraction into a
 program.
 
 \begin{figure}[!ht]
