@@ -7,9 +7,9 @@
 \noindent
 Since the early beginnings of computer science, software engineers make prompt
 efforts to achieve correctness of software. Nowadays, a common approach used by
-the industry is a testing, which enables developers to cover basic use cases.
-However, with the growth of software, it hardly scales up to satisfactory
-coverage, and may miss some corner cases.
+the industry is a testing, which enables developers to cover basic use cases of
+their programs.  However, with the growth of software, it hardly scales up to
+satisfactory coverage, and may miss some corner cases.
 
 Additionally, testing is in trouble when it encounters some nondeterminism in a
 program. We may distinguish two types of nondeterminism. Data nondeterminism
@@ -24,9 +24,9 @@ check all the behaviours of the program automatically, hence cover all the
 corner cases.
 
 The technique that we are particularly interested in is the explicit-state model
-checking. \marginpar{Explicit-state model checking is technique, that
-enumerates all the possible states of the program and checks for satisfaction
-of given property.} The main use case for model checking is to verify
+checking. \marginpar{Explicit-state model checking is a technique, that
+enumerates all possible states of a program and checks for satisfaction
+of a given property.} The main use case for model checking is to verify
 some property over concurrent programs. This is a big advantage against
 the testing, since by the testing we are not able to predict all thread
 interleavings and the tests may behave nondeterministically. But,
@@ -45,7 +45,7 @@ taken form the group). For example function that returns whether the
 number is greater than zero, we can separate inputs to 2 groups -- numbers
 bigger then zero, and numbers less than or equal to zero.
 
-In thesis thesis we would like to introduce a novel approach how to deal with
+In this thesis we would like to introduce a novel approach how to deal with
 inputs of verified programs. In the approaches mentioned before, the
 nondeterminism brought by inputs is commonly processed directly by verification
 tool. Our idea is to transform the program in such a way, that it will simulate
