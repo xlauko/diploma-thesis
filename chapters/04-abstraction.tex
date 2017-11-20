@@ -1,28 +1,32 @@
 \chapter{Program abstractions}\label{ch:abstraction}
 
 In this chapter, we will propose a novel approach to tackle
-handling of program inputs in the model checking. We aim to provide a tooling to
-enable abstraction of inputs, with only minor modifications to model checker.
+handling of program inputs in model checking. We aim to provide a tool to
+enable abstraction of inputs, with only minor modifications to the model checker.
 
-One of the approaches, as mentioned in \autoref{ch:divine}, is symbolic model checking.
-From the point of abstractions, symbolic representation forms an exact abstraction
-of program data. In this chapter, we will review how programs are abstracted more generally.
-Thereafter we will present an approach to abstractions via transformations
-in the preprocessing phase of model checking.
+One of the approaches, as mentioned in \autoref{ch:divine}, is symbolic model
+checking. We may look on the symbolic representation as on form of abstraction,
+since input data are abstracted into the sets of values. In this chapter, we will
+review how programs are abstracted more generally. Firstly we will introduce
+simpler abstract domain, which does not require that much technicalities as
+symbolic abstraction. Thereafter we will present an approach to abstractions via
+program transformation. At the end of the chapter we explore how the transformed
+program with symbolic abstraction interacts with \DIVINE.
 
 \section{Approaches to abstraction}
 
-In common there are two main approaches how to do abstraction of programs.
-Traditionally, abstraction engines work as interpreters~\cite{Cousot79}. During
-interpretation, the abstraction tool needs to interpret given code according
-to some semantics (either encoded in the tool or given). In similar manner works
-\SymDIVINE. During the interpretation of \LLVM bitcode \SymDIVINE accordingly
-manipulates formula representing the multi states, see \autoref{sub:symdivine}.
+Generally there are two main approaches how to do abstraction of programs.  A
+traditional way of abstraction engines is to interpret the given
+program~\cite{Cousot79}. During interpretation, the abstraction tool needs to
+interpret code according to some semantics (either encoded in the tool or
+given). Also \SymDIVINE works in similar manner. During the interpretation of \LLVM
+bitcode \SymDIVINE manipulates a formula representing a multi
+state, see \autoref{sub:symdivine}.
 
 The other alternative to do abstraction is to compile the abstraction into the
 program. It means that the program will be transformed in such manner that it will
-manipulates with abstract values instead of concrete ones. For example, in the
-case of symbolic abstraction, the abstracted program manipulates directly with
+manipulate with abstract values instead of concrete ones. For example, in the
+case of symbolic abstraction, the abstracted program manipulates directly
 formulae, instead of concrete variables. The abstracted program after such
 transformation behaves almost as a traditional program. The main difference is
 that the abstracted program may have lost precision, hence it needs to do
@@ -30,61 +34,44 @@ in some cases nondeterministic choices.
 
 When comparing the above mentioned approaches, each of them comes with its pros
 and cons. The transformation approach does not complicate the design of the
-verification tool since it is used before the very verification process. Hence
-minimize the probability of bringing a bug into the verification tool itself.
+verification tool since it is done before the verification process starts, hence
+it minimize the probability of creating a bug in the verification tool itself.
 
-Bonus of doing the verification over the transformed program is also that,
-besides verifying the sole program, the verification tool checks the
-correctness of the abstract transformers, since they are encoded into the
-program. This is not possible in interpretation approach, because the
-transformers are part of the very interpreter.
+Further, the verification over the transformed program checks the correctness of
+the inserted abstraction, since it is encoded into the program. This is not
+possible in interpretation approach, because the abstraction is part of the
+interpreter.
 
-Additionally the transformation approach enables reuse of the transformation
-with multiple verification tools. Also the program needs to be transformed only
-once, and thereafter it can be reused, in compare to interpretation where the
-analysis has to be done each time.
+Both approaches enable pluggable abstract domains, by generalizing their
+common analysis, as will be shown in this chapter.
 
-The both approaches enables pluggable abstract domains, by generalizing their
-common analysis, as it will be shown in this chapter.
+On the other hand, the transformation approach requires a more complicated
+design, since some of the computation has to be done statically. Also the
+verification of transformed program may potentially become slower, since
+abstract operations have to be interpreted by the verification tool.
 
-But on the other hand, the transformation approach requires more complicated
-design, since the computation has to be done statically. Also the sole
-verification of transformed program may potentially become slower, since the
-abstract operations have to be interpreted by the verification tool, what may
-require nontrivial time in compare to direct interpretation in abstract
-interpreters.
+Since \DIVINE is strong a foundation for explicit model checking, we have
+decided not to complicate the precisely crafted interpreter (\DIVM), and take
+the path of the second approach. We expect the program transformation approach
+to generalize the common analysis used for abstraction, hence provide a
+toolset that will be easily extended to other abstractions.
 
-As long as \DIVINE is strong foundation for the explicit model checking, we have
-decided not to complicate the precisely crafted interpreter, and take the path of
-the second approach. We expect the program transformation approach to generalize
-the common analysis used for the abstraction, hence provide a toolset that will be
-easily extended to other abstractions.
-
-Besides having the symbolic abstraction as a main goal, during the implementation
-we have realized that the core of transformation is usable for arbitrary
-abstraction, as will be shown in this chapter.
-
-This gives us a goal to determine the general technique how to create an arbitrary
-abstraction of a program with minimal effort to be done. As reasonable we see
-that, given a domain and set of transformers with a lowering function from
-concrete to abstract transformers is sufficient description for our tool.
-
-Since the transformation of this kind is not known to be done by any other
-\LLVM based tool, we consider this as broadening of field knowledge and hope for
-usable results.
+Besides having symbolic abstraction as a main goal, we have realized that the
+core of transformation is usable for arbitrary abstraction, as will be shown in
+this chapter.
 
 \section{Abstract domains} \label{sec:absdom}
 
 When dealing with abstraction of programs, first of all, one has to define an
-abstract domain for program variables and transformers based on operational
-semantics of a program. From model checking point of view we want to define an
-abstraction function $\alpha \colon C \to A$ transforming a concrete state $C$
-to an abstract state $A$, where $C$ corresponds to some memory valuation of some
-tuple of concrete values and $A$ corresponds to tuple representing a concrete
-state in abstract world, see \autoref{subsec:amc}. Additionally we have to
-define corresponding abstract transformers of the states (in our case abstract
-equivalents of \LLVM instructions). These transformers induces the transition
-relation between abstract states. We kindly refer to \autoref{subsec:amc}.
+abstract domain for program variables and operations(transformers) based on
+operational semantics of a program. From model checking point of view, we want
+to define an abstraction function $\alpha \colon C \to A$, that defines a
+transformations from a concrete state $C$ to an abstract state $A$, where $C$
+corresponds to some memory valuation (tuple of concrete values) and $A$
+corresponds to a tuple representing a state in the abstract world, see
+\autoref{subsec:amc}. Additionally we have to define abstract instructions that
+manipulates with abstract values (in our case abstract equivalents of \LLVM
+instructions).
 
 \bigskip
 
@@ -95,26 +82,29 @@ relation between abstract states. We kindly refer to \autoref{subsec:amc}.
 \textit{An abstract domain is an abstract algebra, implemented as a library module,
 providing a description of abstract program properties and abstract property
 transformers describing the operational effect of program instructions and
-commands in the abstract program. Abstract domains are often complete lattices. --- Cousot \cite{Cousot79} }
+commands in the abstract program. Abstract domains are often complete lattices.
+--- P. Cousot \cite{Cousot79} }
 \bigskip
 
 \hrule
 
 \bigskip
 
-To define a concrete domain over \LLVM we have to represent integer types,
-pointer types and aggregate types. For simplicity we will work only with this
-subset of \LLVM types. Moreover we do not permit abstraction of pointers, since
-pointer analysis is beyond the scope of this thesis, but we will permit
-pointers to abstract values.
+In order to define the transformation from a concrete domain to an abstract
+domain, we have to describe the concrete domain first. Values of concrete domain
+in \LLVM are partitioned according to their types. For simplicity, we will work
+only with a subset \LLVM types -- integer types, pointer types and aggregate
+types. Moreover we do not permit abstraction of pointers, since pointer analysis is
+beyond the scope of this thesis, but we will permit pointers to abstract values.
 
-Generally we define integer types as set $C_{i}$ containg all \LLVM integer
+We define integer types as a set $C_{i}$ containg all \LLVM integer
 types (i.e.~a type for each bitwidth).
 Aggregate types $C_a$ are then defined as all finite products of integer types and
 pointer types, and set of pointer types $C_p$ consists of pointers to all integer
-and aggregate types. The whole type system of concrete domain is
+and aggregate types and pointer to pointers and so on. The whole type system of concrete domain is
 then defined as union of these sets: $C = C_i \cup C_a \cup C_p$. We will denote
-set of all the possible concrete values by $V_C$.
+the set of all the possible concrete values by $V_C$. These are all \LLVM values
+of types given by $C$.
 
 Defining an abstract domain $A$ over the \LLVM type system requires a representation of
 abstract variables, definition of the type transformation function $\alpha_A \colon C \to A$
