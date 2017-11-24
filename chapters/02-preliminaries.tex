@@ -18,8 +18,8 @@ of the project. \href{http://llvm.org/}{[llvm.org]}}
 Besides defining the semantics of bitcode in the form of \LLVMIR (intermediate
 representation), \LLVM{}~\cite{LLVM:web} is primarily a toolkit for building
 compilers. It was first introduced by Ch. Lattner and V. Adve \cite{Lattner04}
-as an optimization framework. Nowadays \LLVM represents a set of libraries for
-building and manipulation of an intermediate representation of a program and
+as an optimization framework. Nowadays, \LLVM represents a set of libraries for
+building and manipulation of an intermediate representation for compilers and
 platform-specific code generators.
 
 According to \LLVM language reference manual~\cite{LLVM:langref},
@@ -36,9 +36,10 @@ front-end.
 
 \subsection{Instructions, Functions and other LLVM building blocks} \label{subsec:infnllvm}
 \LLVMIR aims to be slightly richer assembly like language. When we look
-\marginpar{\LLVM programs are composed of modules, each of which is a
+into a \LLVMIR file (or \emph{module}
+\sidenote{\LLVM programs are composed of modules, each of which is a
 translation unit of the input programs.}
-into a \LLVMIR file (or \emph{module}), we find a description of global
+), we find a description of global
 data and function definitions. Each function definition consists of a control flow graph
 formed by basic blocks.
 
@@ -91,11 +92,12 @@ int factorial(int n) {
 
 \begin{minted}{llvm}
 define i32 @factorial(i32 %n) {
+entry:
   %1 = icmp eq i32 %n, 0
   br i1 %1, label %then, label %else
-; <label>:then:
+then:
   ret i32 1
-; <label>:else:
+else:
   %2 = sub nsw i32 %n, 1
   %3 = call i32 @factorial(i32 %2)
   %4 = mul nsw i32 %n, %3
@@ -104,29 +106,28 @@ define i32 @factorial(i32 %n) {
 \end{minted}
 
 \noindent
-In \LLVM bitcode, the \code{factorial} function is defined as a
-global object (prefixed by \code{@}) \marginpar{To distinguish between register
-values and mutable address-taken variables \LLVM use two types of prefixes,
-\code{\%} for register values and \code{@} for mutable and global values.}
+In \LLVM bitcode, the \code{factorial} function is defined as a global object
+(prefixed by \code{@}) \marginpar{To distinguish between register values and
+mutable address-taken variables \LLVM use two types of prefixes, \code{\%}
+for register values and \code{@} for mutable and global values.}
 \code{@factorial}, with return type \code{i32} (a 32 bit integer) and an
 argument called \code{\%n}, also of type \code{i32}. In the function
-implementation, we can see almost direct correspondence to \Cpp{} code.
-The function is logically divided into a few basic blocks annotated with
-\code{<label>} and the name of the basic block
-(see~\autoref{def:basicblock}). First basic block, also called
-\emph{entry} block, contains equality comparison (\code{icmp}
-instruction) of the input argument \code{\%n} and \code{0}, followed by
-conditional branching instruction \code{br}.
+implementation, we can see almost direct correspondence to \Cpp{} code.  The
+function is logically divided into a few basic blocks --- \code{entry},
+\code{then} and \code{else} (see~\autoref{def:basicblock}). First basic
+block, also called \emph{entry} block, contains equality comparison
+(\code{icmp} instruction) of the input argument \code{\%n} and \code{0},
+followed by a conditional branching instruction \code{br}.
 
 The branching instruction connects basic blocks and determines control flow
 depending on the value of register \code{\%1}. Branching jumps to basic
-block labeled with \code{\%then} if the condition \code{\%1} was true,
+block labeled with \code{\%then} if the value \code{\%1} is true,
 otherwise it jumps to \code{\%else} basic block. Besides branching, \LLVM
 uses \code{br} instructions to represent loops, by jumping backwards in the
 control flow graph.
 
 In the basic block \code{\%then}, value 1 is returned with \code{ret}
-instruction. In the \code{\%else} branch, besides arithmetic operations
+instruction. Further, in the \code{\%else} branch, besides arithmetic operations
 (\code{sub} representing subtraction and \code{mul} multiplication), a
 recursive call is made using a \code{call} instruction.
 \end{example}
@@ -145,7 +146,7 @@ and vector types \cite{LLVM:langref}. Similarly as in C, array type represents a
 contiguous block of memory, e.g.~to denote array of 10 integers
 \LLVM writes \code{[10 × i32]}. To represent a collection of data members
 together in memory, \LLVM defines a structure type. \LLVM identifies structure types
-by given identifiers in the global namespace as follows. Ror a structure called
+by given identifiers in the global namespace as follows. For a structure called
 \code{aggregate} consisting of \code{i32} and a pointer to pair of \code{i32}
 values:
 
@@ -174,7 +175,7 @@ instructions.
 
 As consequence of branching in the control flow graph and of its \SSA form, \LLVM needs to
 support acquisition of a value from different basic blocks. For this
-purpose a special instruction is designed -- a \code{phi} node \cite{Cytron91}.
+purpose, \LLVM contains a special instruction -- a \code{phi} node \cite{Cytron91}.
 
 \begin{minted}{llvm}
 %v = phi i32 [ %a, %then ], [ %b, %else ]
@@ -201,9 +202,9 @@ bother with expression semantics. The only state mutators are instructions, whic
 semantically atomic and operate only on existing named values. Moreover,
 instructions may mutate at most a single value in the program state. Hence, the
 semantic function with derivation rules can be derived from \LLVM
-language reference \cite{LLVM:langref}. Program state $\sigma$ will basically
+language reference \cite{LLVM:langref}. Program state will basically
 consists of two parts -- stack frames and memory. Stack frames represent
-register values, while the memory part stores allocated variables.
+register values, while the memory portion stores allocated variables.
 Further description of \LLVM semantics as used in \DIVINE can be found in Ročkai's
 dissertation thesis \cite{Rockai15}.
 
@@ -228,10 +229,10 @@ platform, e.g.~\texttt{x86} or ARM.
     \tikzset{>=latex}
     \tikzset{font={\fontsize{9pt}{12}\selectfont}}
 
-    \node [component] (clang) { Clang C++ front-end};
+    \node [component] (clang) { Clang \Cpp{} front-end};
     \node [component, below = 0.5 cm of clang] (gcc) { llvm-gcc front-end};
     \node [component, below = 0.5 cm of gcc] (ghc) { GHC front-end};
-    \node [left = 0.4 cm of clang](c++) {C++};
+    \node [left = 0.4 cm of clang](c++) {\Cpp};
     \node [left = 0.4 cm of gcc](fortran) {Fortran};
     \node [left = 0.4 cm of ghc](haskell) {Haskell};
 
@@ -270,118 +271,167 @@ language and producing \LLVMIR in the front-end part, optimization of produced
 
 \section{Model checking} \label{sec:mc}
 Model checking is an automated technique that, given a finite-state model of a
-system and a formal property, systematically checks whether this property holds
-for (a given state or edge in) that model \cite{Baier08}. To define a model checking problem,
+system and a formal property, systematically checks whether the property holds
+for the model \cite{Baier08}. To define a model checking problem,
 we need to set up a transition system that describes the system to be
-verified. For our purpose, we will talk about transition-based model checking,
-hence we consider a transition system with atomic propositions on transitions:
+verified. For our purposes, we will talk about transition-based model checking,
+which checks satisfaction of the property on the transitions of the system.
 \begin{definition}\label{def:ts}
-Let $AP$ be a set of atomic propositions. A transition system $TS$ over $AP$ is
-a tuple $(S, s_0, Act, T, L)$, where
+A transition system $TS$ is a tuple $(S, s_0, Act, T)$, where:
 \begin{itemize}
     \item $S$ is a set of states,
-    \item $s_0$ is a initial state,
+    \item $s_0 \in S$ is an initial state,
     \item $Act$ is a set of actions,
     \item $T \subseteq S \times Act \times S$ is a
-    transition relation,
-    \item $L \colon T \rightarrow 2^{AP}$ is a labeling function.
+    transition relation.
 \end{itemize}
 \end{definition}
 \noindent
-We will denote a transition from state $p$ to $q$ under the action $a$ as $p \xrightarrow[]{a} q$.
-We say that the transition $t \in T$ satisfies the property $\varphi$, when the set of
-atomic propositions induced by $L(t)$ satisfies the property $\varphi$, i.e.:
-\[ s \models \varphi \iff L(t) \models \varphi.\]
-Given a transition system, we define a path $\varrho$ as an alternating sequence of
-states and taken actions starting from $s_0$ \cite{Baier08}:
+We denote a transition from state $p$ to $q$ under the action $a$ as $p
+\xrightarrow[]{a} q$. In model checking of \LLVM programs, state represents a
+memory configuration and values of stack variables. Transition from one state to
+another is then induced by evaluation of \LLVM instructions (they modify state
+variables or introduce a new one).\sidenote{For example, an instruction
+\code{\%c = add \%a \%b} introduces a new register value \code{\%c}, hence
+modifies the state.}
+
+Given a transition system, we define a run $\varrho$ as an alternating
+sequence of states and actions starting from $s_0$ \cite{Baier08}:
 \[
     \varrho = s_0 a_1 s_1 a_2 s_2 a_3 \dots \text{ such that } s_i
     \xrightarrow[]{a_{i+1}} s_{i+1} \text{ for all } 0 \leq i.
 \]
-\add{ specify the correct path }
-Now we have everything to set up a model checking problem:
 
-\begin{definition}\label{def:mc}
-Let $TS = (S, s_0, Act, T, L)$ be a transition system and $\varphi$ a
-formula of a temporal logic (i.e., the specification). Check whether all
-paths starting from $s_0$ satisfies a property $\varphi$.
-\end{definition}
+We will mark transitions by two types of actions --- $acc$ for an accepting edge,
+and $err$ for an erroneous edge. One edge may contain both markings or neither of
+them, hence the set of all possible actions is $Act = \mathcal{P}(\{acc,
+err\})$.
 
-\DIVINE, is based on transition-based model checking and uses an
-automata-theoretic approach \cite{Vardi96}. Generally in automata based model checking,
-a program is represented by transition system $TS$ induced by program
-a transition relation, and the property $\varphi$ is converted to a transition based
-automaton $A_{\neg \varphi}$ representing the negation of the original formula
-$\varphi$. Model checking algorithm is then executed on the product
-of $T$ and $A_{\neg \varphi}$, further described by Duret in \cite{Duret04}.
+We use error markings in verification of safety properties~\cite{Manna92}.  If a
+sequence of instructions corresponding to an edge produces an error (null
+pointer dereference, violation of an assertion, etc.), we mark the edge by the
+$err$ action. When a such edge is seen during a verification, a model checker
+declares an error. To verify a program we need to prove that an error transition
+is never reachable. This is achieved by exhaustive exploration of a transition
+system $M = (S, s_0, Act, T)$ of a program. To be precise we check whether all
+runs starting from $s_0$ do not contain $err$ mark on any of their edges.
 
-To describe a transition system in context of \LLVM program we
-\marginpar{For example, an action \code{\%c = add \%a \%b} introduces a new
-register value \code{\%c}, hence modifies the state.}
-will consider a program state as a configuration of memory and stack variables.
-Transition from one state to another is then induced by evaluation of \LLVM
-instructions from the given state of memory (the instructions modify program
-variables or introduce a new one). For \DIVINE we will distinguish two types of
-actions \emph{err} marking the transition as erroneous, and \emph{acc} as mark
-for temporal properties (the marking is produces by evaluation of instructions
-from given state). Hence the set of actions is $Act = \mathcal{P}(\{acc, err\})$.
+Besides safety properties, we may want to verify a temporal properties
+\cite{Manna92}. Temporal properties can describe not just properties about
+edges, but also properties about runs of a program. For example, we can check a
+that variable $x$ will be eventually greater then 0. To mark that a property is
+satisfied on some edge we use an $acc$ mark. We say that a run is accepting if
+it contains infinitely many edges with $acc$ mark. Hence to model check a
+temporal property, we check whether all runs starting from $s_0$ are accepting.
 
-From \LLVM point of view, error transitions are those that do not satisfy some
-program assertion (i.e., the transition executes unsatisfied assert call),
-produce memory errors, etc..
+Further in thesis we will use a model checker called \DIVINE. It is based on the
+transition-based model checking and uses an automata-theoretic approach
+\cite{Vardi96}. Generally, in automata-based model checking we get a program $P$
+and temporal property $\varphi$ to be verified (in our case in the \LTL logic).
+We create a transition system $M$ of the program $P$, and construct a
+transition-based automaton $A_{\neg \varphi}$ representing the negation of the
+property~$\varphi$. Model checking algorithm is then executed on the product of
+$M$ and $A_{\neg \varphi}$. The whole process is further described by
+A.~Duret-Lutz \cite{Duret04}. When $M$ satisfies a property $\varphi$, we write
+$M \models \varphi$.
 
 \subsection{Abstraction-based model checking} \label{subsec:amc}
 
-When the number of states is large, it is difficult to determine whether a
+When the number of states is too large, it may be difficult to determine whether a
 program is correct. To reduce state space size, a technique called
-abstraction-based model checking was proposed by E. Clarke et al.~in
-\cite{Clarke94}.
+abstraction-based model checking was proposed by E. Clarke et al.~\cite{Clarke94}.
 
-In abstraction-based model checking, we abstract a transition system, taking
-some concrete state, which is described as an $n$-tuple of variables, and
-replace them with a $m$-tuple of abstract variables.
+In abstraction-based model checking, we abstract a transition system, replacing
+concrete states by a suitable abstract representation. In this way we can
+represent a set of concrete states by a single abstract state. But we require
+that if there was a transition between two concrete states, there has to be a
+transition under same action between the abstract states that represent the
+concrete ones.
 
-Formally, given a concrete domain $C$, we define for a state $s \in C_1 \times
-\dots \times C_n$ a surjection $\alpha$, that maps the $n$-tuple of concrete
-variables to the $m$-tuple in the abstract domain $A$, i.e. $\alpha : C
-\rightarrow A$.
+Formally, given a concrete domain\sidenote{For example all possible values
+in~\LLVM.} $C$, we define a concrete state as an $n$-tuple of concrete values:
+$s \in C^n$, where each element represents a value of a program variable (there
+are $n$ variables in the program location of state $s$). An abstract state is
+then an $m$-tuple of abstract values from abstract domain, let us call it $A$. A
+transformation from a concrete state to an abstract state is defined by
+surjection $\alpha \colon C^n \rightarrow A^m$.  Note that abstract state can be
+represented by different number of values than concrete state.
+\begin{example}
+In \LLVM we can have a concrete state $s$ with two variables $x$
+and $y$: $s = (x:5,y:0)$. Let's have an abstraction that determines whether a state
+contains a value equal to zero.\sidenote{This is a type of a predicate
+abstraction~\cite{Flanagan02}.} Then abstract abstract state $\widehat{s}$ contains only
+a single value $true$.
+\end{example}
 
-Alternatively, we may define a relation between abstracted and concrete states by
-an equivalence relation. Given an abstraction function $\alpha$, equivalence
-${\sim} \subseteq C \times C$ is defined as \[s  \sim s' \iff \alpha(s) =
-\alpha(s').\]
+To get an abstract transition system from a transition system $M$, we need to
+transform concrete states to abstract states and rearrange the transitions
+accordingly. Intuitively, we want an abstract state $\widehat{s}$ to represent
+all states from $M$ for which $\alpha(s) = \widehat{s}$.
 
-We can now define what it means for a transition system to be transformed to the
-abstract version. Let $M$ be a transition system over some concrete domain $C$
-and $\alpha$ be a surjection from $C$ to the abstract domain $A$. Intuitively we
-want an abstract state $\widehat{s}$ to represent all states from $M$ for which
-$\alpha(s) = \widehat{s}$.
-\add{ maybe need to merge the transition labels}
+\newpage
 \begin{definition}\label{def:am}
-    Let $\widehat{M}$ be a transition system over $A$. We say that $\widehat{M}$
+    Let $\widehat{M}$ be an abstract transition system. We say that $\widehat{M}$
     over-approximates $M$ when
     \begin{enumerate}
-        \item $\alpha(s_0) = \widehat{s}_0$ is initial state in $\widehat{M}$, and
-        \item $\forall s\forall p\forall a . s \xrightarrow[]{a} p$ in $M$ implies
-            $\alpha(s)
-            \xrightarrow[]{a} \alpha(p)$ in $\widehat{M}$.
+        \item $\alpha(s_0) = \widehat{s}_0$ is the initial state of $\widehat{M}$, and
+        \item for each transitions $s \xrightarrow[]{a} p$ in $M$  there is a
+            transition\\$\alpha(s) \xrightarrow[]{a} \alpha(p)$ in $\widehat{M}$.
     \end{enumerate}
 \end{definition}
+Remark that we maintain a marking of transitions. This has to be done in order
+to preserve a soundness of a method (i.e. when there was an error transition in
+the original transition system, we want to have an error transition in the
+abstract system between the corresponding abstract states).
 
-\noindent
-\marginpar{Notice that, transitions in $\widehat{M}$ maintain the action label.}
-The transition system that has only transitions required by \autoref{def:am} is called
-\emph{minimal}.
+\begin{example} \label{ex:errtrans}
+By abstraction of a transition system on the left, we merge a transitions from
+original states $s_1$ and $s_2$ into a single transition. This transition
+carries a union of markings of original transitions.
+
+\begin{center}
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[->,>=stealth']
+    \tikzset{state/.style = {
+        circle,
+        fnode,
+        fill=apple!40,
+        minimum width=1.5cm,minimum height=1.5cm
+    }}
+    \node [state] (s1) {$s_0$};
+    \node [state, below = 1 cm of s1] (s2) {$s_2$};
+    \node [state, right = 1.5 cm of s1] (s3) {$s_3$};
+
+    \begin{pgfonlayer}{background}
+        \node [fun, label = {$M$}, fit = (s1) (s2) (s3)] (sp) {};
+    \end{pgfonlayer}
+
+    \node [state, right = 2 cm of s3] (sw1) {$\{s_0, s_2\}$};
+    \node [state, right = 1.5 cm of sw1] (sw2) {$\{s_3\}$};
+
+    \begin{pgfonlayer}{background}
+        \node [fun, label = {$\widehat{M}$}, fit = (sw1) (sw2)] (asp) {};
+    \end{pgfonlayer}
+
+    \draw [flow] (s1) -- (s3) node [midway, above = 1pt] {$\emptyset$};
+    \draw[flow] (s2) -- (s3) node [midway, below = 1pt, sloped] {$\{err\}$};
+    \draw[flow] (sw1) -- (sw2) node [midway, above = 1pt] {$\{err\}$};
+    \draw[flow, very thick, shorten >= 7pt, shorten <= 7pt] (sp.east |- asp.west) -- (asp.west) node [midway, above = 1pt] {$\alpha$};
+\end{tikzpicture}
+}
+\end{center}
+\end{example}
+
 
 Once we have an abstract transition system $\widehat{M}$, model checking is
-straightforward. Traversing the abstract state space is done in the same manner
-as in the original explicit-state model checking approach. But satisfaction of
-property has to be checked over abstract transitions. Since an abstract transition
+straightforward. Exploration of the abstract state space is done in the same manner
+as in the original explicit-state model checking approach. Although, satisfaction of
+a property has to be checked over abstract transitions. Since an abstract transition
 represents a set of concrete transitions, it may happen that abstraction does not
 separate error transitions from the rest. Hence an error may be found even
-though the error transition is not reachable in the concrete system. However
-since abstracted system includes all the behaviours of the original model $M$, we know that if $\widehat{M}
+though the error transition is not reachable in the concrete system (see an \autoref{ex:errtrans}). However,
+since the abstracted system includes all the behaviours of the original model $M$, we know that if $\widehat{M}
 \models \varphi$ then $M \models \varphi$, for some property $\varphi$. If the
 abstraction satisfies also the property $\widehat{M} \not\models \varphi
-\implies M \not\models \varphi$, we say that abstraction is
+\implies M \not\models \varphi$, we say that the abstraction is
 \emph{precise}.

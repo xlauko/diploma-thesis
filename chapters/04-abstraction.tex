@@ -281,30 +281,38 @@ a common sense brings us to solution, where abstract data will carry their
 definitions in the way of some representation of formulae. A common formula
 representation are formula trees. For example having the following program the
 data representation at the end of program by formula trees will be as on picture bellow.
+
+\add{ describe situation when c = x + y again }
+
+\begin{center}
+\begin{minipage}{.3\textwidth}
 \begin{minted}{cpp}
 int x = input();
 int y = input();
 int a = x + y;
 int b = a * x;
 \end{minted}
-
-\begin{center}
-\begin{minipage}{.4\textwidth}
-\begin{tikzpicture}[->,>=stealth',level/.style={sibling distance = 2cm/#1, level
-    distance = 1cm}]
-    \node [ftreenode, label={a}] {$+$}
-        child{ node [ftreenode] {$x$} }
-        child{ node [ftreenode] {$y$} }
-    ;
-\end{tikzpicture}
 \end{minipage}
-\begin{minipage}{.4\textwidth}
+\begin{minipage}{.55\textwidth}
 \begin{tikzpicture}[->,>=stealth',level/.style={sibling distance = 2cm/#1, level
     distance = 1cm}]
-    \node [ftreenode, label={b}] {$*$}
-        child{ node [ftreenode] {$a$} }
-        child{ node [ftreenode] {$x$} }
-    ;
+    \node [fvar] (x) {$x$};
+    \node [fvar, right = of x] (y) {$y$};
+    \node [fvar, right = of y] (a) {$a$};
+    \node [fvar, right = of a] (b) {$b$};
+    \node [fop, below = 0.6cm of a] (plus) {$+$};
+    \node [fop, below = 0.6cm of b] (times) {$*$};
+    \node [fatom, below = 1cm of x] (xa) {};
+    \node [fatom, below = 1cm of y] (ya) {};
+
+    \draw [flow] (x) -- (xa);
+    \draw [flow] (y) -- (ya);
+    \draw [flow] (a) -- (plus);
+    \draw [flow] (b) -- (times);
+    \draw [flow] (plus) to [out=-135, in=-45] (xa);
+    \draw [flow] (plus) to [out=-135, in=-45] (ya);
+    \draw [flow] (times) to [out=-135, in= -45] (plus);
+    \draw [flow] (times) to [out=-135, in= -45] (xa);
 \end{tikzpicture}
 \end{minipage}
 \end{center}

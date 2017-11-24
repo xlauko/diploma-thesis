@@ -223,7 +223,7 @@
 \usepackage{classicthesis}
 
 \areaset[current]{312pt}{657pt}
-\setlength{\marginparwidth}{7.5em}%
+\setlength{\marginparwidth}{9.5em}%
 \setlength{\marginparsep}{2em}%
 
 \newlength\titleindent
@@ -291,6 +291,30 @@
             color=pruss,
             font=\ttfamily
         }}}}
+    },
+    fnode/.style = {
+        align = center,
+        inner sep = 0pt,
+        text=pruss,
+        minimum width = 0.75cm,
+        minimum height = 0.75cm,
+        text centered
+    },
+    fvar/.style = {
+        rectangle,
+        fnode,
+        draw,
+        thick,
+        color=pruss
+    },
+    fop/.style = {
+        circle,
+        fnode,
+        fill=apple!40
+    },
+    fatom/.style = {
+        circle,
+        fill=pruss
     },
     ftreenode/.style = {
         treenode,
@@ -423,6 +447,8 @@
 %\usepackage[default,osfigures]{opensans} % scale=0.95
 %\usepackage[sfdefault]{FiraSans}
 % ****************************************************************************************************
+
+\usepackage{sidenotes}
 
 \newenvironment{summary}
 {\bigskip\hrule\bigskip\itshape}
