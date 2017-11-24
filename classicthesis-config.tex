@@ -86,6 +86,7 @@
 \usepackage{minted}
 \setminted{
     frame=lines,
+    rulecolor=pruss,
     framesep=2mm,
     baselinestretch=1.2,
     fontsize=\footnotesize
@@ -99,27 +100,47 @@
 \usepackage{csquotes}
 
 \PassOptionsToPackage{%
+    %backend=biber, %instead of bibtex
 	backend=bibtex8,bibencoding=ascii,%
 	language=auto,%
-	style=numeric-comp,%
+	style=alphabetic,%
+        citestyle=alphabetic,
+        firstinits=true,
+    %style=authoryear-comp, % Author 1999, 2010
+    %bibstyle=authoryear,dashed=false, % dashed: substitute rep. author with ---
     sorting=nyt, % name, year, title
     maxbibnames=10, % default: 3, et al.
-    natbib=true, % natbib compatibility mode (\citep and \citet still work)
-    url=true,
-    doi=true,
-    hyperref=auto,				% detect hyperref and create links
-    block=ragged 				% format bibliography into blocks, ragged on right
+    %backref=true,%
+    natbib=true % natbib compatibility mode (\citep and \citet still work)
 }{biblatex}
 \usepackage{biblatex}
+
+\renewcommand\mkbibnamefamily[1]{\textsc{#1}}
+
+\newcommand{\prule}{
+    {\color{pruss} \hrule}%
+}
 
 \PassOptionsToPackage{fleqn}{amsmath} % math environments and more by the AMS
 \usepackage{amsmath,amsfonts,amssymb,amsthm}
 
-\theoremstyle{definition}
-\newtheorem{definition}{Definition}[section]
-\newtheorem{example}{Example}[section]
-\newcommand{\definitionautorefname}{Definition}
-\newcommand{\exampleautorefname}{Example}
+\usepackage{framed,  etoolbox}
+  \colorlet{framecolor}{pruss!40}
+\usepackage{thmtools}
+
+\makeatletter
+\define@key{thmdef}{frame}[{}]{%
+ \thmt@trytwice{}{%
+ \RequirePackage{framed}%
+ \RequirePackage{thm-patch}%
+ \addtotheorempreheadhook[\thmt@envname]{\bigskip \prule \par}%
+ \addtotheorempostfoothook[\thmt@envname]{\prule \bigskip}%
+ }%
+}
+\makeatother
+
+\declaretheorem[numberwithin=section, frame]{definition}
+\declaretheorem[numberwithin=section, frame]{example}
 
 % ********************************************************************
 % General useful packages
@@ -146,7 +167,7 @@
 \newcommand{\tableheadline}[1]{\multicolumn{1}{c}{\spacedlowsmallcaps{#1}}}
 \newcommand{\myfloatalign}{\centering} % to be used with each float for alignment
 \usepackage{caption}
-\captionsetup{font=small}
+\captionsetup{font=small,textfont=it}
 \usepackage{subfig}
 
 % ****************************************************************************************************
@@ -171,7 +192,7 @@
     breaklinks=true, pdfpagemode=UseNone, pageanchor=true, pdfpagemode=UseOutlines,%
     plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=1,%
     hypertexnames=true, pdfhighlight=/O,%nesting=true,%frenchlinks,%
-    urlcolor=webbrown, linkcolor=RoyalBlue, citecolor=webgreen, %pagecolor=RoyalBlue,%
+    urlcolor=webbrown, linkcolor=pruss, citecolor=pruss, %pagecolor=RoyalBlue,%
     %urlcolor=Black, linkcolor=Black, citecolor=Black, %pagecolor=Black,%
     pdftitle={\Title},%
     pdfauthor={\textcopyright\ \Author, \University, \Department},%
@@ -230,8 +251,9 @@
 \setlength\titleindent{1em}
 
 \titleformat{\chapter}[display]%
-        {\relax}{\mbox{}\oldmarginpar{\vspace*{-                                                          3\baselineskip}\color{halfgray}\chapterNumber\thechapter}}{0pt}%
-        {\raggedright\spacedallcaps}[\normalsize\vspace*{.8\baselineskip}\titlerule]%
+        {\relax}{\mbox{}\oldmarginpar{\vspace*{-
+        3\baselineskip}\color{pruss!80}\chapterNumber\thechapter}}{0pt}%
+        {\raggedright\spacedallcaps}[\normalsize\vspace*{.8\baselineskip}\prule]%
 
 \titleformat{\section}
       {\relax}

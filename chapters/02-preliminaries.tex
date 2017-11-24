@@ -54,11 +54,11 @@ Instructions from basic blocks manipulate values in virtual registers or
 they move values between registers and memory. Each instruction has at most one
 return value, which is assigned to a register for the time of execution of a
 function. Considering values in registers, \LLVM bitcode is always in a
-partial \SSA form.
+partial \SSA (static single assignment) form.
 
 \begin{definition}\label{def:ssa}
-Static single assignment (\SSA{}) is a property of an intermediate representation
-(\textsc{ir}), which requires that each variable is assigned exactly once, and every
+Static single assignment is a property of an intermediate representation
+, which requires that each variable is assigned exactly once, and every
 variable is defined before it is used~\cite{Cytron91}.
 \end{definition}
 
@@ -77,10 +77,8 @@ control flow (terminator) instructions. Precise documentation of all can be
 found in the \LLVM language reference manual \cite{LLVM:langref}. For better
 understanding of \LLVM bitcode, please look at the following example.
 
-\improvement{ Add hrule to examples }
-
-\begin{example}
-Let's have a look at piece of \Cpp{} code and corresponding \LLVM bitcode.
+\begin{example} \label{ex:factorial}
+shows an implementation of \code{factorial} in \Cpp{} and its corresponding \LLVM bitcode.
 
 \begin{minted}{cpp}
 int factorial(int n) {
@@ -104,20 +102,20 @@ else:
   ret i32 %4
 }
 \end{minted}
+\end{example}
 
-\noindent
-In \LLVM bitcode, the \code{factorial} function is defined as a global object
-(prefixed by \code{@}) \marginpar{To distinguish between register values and
-mutable address-taken variables \LLVM use two types of prefixes, \code{\%}
-for register values and \code{@} for mutable and global values.}
-\code{@factorial}, with return type \code{i32} (a 32 bit integer) and an
-argument called \code{\%n}, also of type \code{i32}. In the function
-implementation, we can see almost direct correspondence to \Cpp{} code.  The
-function is logically divided into a few basic blocks --- \code{entry},
-\code{then} and \code{else} (see~\autoref{def:basicblock}). First basic
-block, also called \emph{entry} block, contains equality comparison
-(\code{icmp} instruction) of the input argument \code{\%n} and \code{0},
-followed by a conditional branching instruction \code{br}.
+\autoref{ex:factorial} demonstrates a code of \code{factorial} function. In
+\LLVM it is defined as a global object (prefixed by \code{@}) \marginpar{To
+distinguish between register values and mutable address-taken variables \LLVM
+use two types of prefixes, \code{\%} for register values and \code{@} for
+mutable and global values.} \code{@factorial}, with return type \code{i32} (a 32
+bit integer) and an argument called \code{\%n}, also of type \code{i32}. In the
+function implementation, we can see almost direct correspondence to \Cpp{} code.
+The function is logically divided into a few basic blocks --- \code{entry},
+\code{then} and \code{else} (see~\autoref{def:basicblock}). First basic block,
+also called \emph{entry} block, contains equality comparison (\code{icmp}
+instruction) of the input argument \code{\%n} and \code{0}, followed by a
+conditional branching instruction \code{br}.
 
 The branching instruction connects basic blocks and determines control flow
 depending on the value of register \code{\%1}. Branching jumps to basic
@@ -130,7 +128,6 @@ In the basic block \code{\%then}, value 1 is returned with \code{ret}
 instruction. Further, in the \code{\%else} branch, besides arithmetic operations
 (\code{sub} representing subtraction and \code{mul} multiplication), a
 recursive call is made using a \code{call} instruction.
-\end{example}
 
 \subsection{Type system} \label{subsec:typesystem}
 
@@ -225,42 +222,43 @@ platform, e.g.~\texttt{x86} or ARM.
 \resizebox{\textwidth}{!}{
 \begin{tikzpicture}[>=stealth,shorten >=1pt,auto,node distance=4em, <->]
 
-    \tikzstyle{component}=[draw, text centered, rounded corners=1pt, minimum height=2.8 em, minimum width=2 cm, text width=1.8 cm]
+    \tikzstyle{component}=[draw, color=pruss, text centered, rounded corners=1pt, minimum height=2.8 em, minimum width=2 cm, text width=1.8 cm]
+    \tikzstyle{inout}=[color=pruss]
     \tikzset{>=latex}
     \tikzset{font={\fontsize{9pt}{12}\selectfont}}
 
     \node [component] (clang) { Clang \Cpp{} front-end};
     \node [component, below = 0.5 cm of clang] (gcc) { llvm-gcc front-end};
     \node [component, below = 0.5 cm of gcc] (ghc) { GHC front-end};
-    \node [left = 0.4 cm of clang](c++) {\Cpp};
-    \node [left = 0.4 cm of gcc](fortran) {Fortran};
-    \node [left = 0.4 cm of ghc](haskell) {Haskell};
+    \node [inout, left = 0.4 cm of clang](c++) {\Cpp};
+    \node [inout, left = 0.4 cm of gcc](fortran) {Fortran};
+    \node [inout, left = 0.4 cm of ghc](haskell) {Haskell};
 
-    \node [component, right = of gcc] (opt) {\LLVM optimizer};
+    \node [inout,component, right = of gcc] (opt) {\LLVM optimizer};
 
     \node [component, right = of opt] (power) {\LLVM PowerPC back-end};
     \node [component, above = 0.5 cm of power] (x86) {\LLVM \texttt{x86} back-end};
     \node [component, below = 0.5 cm of power] (arm) {\LLVM ARM back-end};
 
-    \node [right = 0.4 cm of x86] (rx86) {\texttt{x86}};
-    \node [right = 0.4 cm of power] (rpower) {PowerPC};
-    \node [right = 0.4 cm of arm] (rarm) {ARM};
+    \node [inout, right = 0.4 cm of x86] (rx86) {\texttt{x86}};
+    \node [inout, right = 0.4 cm of power] (rpower) {PowerPC};
+    \node [inout, right = 0.4 cm of arm] (rarm) {ARM};
 
-    \draw [->] (c++) -- (clang);
-    \draw [->] (fortran) -- (gcc);
-    \draw [->] (haskell) -- (ghc);
+    \draw [flow] (c++) -- (clang);
+    \draw [flow] (fortran) -- (gcc);
+    \draw [flow] (haskell) -- (ghc);
 
-    \draw [->] (clang.east) -| ([xshift= 0.3 cm]gcc.east) -- (opt.west);
-    \draw [->] (gcc) -- (opt) node [pos=0.6,above] {\tiny \LLVMIR};
-    \draw [->] (ghc) -| ([xshift= 0.3 cm]gcc.east) -- (opt);
+    \draw [flow] (clang.east) -| ([xshift= 0.3 cm]gcc.east) -- (opt.west);
+    \draw [flow] (gcc) -- (opt) node [inout, pos=0.6,above] {\small \LLVM};
+    \draw [flow] (ghc) -| ([xshift= 0.3 cm]gcc.east) -- (opt);
 
-    \draw [->] (opt) -- ([xshift= -0.3 cm]power.west) |- (x86);
-    \draw [->] (opt) -- (power) node [pos=0.4,above] {\tiny \LLVMIR};
-    \draw [->] (opt) -- ([xshift= -0.3 cm]power.west) |- (arm);
+    \draw [flow] (opt) -- ([xshift= -0.3 cm]power.west) |- (x86);
+    \draw [flow] (opt) -- (power) node [inout, pos=0.4,above] {\small \LLVM};
+    \draw [flow] (opt) -- ([xshift= -0.3 cm]power.west) |- (arm);
 
-    \draw [->] (x86) -- (rx86);
-    \draw [->] (power) -- (rpower);
-    \draw [->] (arm) -- (rarm);
+    \draw [flow] (x86) -- (rx86);
+    \draw [flow] (power) -- (rpower);
+    \draw [flow] (arm) -- (rarm);
 \end{tikzpicture}
 }
 \caption{\LLVM compilation process consists of 3 steps -- parsing of the input
@@ -276,7 +274,11 @@ for the model \cite{Baier08}. To define a model checking problem,
 we need to set up a transition system that describes the system to be
 verified. For our purposes, we will talk about transition-based model checking,
 which checks satisfaction of the property on the transitions of the system.
+
+\noindent
+\begin{minipage}{\textwidth}
 \begin{definition}\label{def:ts}
+\medskip
 A transition system $TS$ is a tuple $(S, s_0, Act, T)$, where:
 \begin{itemize}
     \item $S$ is a set of states,
@@ -286,6 +288,7 @@ A transition system $TS$ is a tuple $(S, s_0, Act, T)$, where:
     transition relation.
 \end{itemize}
 \end{definition}
+\end{minipage}
 \noindent
 We denote a transition from state $p$ to $q$ under the action $a$ as $p
 \xrightarrow[]{a} q$. In model checking of \LLVM programs, state represents a
@@ -307,7 +310,7 @@ and $err$ for an erroneous edge. One edge may contain both markings or neither o
 them, hence the set of all possible actions is $Act = \mathcal{P}(\{acc,
 err\})$.
 
-We use error markings in verification of safety properties~\cite{Manna92}.  If a
+We employ error markings in verification of safety properties~\cite{Manna92}.  If a
 sequence of instructions corresponding to an edge produces an error (null
 pointer dereference, violation of an assertion, etc.), we mark the edge by the
 $err$ action. When a such edge is seen during a verification, a model checker
@@ -369,7 +372,6 @@ transform concrete states to abstract states and rearrange the transitions
 accordingly. Intuitively, we want an abstract state $\widehat{s}$ to represent
 all states from $M$ for which $\alpha(s) = \widehat{s}$.
 
-\newpage
 \begin{definition}\label{def:am}
     Let $\widehat{M}$ be an abstract transition system. We say that $\widehat{M}$
     over-approximates $M$ when
