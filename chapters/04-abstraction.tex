@@ -832,17 +832,17 @@ the prototype is created based on the arguments included in the given set.
 Moreover, the return type is deduced from the reachability of the \code{ret} instruction
 from the roots.
 
-During this phase and further the transformation pass builds a mapping between
-concrete types and abstract types. The abstract types is a \LLVM structure
-expressing the abstracted concrete type and the domain. For example an integer
-in symbolic domain is represented as follows.
+In order to lift \LLVM instructions and function prototypes, we need to
+establish an abstract type system. To do so, we express an abstract type as an
+\LLVM structure, which maintains the information about domain and original
+type. For example an integer in symbolic domain is represented as follows.
 
 \begin{minted}{llvm}
 %lart.sym.i32 = type { i32 }
 \end{minted}
 
 Names of abstract types are always prefixed by \code{lart}, followed by the
-domain name and finished by a name of a concrete \LLVM type.
+domain name and finished by a name of a lifted \LLVM type.
 
 In this type system we can create desired prototypes for the functions from our
 example program (\autoref{fig:exampleprogram}). Expecting that the function \code{foo}
@@ -877,15 +877,12 @@ transform the concrete value into the correct domain. This is done by a \code{li
 operation, which creates an abstract constant (described in
 \autoref{sec:absdom}).
 
-\marginpar{More unpleasant way exists, where combinatorial amount of abstract
-operations is generated. For obvious reasons we did not take this path.}
-
 \add{ add sidenote about within domain transfomation }
-Besides within domain transformations, we need to solve inter-domain interactions. As
-mentioned in \autoref{sec:interactions}, we need to transform in-domain booleans
-into tristate manipulations. This has to be done to unify control flow
-handling when dealing with multiple domains. Let's consider the following condition
-to be abstracted.
+Besides within-domain operations, we need to solve interactions between domains.
+As mentioned in \autoref{sec:interactions}, we need to transform in-domain
+booleans into tristate manipulations. This has to be done to unify control flow
+handling when dealing with multiple domains. Let us consider the following
+condition to be abstracted:
 \begin{minted}{llvm}
 %cond = icmp sgt i32 %a, %b
 br i1 %cond, label %then, label %else
@@ -893,12 +890,12 @@ br i1 %cond, label %then, label %else
 Since we do not know without further analysis whether the resulting value of
 \code{icmp} is used in control flow determination, we prefer the result to
 remain in the abstract domain. Only when we found a use of abstract boolean in
-some control flow instruction (i.e. branching), we inserts conversion operation
-from abstract boolean to tristate (described in \autoref{sec:interactions}).
-Subsequently we lower the tristate into concrete boolean in order to preserve
-explicit control flow:
-\marginpar{During the execution, the lowering of tristate may call a non
+some control flow instruction (i.e. branching), we insert a conversion operation
+from the abstract boolean to tristate (described in \autoref{sec:interactions}).
+Immediately we lower the tristate into a concrete boolean in order to preserve
+\marginpar{During execution, the lowering of tristate may cause a non
 deterministic choice if its value is uncertain i.e.~\emph{maybe}.}
+explicit control flow:
 \begin{minted}{llvm}
 %cond = call %lart.sym.i1
              @lart.sym.icmp_sgt.i32(%lart.sym.i32 %a,
@@ -912,7 +909,8 @@ br i1 %bool, label %then, label %else
 
 \begin{figure}
 \begin{example}
-With created prototypes the whole transformation of our example program from
+\bigskip
+With created prototypes the whole transformation of the example program from
 \autoref{fig:exampleprogram}:
 
 \bigskip
@@ -965,55 +963,57 @@ with concrete arguments remains untouched.
 \end{figure}
 
 When dealing with aggregate or pointer types, we know that they are not
-abstract, so we do not need to create abstract operations with them. Hence the
-original instructions manipulating with aggregates remain untouched, except the
-instructions that extract or inserts scalars to them.
+abstract, so we do not need to create abstract operations, that manipulates
+them. Hence the original instructions manipulating aggregates remain
+untouched, except the instructions that extract or insert scalars to them.
 
 In those situations, we take the use of results from the value propagation analysis.
-Knowing which elements of aggregate are abstract, when the program tries to
-reach to some of them (through some pointer) we just simply bitcast
-the resulting concrete pointer to pointer to an abstract element. We can afford
-to this because we know that in the particular memory location, an abstract value is
+Knowing which elements of an aggregate are abstract, when the program tries to
+reach some of them (through some pointer) we just simply bitcast
+the resulting concrete pointer to a pointer to an abstract element. We can afford
+to do this because we know that in the particular memory location, an abstract value is
 stored.
+\add{ add example of reaching into the aggregate }
 
 However this approach has its limitations, since the abstract representation has
 to fit into the size of original type. As consequence we are not currently able
-to store a pointer to representation of abstract type into smaller types then
+to store a pointer to representation of abstract type into smaller types than
 pointer type (i.e. \code{i64} on 64-bit architecture)\marginpar{In \DIVINE is a
-preparation in process, to be able to store an additional data into 'shadow'
-memory. With it, \DIVINE will be able to maintain a pointer in the smaller type.}.
+preparation in process, to be able to store additional data with verified
+values. With it, \DIVINE will be able to maintain a pointer in the smaller
+type.}.
 
-But as a big advantage of this approach is that we do not need to create an
-abstract aggregate types and handcraft the whole structures. This way we also
-can preserve the pointer arithmetic operations, since the offsets to the
+But a big advantage of this approach is that we do not need to create
+abstract aggregate types and handcraft entire structures. This way we also
+preserve pointer arithmetic operations, since the offsets within
 aggregates do not change.
 
 \begin{summary}
-Given the roots of abstraction, we have shown how to transform program into
-abstract intermediate form. Firstly we have constructed prototypes of functions
-with abstract signature (either has some abstract argument or returns abstract value).
-Further we have transformed all instructions reachable from the abstraction
-roots into abstrct intrisics. Accordingly we have introduced representation of
-abstract types. During the transformation process we have also dealed with an
-interaction with control flow using transformation to tristate and consequent
-lowering to \LLVM boolean.
+Given the roots of abstraction, we have shown how to transform a program into an
+abstract intermediate form. Firstly we have constructed prototypes of
+functions with abstract signature (either has some abstract argument or
+returns an abstract value). Further, we have transformed all instructions
+reachable from the abstraction roots into abstract intrisics. Accordingly we
+have introduced representation of abstract types. During the transformation
+process, we have also solved an interaction with control flow using
+transformation to tristate and lowering to \LLVM boolean.
 \end{summary}
 
 \subsection{Backwards constraint propagation and value restriction}
 \label{sec:bcp}
 When a branch is taken due to a lowered tristate, we need to restrict the values
-engaged in the condition. Consider that branch is taken, based on comparison $a
+engaged in the condition. Consider that a branch is taken, based on comparison $a
 > 10$, where $a$ is an abstract value. If we do not have any restriction on $a$
-yet and branch was taken nondeterministically, as consequence the value of $a$
+yet and the branch was taken nondeterministically, as consequence, the value of $a$
 has to be greater than 10. However, when the branch was not taken,
-the value has to be 10 or less. We will utilize this fact, to restrict the value
+the value has to be 10 or less. We will utilize this fact to restrict the value
 right after the branch was taken.
 
 We can compute the value restrictions independently of the abstract domain, as
-long as the abstract domain provides a right set of primitives. Concretely we
-need to be able to infer a restricted value from a given value and some predicate
-instruction on which we want to base the restriction, along with an actual
-result of the predicate evaluation. For this purpose we have established
+long as the abstract domain provides the right set of primitives. Specifically we
+need to be able to obtain a new restricted value from a value and a predicate
+instruction on which we want to base the restriction, along with the actual
+result of the predicate. For this purpose, we have established
 an \code{assume} operation:
 \begin{minted}{llvm}
 %x = call %lart.sym.i32
@@ -1024,46 +1024,41 @@ an \code{assume} operation:
 Meaning that value \code{\%x} carries the restricted value of \code{\%a}
 according to the satisfied condition \code{\%cond}.
 
-The insertion of assumes in two steps, first of all we restrict only the
-tristates that are directly lowered and used in unconditional branching. By this
-transformation we simply mark which path is taken based on the nondeterministic
-choice.
-
-Further we proceed in restriction of variables that are engaged in the condition
+The insertion of assumes is done in two steps: first, we restrict only the
+tristates that are directly lowered and used in conditional branching. By this
+transformation we simply denote which path is taken based on the nondeterministic
+choice. We then proceed in restriction of variables that are engaged in the condition
 predicate. It may seem reasonable to carry on backwards in the program history to
 provide more precise restriction, but backwards constraint propagation has some
 limitations.
 
 \add{ constrain propagation example }
 
-Since the whole computation has to be done statically it is not clear how far the
+Since the whole computation has to be done statically, it is not clear how far the
 backwards look up should proceed. The other limitation is that, the propagation
-can only sufficiently analyze only the local static scope, and cannot infer
+can only sufficiently analyze only the local static scope and cannot infer
 information from function arguments and global state.
 
 Consequently we need to make trade-off between work given to domain
-implementation and simple constrain analysis. Since the symbolic domain is
-capable to acquire the implications resulting from simple restriction over the
-branch condition we have decided to retain only simple assume insertion
-algorithm for this thesis.
+implementation and simple constraint analysis. In symbolic domain, we are able
+to achieve restrictions by building a path condition. Hence we do not need the
+complicated analysis in this case, so we have decided to retain only simple
+assume insertion algorithm for this thesis.
 
 The symbolic domain can simply collect the restrictions as path condition and
-restricts the possible variable evaluations based on the whole path
-(in detail description of utilization of assumes in symbolic domain will be
+restricts the possible variable evaluations based on the entire path
+(detailed description of utilization of assumes in symbolic domain will be
 described in \autoref{sec:symbolic}).
 
-In addition to backwards analysis, assumes insertion demands a few minor
+In addition to backwards analysis, assumption demands a few minor
 modifications to bitcode. When control flow of restricted value merges with
 control flow from another restriction or original definition, we need to insert
 appropriate $\varphi$ nodes.
 
-For simpler dependency analysis and $\varphi$ nodes insertion, we have decided
-to insert the restrictions on the edge between restricting branch and consequent
-basic block. The insertion is implemented as creation of a new basic block
-between two blocks redirection of the branch (illustrated in the
-\autoref{ex:assumes}).
+For simpler dependency analysis and $\varphi$ node insertion, we have decided
+to insert the restrictions on the edge between the restricting branch and the consequent
+basic block (illustrated in the \autoref{ex:assumes}).
 
-\begin{figure}
 \begin{example} \label{ex:assumes}
 Analyzing the example program, we need to restrict values depending on one
 conditional branching.
@@ -1119,87 +1114,94 @@ conditional branching.
 \bigskip
 
 In this simple case, proper assumes are inserted on the edges between branching
-and consequent basic blocks. Remark that separate basic blocks were created for
-the assumes. Creation of new basic blocks does not make any diffence in this
+and consequent basic blocks. Remark that a new basic blocks was created for each
+assume. Creation of new basic blocks does not make any diffence in this
 program, but for more complicated functions with loops edge splitting needs
 to be done in order to enable $\varphi$ nodes creation.
 
 We may see, that assumes return a new value for restricted variable, that is
 used in following code. After an inspection we may notice that assume in
 \emph{false} branch is unnecessery since the value of restricted
-\code{\textoverline{x}} never used afterwards, but we don't do any optimizations
-in this case.
+\code{\textoverline{x}} is never used afterwards, but we don't do any
+optimizations in this case.
 \end{example}
-\end{figure}
 
 \begin{summary}
-When abstract program takes nondeterministic conditional branching, it needs to
+When an abstract program executes a nondeterministic choice on branch, it needs to
 constrain abstract values that appeard in the condition of branching. For this
-purpose we have introduced \code{assume} calls. Given abstract value, condition
-predicate, and result of the predicate, \code{assume} call computes the
-constrained value. In the section we have also introduced backwards constraint
+purpose, we have introduced \code{assume} calls. Given the abstract value, the condition
+predicate, and the result of the predicate, an \code{assume} call computes the
+constrained value. In this section we have also introduced backwards constraint
 propagation, that provides more precise restrictions.
 \end{summary}
 
-\subsection{Domain manipulations insertion}
+\subsection{Domain insertion}
 
-After all the analysis and transformations are finished, we can proceed to actual
-domain insertion. Since we now know all the instructions that have to be
-transformed with relevant information about the domain, we do the substitution
-per instruction without any further analysis.
+After all the analyses and transformations are finished, we can proceed to
+actual domain insertion. As a result of previous transformations we have all
+abstract instruction already in the bitcode, and we just need to replace them by
+their implementation in the domain. Since no further analysis is required, we do
+the substitution per instruction.
 
-Similarly as in the abstraction of instructions from the second phase we proceed in
-the order, to have all the operations substituted before they are
-used further in the bitcode (reverse postorder). When processing an
-instruction, we look on the domain tag (in the name of the abstract intrinsic)
-and accordingly choose the appropriate implementation. In current setting the
-abstract intrinsics are replaced by calls to functions implementing the domain
-transformers. This may optimized in the future as inlining of block of code or
-direct replacing by single instruction (possible for simpler domain operations),
-to minimize the number of call the bitcode.
+Like in the abstraction of instructions from the second phase, we need to
+substitute instructions before they are used further in the bitcode (we proceed
+in reverse postorder). When processing an instruction, we look at the domain tag
+(in the name of the abstract intrinsic) and accordingly choose the appropriate
+implementation. Currently abstract intrinsics are replaced by calls to functions
+implementing the domain operations. This may be optimized in the future as
+inlining of a block of code or direct replacement by a by single instruction
+(possible for simpler domain operations), to minimize the number of calls in the
+bitcode.
 
 From the domain implementation point of view, there are two things to be
-provided. First, the implementation of transformers over the domain, including
+provided. First, the implementation of operations in the domain, including
 the special ones --- \code{assume}, \code{lift} and \code{bool\_to\_tristate}.
-And secondly, the implementation of lowering function, that given an abstract
-\LART intrinsic and its arguments, produces a corresponding call to domain
-transformer.
+And secondly, the implementation of lowering function that, given an abstract
+\LART intrinsic and its arguments, produces a corresponding call to a domain
+operation.
 
-The limitation of whole transformation is that the abstract values must have
-run-time representation using scalar values from concrete domain. This is not a
-problem for simpler domains like $Z$, but for symbolic abstraction the value
-representation has to be tweaked. As proposed in \autoref{sec:sym}, the data
-have to be represented by tree-like structure. This representation can be then
-stored behind a pointer, and stored on program heap. But by this approach we
-introduce memory leaks to transformed bitcode. The other way is to copy symbolic
-representation on every taken operation, what is quite inefficient in actual
-bitcode runtime. Due to this we have used a special pointers provided by
-\DIVINE (weak pointer), which \DIVINE recognize as non leaking. These pointers
-are then maintained by \DIVM in similar fashion as garbage collectors do.
-Hence during the verification \DIVINE will distinguish the pointers to symbolic
-values and conceal the memory leak.
+The limitation of a transformation is that the abstract values must have a
+run-time representation using scalar values from the concrete domain. This is
+not a problem for simpler domains like $Z$, but for symbolic abstraction, the
+value representation has to be tweaked. As proposed in \autoref{sec:sym}, the
+data have to be represented by a formula tree. This representation can be
+then stored behind a pointer, and stored on program heap (i.e.~abstract value in
+program will be a pointer to its representation). But with this approach, we
+introduce memory leaks to the transformed bitcode. The other way is to copy the symbolic
+representation on every operation, which is quite inefficient in runtime. Due to
+this, we have used special pointers provided by \DIVINE (weak pointer), which
+\DIVINE recognize as non leaking. These pointers are then maintained by \DIVM in
+similar fashion as garbage collectors do. Hence during the verification, \DIVINE
+will distinguish the pointers to symbolic values and conceal the memory leak.
+
+For verification in \DIVINE, weak pointers are also important for state
+comparison, since we do not want to compare the shape of the tree behind them.
+The exact comparison will be described in the next section.
+
+\add{ add note about drawback of structures }
 
 \begin{summary}
 In this section we have shown, how the actual domain is inserted into the
-program. Insertion is done in per instruction manner, where given an abstract
-instruction (intermediate intrinsic call) we replace it by corresponding code
-that implements manipulation in given domain.
+program. Insertion is done in per-instruction manner: given an abstract
+instruction (intermediate intrinsic call), we replace it by corresponding code
+that implements manipulation in a given domain. We have also illustrated
+problems with more complicated data representation.
 \end{summary}
 
 \section{Symbolic state space exploration} \label{sec:symbolic}
 When the program transformation is finished, abstracted program is given to
-\DIVINE for model checking phase. Since the equality and reachability check
-of the symbolic states cannot be done in only explicit manner, we need to employ
-a similar exploration algorithm as \SymDIVINE (see \autoref{sub:symdivine}).
+\DIVINE for model checking. In current state a program will simulate operations
+on the symbolic data and creation of path condition with assumes. However
+equality and reachability of symbolic states cannot be decided in an explicit
+manner. Therefore we need to employ an exploration algorithm similar to
+\SymDIVINE (see \autoref{sub:symdivine}).
 
-As described in previous sections, symbolic data in abstracted program are
-described by data definitions (that are created by symbolic operations) and
-path condition (that is defined by assumes taken during the program execution).
-Then during the interpretation we need to check whether the state is
-reachable, this is done by query on \SMT solver, whether the already taken
-path condition is satisfiable. And secondly we need to distinguish whether we
-have already seen the reachable state, that is done via equality check. Now we will
-describe both queries in higher detail.
+During interpretation of program, we need to check whether the state is
+reachable. This is done by querying an \SMT solver, to decide if the path
+condition is satisfiable. In current implementation a path condition is
+represented by a global formula, which is edited each time an assume is called.
+Likewise, we need to distinguish whether we have already seen the reachable
+state.
 
 \subsection{Exploration algorithm}
 The symbolic exploration algorithm, similarly as explicit algorithm, uses \DIVM
@@ -1208,10 +1210,6 @@ operations manipulates with symbolic values, according to the inserted implement
 symbolic domain (i.e.~they operates on formula trees, see \autoref{sec:sym}).
 Note that \DIVM has no clue about the symbolic representation and interprets
 program as ordinary \LLVM bitcode.
-
-The data definitions are currently represented as global data structure, that
-keeps all the references to the formula trees. This structure has to be global
-for abstract operations to be able to access it.
 
 In order to create path condition, program needs to track constraints over the
 symbolic values. This is achieved with \code{assume} calls inserted after the
@@ -1230,12 +1228,12 @@ does not restrict the original value, only creates a nondeterministic choice
 whether the branch is taken or not, hence value of \code{x} is arbitrary even if
 we have decided that it is smaller then 10 in the first condition.
 
-The restriction is achieved, right away after the branch is taken, by
+The restriction is achieved, right after the branch is taken, by
 \code{assume} call. To maintain the restrictions a path condition is stored in
 some global data structure. Then, when the \code{assume} call is executed a
 restriction is appended to the path condition. This is done in the
 implementation of the \code{assume} call in the symbolic domain
-(i.e.~manipulation with path codition is interpreted by \DIVM). Looking back to
+\sidenote{Manipulations with the path condition are interpreted by \DIVM.}. Looking back to
 the example, the path condition on the 4.~line is represented by two
 restrictions: $(x < 10)$ and $(x > 5)$.
 
@@ -1258,7 +1256,9 @@ compare the explicit part of the states and then the symbolic part using the
 Let's have two states $s_1$ and $s_2$, in the same control flow location, with
 the same memory shape. This is when $s_1 = (c, m, \varphi)$ and $s_2 = (c,
 m, \psi)$ for control location $c$, memory shape $m$ and path conditions $\varphi$ and $\psi$.
-
+\sidenote{Note that, formula-trees does not count into the comparison of memory
+shape, because they are stored behind marked pointers, hence \DIVINE does not
+consider them.}
 For example representation of the memory configuration of compared states (in
 the same control location) may look like this:
 
@@ -1319,15 +1319,15 @@ see that concrete values ($c_1$, $\widehat{c}_1$) and symbolic values
 ($p_1, p_2, \widehat{p}_1, \widehat{p}_2$) occupy the same memory locations in
 both states. Symbolic values are represented by formula trees, as described in
 \autoref{sec:sym}. In the leafs of trees we maintain constants or symbolic
-variables. We kindly remark that, even though symbolic values are represented by
+variables. We remark that, even though symbolic values are represented by
 tree, we do not consider them in the memory shape comparison. Only the position
-of symbolic values $p_k$ is considered in the comparison.
+of symbolic values $p_k$ is considered.
 
 We will denote symbolic variables of both states as $v_1, \dots, v_n$. The
 values $p_1, \dots, p_k$ in the state $s_1$ and $\widehat{p}_1, \dots,
-\widehat{p}_k$ in state $s_2$ are results of transformers over the symbolic
+\widehat{p}_k$ in state $s_2$ are results of operations on the symbolic
 values. From the logic point we consider them as nullary functions, these
-functions return predicates over the symbolic values. For example $p_1$ defines
+functions are predicates over the symbolic values. For example $p_1$ defines
 a nullary function $v_1 + 1$.
 
 Comparing these states, we compare the explicit values directly (i.e.~$c_i =
@@ -1344,17 +1344,17 @@ $equals(s_1, s_2)$:
 \end{aligned}
 \end{equation*}
 The formula says, that states are equal when the path conditions are
-equivalent (defined by $pc_{eq}$) and data definitions describe the same set
-of data valuations (defined by $val_{eq}$). We check for data equality only in
-the case when path conditions are satisfiable. Since the path conditions must
-be equivalent, it does not matter which one we check for satisfiability.
-
 \marginpar{In reality when we check for equality of two states, we just need to
 find proof of that there exists an evaluation that distinguishes both states.
 This is done easily by querying the \SMT solver for $\neg equals(s_1, s_2)$.
 Hence we have simplified the work for solver, because it has to find a proof only
 for existential quantifier used in negated formula instead of universal from
 original formula.}
+equivalent (defined by $pc_{eq}$) and data definitions describe the same set
+of data valuations (defined by $val_{eq}$). We check for data equality only in
+the case when path conditions are satisfiable. Since the path conditions must
+be equivalent, it does not matter which one we check for satisfiability.
+
 Equality of data valuations is defined in per value manner. We couple the
 corresponding symbolic values defined by nullary functions and compare them for
 equality. These equalities have to be satisfied for all free variables (symbolic
@@ -1369,6 +1369,8 @@ values of $v_1, v_2, v_3$.
 Hence to check whether \DIVINE encounters a new state $s$, we query the \SMT solver
 for equality with all already reached states in the same control location with the same memory shape.
 
+\add{ how inputs come into existence }
+\add{ how free variables are matche  up }
 \add{ comparison to symdivine }
 
 \add{ add chapter summary }

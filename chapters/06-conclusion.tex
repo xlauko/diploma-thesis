@@ -1,14 +1,75 @@
 \chapter{Conclusion}\label{ch:conclusion}
-%
-%## Future work
-%
-%\mytodo{ Extend domain support to predicate abstraction. }
-%\mytodo{ Add memory abstraction. }
-%\mytodo{ Add foats abstraction. }
-%\mytodo{ Do CEGAR for unprecise domains - from abstract trace extract concrete trace
-%               -> sim -> refine -> profit  }
-%\mytodo{ Idea of control flow narrowing = extract model from counter
-%    example and isert the corresponding assumes to program }
-%
-%\mytodo{ Potential optimizations after abstraction pass. ( inlining of
-%        abstract instructions }
+
+In this thesis, we have explored how to deal with inputs in the program
+verification. A common approach is to abstract inputs and do a kind of abstract
+interpretation of a program. However, to add this feature into a verification
+tool, in many cases requires to tweak the tool a lot.
+
+Therefore, we have proposed a novel approach to abstraction, as program
+transformation. In this way we are able to abstract a program with a minor
+modification to the verification tool.
+
+Specifically, we have focused on a symbolic abstraction as used in the \SMT-based
+symbolic model checkers. We have recognized which parts of the program can be
+abstracted and what modification of the tool needs to be done.
+
+The entire approach was designed as transformation of \LLVM programs for
+explicit-state model checker \DIVINE. But we believe, that it can be easily extended
+to another tools.
+
+\section{Contribution}
+We believe that this thesis contributed to the verification world, by enabling
+easier abstraction of programs, which will not be able without a large amount of
+programing work.
+
+First and foremost, we would like to point out that the largest part of this
+thesis is contained in the implementation. The sole transformation required
+a lot of static analysis as was described in \autoref{ch:abstraction}. The main
+implementation was done as extension of the tool \LART, where all analyses can be
+found.
+
+The transformation was evaluated with a symbolic domain\sidenote{Implementation
+of a symbolic domain and an algorithm in \DIVINE is not a part of this thesis.},
+what showed that this approach can compete with traditional symbolic model
+checking.  At the same time we have achieved that a new abstraction can be
+easily implemented and used in already settled \DIVINE toolchain. As a proof
+we have created a simple domain that distinguishes whether the value is zero
+or not.
+
+Additionally we provide a short tutorial how to abstract a program and verify it by
+\DIVINE, in the \autoref{ch:appendixb}. A short description can be also found on
+the project website \url{divine.fi.muni.cz} in the manual section.
+
+\section{Future work}
+
+The sole abstraction framework opens a broad area in the abstraction of
+programs. An example is a predicate abstraction, which can be done in a
+similar manner as a symbolic one.
+
+This brings us to the state of the art approaches such as \textsc{cegar} loop.
+To refine an abstraction, our framework should be easily extended with other
+analyses. The main mission here is to find a way how to extract an counter
+example from the abstracted program. Further, the transformation should be done
+according to the extracted counter example.
+
+In our framework we have covered only a subset of \LLVM. In this way we see a
+multiple directions in which we can extend the current framework. Currently, the
+biggest limitation is abstraction of memory and pointers. To do their
+abstraction, the framework needs to be extended with some pointer analysis.
+Current implementation is also restricted in the abstraction of aggregate types,
+where we are not able to abstract array types, and completely the struct
+types. In this case for complete abstraction a shape analysis is
+required. Lastly, the transformation can be easily extended to abstract
+floating point operations similarly as integers.
+
+For other domains than symbolic, a full constraint propagation needs to be
+implemented. To do so, we need to find a compromise between analysis and the
+constraint computation during the runtime.
+
+Lastly as in every software, a lot of potential optimization can be done in the whole approach.
+Meaning optimizations of the sole transformation and also the program which is
+abstracted. For example, one optimization mentioned before is an inlinig of abstract
+operations.
+
+And as promising this tool may sound, we aim to use it with other tools too.
+
