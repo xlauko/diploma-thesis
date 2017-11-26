@@ -105,17 +105,18 @@ else:
 \end{example}
 
 \autoref{ex:factorial} demonstrates a code of \code{factorial} function. In
-\LLVM it is defined as a global object (prefixed by \code{@}) \marginpar{To
-distinguish between register values and mutable address-taken variables \LLVM
-use two types of prefixes, \code{\%} for register values and \code{@} for
-mutable and global values.} \code{@factorial}, with return type \code{i32} (a 32
-bit integer) and an argument called \code{\%n}, also of type \code{i32}. In the
-function implementation, we can see almost direct correspondence to \Cpp{} code.
-The function is logically divided into a few basic blocks --- \code{entry},
-\code{then} and \code{else} (see~\autoref{def:basicblock}). First basic block,
-also called \emph{entry} block, contains equality comparison (\code{icmp}
-instruction) of the input argument \code{\%n} and \code{0}, followed by a
-conditional branching instruction \code{br}.
+\LLVM, the \code{factorial} function is defined as a global object (prefixed by
+\code{@}) \marginpar{To distinguish between register values and mutable
+address-taken variables \LLVM use two types of prefixes, \code{\%} for register
+values and \code{@} for mutable and global values.} \code{@factorial}, with
+return type \code{i32} (a 32 bit integer) and an argument called \code{\%n},
+also of type \code{i32}. In the function implementation, we can see almost
+direct correspondence to \Cpp{} code.  The function is logically divided into a
+few basic blocks --- \code{entry}, \code{then} and \code{else}
+(see~\autoref{def:basicblock}). First basic block, also called \emph{entry}
+block, contains equality comparison (\code{icmp} instruction) of the input
+argument \code{\%n} and \code{0}, followed by a conditional branching
+instruction \code{br}.
 
 The branching instruction connects basic blocks and determines control flow
 depending on the value of register \code{\%1}. Branching jumps to basic
@@ -390,7 +391,6 @@ abstract system between the corresponding abstract states).
 By abstraction of a transition system on the left, we merge a transitions from
 original states $s_1$ and $s_2$ into a single transition. This transition
 carries a union of markings of original transitions.
-
 \begin{center}
 \resizebox{\textwidth}{!}{
 \begin{tikzpicture}[->,>=stealth']

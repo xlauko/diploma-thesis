@@ -9,13 +9,13 @@
 In everyday practice, software engineers struggle to achieve correctness of
 software. Nowadays, a common approach used by the industry is testing, which
 enables developers to cover basic use cases of their programs. However, with the
-increasing size of program, it becomes harder to achieve to satisfactory
+increasing size of programs, it becomes harder to achieve satisfactory
 coverage, and cover all the corner cases.
 
 Moreover, testing is not sufficient when it encounters nondeterminism in a
 program. We may distinguish two types of nondeterminism. Data nondeterminism
 which is introduced by inputs from the environment, and control-flow
-nondeterminism caused by unpredictable interleaving of threads in a parallel
+nondeterminism caused by unpredictable interleaving of threads in parallel
 programs.
 
 To avoid the problems of testing, many techniques of formal verification have
@@ -26,15 +26,16 @@ hence cover all the corner cases.
 
 The technique that we are particularly interested in is explicit-state model
 checking.\sidenote{Explicit-state model checking is a technique, which
-enumerates all possible states of a program and checks for satisfaction
-of a given property.} The main use case for model checking is to verify
-some property over concurrent programs. This is a big advantage against
-testing, since by testing we are not able to predict all thread interleavings
-and the tests may behave nondeterministically. Besides all the advantages of
-model checking, it comes with a drawback, that it is useless on programs that
-interact with the environment, since it has to verify executions for each
-possible input. That requires unmanageable amount of work (also known as a
-\emph{state space explosion problem}).
+enumerates all possible states of a program and checks for satisfaction of a
+given property.} The main use case for model checking is to verify some
+property over concurrent program by analysis of all possible
+interleavings of its threads. This is a big advantage against testing, since
+by testing we are not able to predict all thread interleavings and the tests may
+behave nondeterministically. Besides all the advantages of model checking, it
+comes with a drawback, that it is useless on programs that interact with an
+environment. In this case model checking has to verify executions for each
+possible input, what requires unmanageable amount of work --- exploration of an
+enormous state space (also known as a \emph{state space explosion problem}).
 
 To tackle the problem with program inputs, a few extensions of explicit-state
 model checking have been introduced over the time --- abstraction-based model
@@ -73,20 +74,21 @@ The program transformed in this way, we can forward for analysis to
 an arbitrary verification tool.
 
 In this work, we will present how such a transformation can be achieved and how
- abstract data can be represented. The structure of the thesis is following:
+abstract data can be represented. The structure of the thesis is following:
 first in \autoref{ch:preliminaries}, we will cover the input language for our
 transformation (\LLVM), and we will define what is model checking more
 precisely. In \autoref{ch:divine}, we will look on \DIVINE model checker
-toolchain, in which is the program transformation implemented. In this chapter
-we will also cover other approaches to the input abstraction, from which we
-have taken inspiration. More specifically,the \SymDIVINE approach of handling
-inputs will be explored. \autoref{ch:abstraction} presents basic abstractions
-and the whole process of program transformation. The experimental evaluation of
-the work is summed up in the chapter \autoref{ch:results}.  Evaluation has been
-made on the subset of \textsc{sv-comp} (software verification competition)
-benchmarks and on set of handcrafted data structures, such as an AVL tree.
-Finally, \autoref{ch:conclusion} summarize contributions of the work.
-\add{ add citations }
+toolchain \cite{Divine17}, in which is the program transformation implemented.
+In this chapter we will also cover other approaches to the input abstraction,
+from which we have taken inspiration. More specifically,the \SymDIVINE
+approach of handling inputs will be explored \cite{Mrazek16}. \autoref{ch:abstraction}
+presents basic abstractions and the whole process of program transformation.
+The experimental evaluation of the work is summed up in the chapter
+\autoref{ch:results}.  Evaluation has been made on the subset of
+\textsc{sv-comp} (software verification competition) benchmarks
+\cite{Beyer17} and on set of handcrafted data structures, such as an AVL
+tree. Finally, \autoref{ch:conclusion} summarize contributions of the work.
 
-\add{ a co appendix ? }
+
+\add{ add citations }
 \add{ chce to sem aj nejaky zaver }

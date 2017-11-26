@@ -1,5 +1,62 @@
 \chapter{Evaluation}\label{ch:results}
 
+The resulting transformation is able to handle programs where only integer
+arithmetic is abstracted. We provide ability for pointers to point on the
+abstract values and structures to contain abstract elements. However we are
+currently not able to insert abstract values into arrays and abstract pointers
+(i.e. memory allocation). These limitations are caused by insufficient
+representation of symbolic data, in the case of arrays, and missing pointer
+analysis in the case of pointers. For further evaluation we have omitted
+programs that contain these unsupported characteristics.
+
+Other technicalities, such as support of threading and support of full \Cpp{}
+standard library remains untouched, since transformations do not interfere with
+explicit computation of a program.
+
+To show that the proposed approach is sufficient replacement of \SymDIVINE, we
+will compare the symbolic transformation with \DIVINE as backend against \SymDIVINE.
+Evaluation will be done on two sets of benchmarks --- subset of benchmarks from
+software verification competition (\textsc{sv-comp})~\cite{Beyer17} and
+benchmarks of data structures, concretely binary trees and more complicated AVL
+tree. The AVL tree benchmark demonstrates the ability of transformation of more
+complicated code, and also of the verification by explicit model checker.
+
+\section{\textsc{sv-comp} benchmarks}
+
+\begin{table}
+\checkoddpage
+\edef\side{\ifoddpage l\else r\fi}
+\makebox[\textwidth][\side]{
+\begin{minipage}[bt]{\fullwidth}
+  \begin{center}
+    \setlength{\tabcolsep}{0.5em}
+    \begin{tabularx}{\textwidth}{l r r r r r X r r r r}
+      \toprule
+      & ~ & \multicolumn{4}{c}{\DIVINE + transformation} & ~ & \multicolumn{4}{c}{\SymDIVINE} \\
+      \cmidrule(l){3-6}
+      \cmidrule(l){8-11}
+      & & valid & error & timeout & failed & & valid & error & timeout & failed \\
+      \midrule
+      pthreads & & $0$ & $0$ & $0$ & $0$ & & $0$ & $0$ & $0$ & $0$  \\
+      loops & & $0$ & $0$ & $0$ & $0$ & & $0$ & $0$ & $0$ & $0$  \\
+      recursion & & $0$ & $0$ & $0$ & $0$ & & $0$ & $0$ & $0$ & $0$  \\
+      bitvector & & $0$ & $0$ & $0$ & $0$ & & $0$ & $0$ & $0$ & $0$  \\
+      product-lines & & $0$ & $0$ & $0$ & $0$ & & $0$ & $0$ & $0$ & $0$  \\
+      \bottomrule
+    \end{tabularx}
+  \end{center}
+  \caption{For each benchmark set and each tool, the table provides the
+    numbers of programs decided as valid, or with error, or undecided with the
+        failed result or because of timeout.}
+  \label{tbl:results}
+\end{minipage}}
+\end{table}
+
+\add{ add qunatitative plot of benchmarks }
+
+\section{Data structures}
+
+\subsection{AVL tree}
 \add{ avl tree vefification }
 
 \add{ svcomp benchmarks }

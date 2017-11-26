@@ -67,7 +67,13 @@
 %*******************************************************
 \cleardoublepage\pagenumbering{arabic}
 \cleardoublepage
+\newlength\fullmarginwidth
+\fullmarginwidth=\marginparwidth
+\advance\fullmarginwidth by \marginparsep
 
+\newlength\fullwidth
+\fullwidth=\textwidth
+\advance\fullwidth by \fullmarginwidth
 \include{chapters/01-introduction}
 \include{chapters/02-preliminaries}
 \include{chapters/03-divine}
