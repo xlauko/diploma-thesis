@@ -5,9 +5,13 @@ arithmetic is abstracted. We provide ability for pointers to point on the
 abstract values and structures to contain abstract elements. However we are
 currently not able to insert abstract values into arrays and abstract pointers
 (i.e. memory allocation). These limitations are caused by insufficient
-representation of symbolic data, in the case of arrays, and missing pointer
-analysis in the case of pointers. For further evaluation we have omitted
-programs that contain these unsupported characteristics.
+representation of abstract data, in the case of arrays\sidenote{Currently, we
+are not able to represent elements of arrays by shapes for abstract values. We
+think this can easily implemented in a similar manner as abstraction of
+aggregate types. Further limitations represent a runtime indices into the
+arrays, which we are not able to compute during transformation.},
+and missing pointer analysis in the case of pointers. For further evaluation we
+have omitted programs that contain these unsupported characteristics.
 
 Other technicalities, such as support of threading and support of full \Cpp{}
 standard library remains untouched, since transformations do not interfere with
@@ -15,11 +19,14 @@ explicit computation of a program.
 
 To show that the proposed approach is sufficient replacement of \SymDIVINE, we
 will compare the symbolic transformation with \DIVINE as backend against \SymDIVINE.
-Evaluation will be done on two sets of benchmarks --- subset of benchmarks from
+Evaluation will be done on two sets of benchmarks -- subset of benchmarks from
 software verification competition (\textsc{sv-comp})~\cite{Beyer17} and
-benchmarks of data structures, concretely binary trees and more complicated AVL
-tree. The AVL tree benchmark demonstrates the ability of transformation of more
-complicated code, and also of the verification by explicit model checker.
+benchmarks of data structures, concretely binary trees and more complicated \AVL
+tree. The \AVL tree benchmarks demonstrate the ability of transformation of more
+complicated code.
+
+All measurements were done on \dots
+\add{add description of machine ? }
 
 \section{\textsc{sv-comp} benchmarks}
 
@@ -56,32 +63,80 @@ complicated code, and also of the verification by explicit model checker.
 
 \section{Data structures}
 
-\subsection{AVL tree}
-\add{ avl tree vefification }
+The data structure benchmarks show the greatest contribution of a symbolic
+approach. In real world a correctness of data structures is crucial. By symbolic
+representation of elements in data structures we can verify all possible
+behaviours for given amount of inputs. In these benchmarks we will demonstrate
+how much time the transformation takes and how much time \DIVINE spends in
+verification process. Because these benchmarks are in \Cpp, we can not compare
+results with \SymDIVINE.
 
-\add{ svcomp benchmarks }
-
-\add{ data structures benchamrks }
+In all benchmarks we will try to verify insertions and deletions of arbitrary
+values from the data structures. The data structures will be stored on the
+stack, because we are limited in transformation by dynamic memory allocation.
+We set naming convention for benchmarks as \code{\{name\}-\{num. of
+insertion\}-\{num. of deletions\}-\{V/E for validity or error\}}.
 
 \begin{table}
   \begin{center}
     \begin{tabularx}{\textwidth}{l r r r}
       \toprule
-        & transformation & verification & states \\
-      \midrule
-      insert 1 & $0$ & $0$ & $0$ \\
-      insert 2 & $0$ & $0$ & $0$ \\
-      insert 3 & $0$ & $0$ & $0$ \\
-      insert 4 & $0$ & $0$ & $0$ \\
-      insert 5 & $0$ & $0$ & $0$ \\
-      \midrule
-      insert/erase 1 & $0$ & $0$ & $0$ \\
-      insert/erase 2 & $0$ & $0$ & $0$ \\
-      insert/erase 3 & $0$ & $0$ & $0$ \\
-      insert/erase 4 & $0$ & $0$ & $0$ \\
-      insert/erase 5 & $0$ & $0$ & $0$ \\
+      Benchmark Name & Transformation & Verification & States \\
+        \midrule
+        \code{sorted-list-3-0-E} & $8.52s$ & $0.02s$ & $14$ \\
+        \code{sorted-list-3-0-V} & $10s$ & $37s$ & $39$ \\
+        \code{sorted-list-4-0-V} & $11.6s$ & $2m 14s$ & $155$ \\
+        \code{sorted-list-5-0-V} & $9.04s$ & $8m 15s$ & $733$ \\
+        \midrule
+
+        \code{bintree-3-0-V} & $9.81s$ & $33.3s$ & $78$ \\
+        \code{bintree-3-1-V} & $12.3s$ & $33.9s$ & $124$ \\
+        \code{bintree-3-2-V} & $13s$ & $27s$ & $171$ \\
+        \code{bintree-3-3-V} & $12.1s$ & $16s$ & $192$ \\
+
+        \midrule
+
+        \code{avl-1-0-V} & $6.15s$ & $1.93s$ & $16$ \\
+        \code{avl-2-0-V} & $7.19s$ & $8.31s$ & $64$ \\
+        \code{avl-3-0-V} & $7.96s$ & $39s$ & $346$ \\
+        \code{avl-4-0-V} & $7.29s$ & $3m~27s$ & $1464$ \\
+        \code{avl-5-0-V} & $6.89s$ & $14m~16s$ & $9242$ \\
       \bottomrule
     \end{tabularx}
   \end{center}
-  \caption{caption}
+  \caption{Benchmarks of insertions and deletions from the data
+    structures. A~name of benchmark represents a data structure, number of
+    insertions and number of deletions. \code{V} or \code{E} at the end of
+    name denotes whether the benchmark is valid or contains error.}
 \end{table}
+
+From the results we can see that bottleneck is still a verification. Although,
+we have destroyed the data nondeterminism, we have brought a control flow
+nondeterminism because of nondeterministic choices on branches. The transformation
+time is steadily around 10seconds. An average speed of verification is 2 states
+per second. We believe that this is consequence of slow \API between the model
+checker and the \SMT solver. Since \SymDIVINE was able to generate 200 states
+per seconds in average, with much less optimized exploration algorithm. Hence we
+believe that in future we can optimize the algorithm to cope with larger state
+spaces in reasonable time.
+
+In benchmarks of the \AVL tree, we can see that despite the increasing number of inputs
+the transformation time stays the same, but the verification time exponentially
+grows. The exponential growth is caused by the nature of the \AVL tree. When we
+are inserting an arbitrary value we have to branch the state space on each
+comparison of the inserted value and node into which we are inserting. Branching
+creates two possibilities, first when the value is inserted into the left
+subtree and second for the right subtree. This way, we create during
+verification all possible shapes of the \AVL tree for given amount of elements.
+A similar phenomenon appears in other data structures, where the algorithm branches
+depending on the inserted value.
+
+But since the algorithms on these data structures are simple, the most of errors
+are shallow and can be found much more faster than proving of correctness of
+the algorithms.
+
+During the evaluation we have encountered the qualities of the proposed
+approach, because besides the verification of the program we have verified the
+implementation of the abstraction and fix minor bugs that we have found. This
+would not be possible if the abstraction would be implemented inside of the
+verification tool.

@@ -134,8 +134,8 @@
  \thmt@trytwice{}{%
  \RequirePackage{framed}%
  \RequirePackage{thm-patch}%
- \addtotheorempreheadhook[\thmt@envname]{\bigskip \prule \par}%
- \addtotheorempostfoothook[\thmt@envname]{\prule \bigskip}%
+ \addtotheorempreheadhook[\thmt@envname]{\medskip \par}%
+ \addtotheorempostfoothook[\thmt@envname]{\medskip}%
  }%
 }
 \makeatother
@@ -354,13 +354,13 @@
     },
     llvm/.style={
         data,
-        fill=vivid!50,
+        fill=vivid!40,
         font = \ttfamily,
     },
     pc/.style={
         data,
         font = \ttfamily,
-        fill=apple!50,
+        fill=apple!40,
     },
     br/.style={
         data,
@@ -398,7 +398,7 @@
         font=\ttfamily
     },
     bb/.style={
-        fill=pruss!20,
+        fill=pruss!15,
         inner sep=3pt,
         rounded corners= 3pt
     },

@@ -1,75 +1,84 @@
 \chapter{Conclusion}\label{ch:conclusion}
 
-In this thesis, we have explored how to deal with inputs in the program
-verification. A common approach is to abstract inputs and do a kind of abstract
-interpretation of a program. However, to add this feature into a verification
-tool, in many cases requires to tweak the tool a lot.
+In this thesis, we have explored how to deal with inputs in program
+verification. A common approach is to abstract inputs and perform an
+abstract-interpretation-like analysis of the program. However, adding this feature into a
+verification tool requires significantly tweaking the tool in many cases.
 
-Therefore, we have proposed a novel approach to abstraction, as program
-transformation. In this way we are able to abstract a program with a minor
-modification to the verification tool.
+Therefore, we have proposed a novel approach to verification of programs with
+inputs. Specifically, an abstraction via program transformation. This way, we
+were able to abstract a program with only minor modifications of the verification
+tool.
 
-Specifically, we have focused on a symbolic abstraction as used in the \SMT-based
-symbolic model checkers. We have recognized which parts of the program can be
-abstracted and what modification of the tool needs to be done.
+Especially, we have focused on symbolic representation of inputs as used in \SMT-based
+symbolic model checkers. To do so, we have identified which parts of the program can be
+abstracted and what modifications of the verification tool need to be done.
 
-The entire approach was designed as transformation of \LLVM programs for
-explicit-state model checker \DIVINE. But we believe, that it can be easily extended
-to another tools.
+The transformation was designed for \LLVM{} programs, and evaluated with
+explicit-state model checker \DIVINE. But we believe that it can be easily extended
+to other tools.
 
 \section{Contribution}
-We believe that this thesis contributed to the verification world, by enabling
-easier abstraction of programs, which will not be able without a large amount of
-programing work.
+We believe that this thesis contributed to the verification world by enabling
+easier abstraction of programs, which would not have been possible without a
+large amount of programming work.
 
-First and foremost, we would like to point out that the largest part of this
-thesis is contained in the implementation. The sole transformation required
-a lot of static analysis as was described in \autoref{ch:abstraction}. The main
-implementation was done as extension of the tool \LART, where all analyses can be
-found.
+\add{ besides exploration of abstraction  of \LLVM and defining composable
+    algorithms for analysis }
 
-The transformation was evaluated with a symbolic domain\sidenote{Implementation
-of a symbolic domain and an algorithm in \DIVINE is not a part of this thesis.},
-what showed that this approach can compete with traditional symbolic model
-checking.  At the same time we have achieved that a new abstraction can be
-easily implemented and used in already settled \DIVINE toolchain. As a proof
-we have created a simple domain that distinguishes whether the value is zero
-or not.
+First and foremost, we would like to point out that the most significant part of
+this thesis is contained in the implementation. The transformation alone required
+a lot of static analysis as was described in \autoref{ch:abstraction}. The
+implementation was done as an extension of the tool \LART, where all building
+blocks of the transformation are located.
 
-Additionally, we provide a short tutorial how to abstract a program and verify it by
-\DIVINE, in the \autoref{ch:appendixb}. A short description can be also found on
-the project website \url{divine.fi.muni.cz} in the manual section.
+The transformation was evaluated with a symbolic domain,\marginpar{Implementation
+of the symbolic domain and a symbolic exploration algorithm in \DIVINE is not part of this thesis.}
+which showed that this approach can compete with traditional symbolic model
+checking. At the same time, a new abstractions can be easily implemented and
+integrated into the nature \DIVINE toolchain. To demonstrate this, we have created a
+simple domain that distinguishes whether a value is zero or not.
+
+Additionally, in \autoref{ch:appendixb} we provide a short tutorial on how to
+abstract a program and verify it with \DIVINE. A description is also
+available from the manual, on the project website -- \url{divine.fi.muni.cz}.
 
 \section{Future work}
 
-The sole abstraction framework opens a broad area in the abstraction of
-programs. An example is a predicate abstraction, which can be done in a
-similar manner as a symbolic one.
+The proposed framework brings a number of new possibilities in abstraction of
+programs. An example is predicate abstraction~\cite{Flanagan02}, which can be
+implemented in a similar manner as the symbolic one.
 
-This brings us to the state of the art approaches such as \textsc{cegar} loop.
-To refine an abstraction, our framework should be easily extended with other
-analyses. The main mission here is to find a way how to extract an counter
-example from the abstracted program. Further, the transformation should be done
-according to the extracted counter example.
+A useful extension for the abstraction framework can also be an implementation
+of a \textsc{cegar} loop~\cite{Clarke20}. In current settings, we are able to
+abstract a program, verify it and find a potential counter-example. The
+remaining challenge is how to extract from the counter-example informations
+for refinement. The refinement can be then implemented as a more precise
+transformation.
 
-In our framework we have covered only a subset of \LLVM. In this way we see a
-multiple directions in which we can extend the current framework. Currently, the
-biggest limitation is abstraction of memory and pointers. To do their
-abstraction, the framework needs to be extended with some pointer analysis.
-Current implementation is also restricted in the abstraction of aggregate types,
-where we are not able to abstract array types, and completely the struct
-types. In this case for complete abstraction a shape analysis is
-required. Lastly, the transformation can be easily extended to abstract
-floating point operations similarly as integers.
+In our framework, we have covered only a subset of program behaviours.
+Currently, the biggest limitation is abstraction of memory and pointers.
+Abstraction of those, can be done either naively, where program would build
+a lookup table for pointers and will simulate the pointers based
+on the values in the table. This approach has a big overhead on the runtime
+interpretation. A better direction should be to use a pointer analysis, to
+restrict pointers during the transformation.
 
-For other domains than symbolic, a full constraint propagation needs to be
-implemented. To do so, we need to find a compromise between analysis and the
-constraint computation during the runtime.
+The current implementation is also restricted in the abstraction of aggregate
+types, where we are not able to abstract array types, and there are limitations
+in abstraction of struct types. In this case, we can also let the runtime do the
+hard work and maintain the tables of abstract values, but for faster
+verification we can extend the transformation with a shape analysis and
+precompute the abstract values. Finally, the transformation can be easily
+extended to abstract floating point operations similarly to integers.For domains
+other than symbolic, better constraint propagation can be implemented. To do so,
+we need to find a compromise between analysis and the constraint
+computation during the runtime.
 
-Lastly as in every software, a lot of potential optimization can be done in the whole approach.
-Meaning optimizations of the sole transformation and also the program which is
-abstracted. For example, one optimization mentioned before is an inlinig of abstract
-operations.
+Finally, as in every software, there is a lot of potential for optimization.
+This includes optimizations of the transformation and also of the abstracted program.
+An example of one such optimization is inlining of abstract operations. In this
+way, we can improve the performance of verification tool.
 
-And as promising this tool may sound, we aim to use it with other tools too.
-
+Given the premising results (\autoref{ch:results}), we would like to combine
+\LART with verification tools other than \DIVINE.

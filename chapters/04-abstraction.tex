@@ -714,14 +714,16 @@ Consider a nested structure represented in \LLVMIR:
 \end{minted}
 
 We have utilized this indexing strategy to create a tree-like representation
-of types. The representation of \code{Widget} as tree is shown on the
+of types.\sidenote{The tree representation is sufficient only in simple cases.
+For more complex structures (recursive data types) we need to employ a shape
+analysis.} The representation of \code{Widget} as tree is shown on the
 left picture. The edges of the tree represent the access operation type
 (i.e \code{load} operation or index in \code{getelementptr} instruction)
 \cite{LLVM:langref}.
 
 Since we work only with abstraction of scalar types, we need to focus only on
 the leafs of the tree structure. To denote a domain we assign the type of the
-abstraction to the leaf. Beacause we only need an information about abstract
+abstraction to the leaf. Because we only need an information about abstract
 elements, we do not store the rest of the leafs. Example abstract structure
 with multiple domains is on the right picture.
 
@@ -1065,6 +1067,7 @@ conditional branching.
 \autoref{fig:exampleprogram}:
 
 \bigskip
+\noindent
 \resizebox{\textwidth}{!}{
 \begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
 \tikzset{>=latex}
@@ -1345,7 +1348,7 @@ $equals(s_1, s_2)$:
 \end{equation*}
 The formula says, that states are equal when the path conditions are
 \marginpar{In reality when we check for equality of two states, we just need to
-find proof of that there exists an evaluation that distinguishes both states.
+find the proof that there exists an evaluation distinguishing both states.
 This is done easily by querying the \SMT solver for $\neg equals(s_1, s_2)$.
 Hence we have simplified the work for solver, because it has to find a proof only
 for existential quantifier used in negated formula instead of universal from
