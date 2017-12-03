@@ -100,7 +100,7 @@ further described in next section.
 \caption{Layout of \DIVINE architecture.}\label{fig:architecture}
 \end{figure}
 
-\section{\DIVINE virtual machine}
+\subsection{\DIVINE virtual machine}
 
 The \DIVINE virtual machine aims to provide a bare minimum for \LLVM-based model
 checking. This involves execution of instructions, memory management and support
@@ -111,7 +111,7 @@ Besides interpretation of \LLVM bitcode, \DIVM stores a representation of a
 program state. The verification algorithm may ask \DIVM for successors of a
 given state. Afterwards \DIVM interprets \LLVM bitcode from that state until it
 reaches some interrupt.\sidenote{Interpreted \LLVM instructions then represent
-an edge between two states.} We will call this process edge generation.  During
+an edge between two states.} We will call this process edge generation. During
 the interpretation \DIVM checks for potential property violation.
 
 A program state is represented by memory configuration encoded as a graph.
@@ -300,8 +300,9 @@ respectively. Functions symbols in the theory are $+, \times, \div, \&, \mid,
 \oplus, \ll, \gg, \cdot, \extract{n}{p}$, representing addition, multiplication,
 unsigned division, bit-wise and, bit-wise or, bit-wise exclusive or, left-shift,
 right-shift, concatenation, and extraction of $n$ bits starting from position
-$p$, respectively. For a precise description of the syntax and semantics of the
-bit-vector theory, we refer the reader to Hadarean \cite{Hadarean14}.
+$p$, respectively~\cite{Jonas17}. For a precise description of the syntax and
+semantics of the bit-vector theory, we refer the reader to Hadarean
+\cite{Hadarean14}.
 
 Since \SymDIVINE does not support dynamic memory allocation, representation
 of symbolic data becomes much simpler. In representation via bit-vector
@@ -529,7 +530,7 @@ To recognize that two multi states are equal, \SymDIVINE checks by \SMT solver
 whether the symbolic parts of two multi states represent the same set of values.
 Formally we will describe a multi state as a triplet $(c, m, \varphi)$, where
 $c$ is a control part, $m$ is a memory shape and $\varphi$ is a symbolic part of
-the state.
+the state~\cite{Jonas17}.
 
 Let $s_1$ and $s_2$ are multi states with same explicit part. That is, when $s_1
 = (c, m, \varphi)$ and $s_2 = (c, m, \psi)$ for the control part $c$ and memory
@@ -557,9 +558,7 @@ states $s_1$ and $s_2$ are equal precisely if both of formulas
 $\notsubseteq(s_1, s_2)$ and $\notsubseteq(s_2, s_1)$ are unsatisfiable, i.e.
 there is no memory valuation that is represented only by one of the
 multi-states. However, the equality check requires a quantified \SMT query,
-which is more expensive than a quantifier-free one.
-
-\add{ add citation of Symdivine paper }
+which is more expensive than a quantifier-free one~\cite{Jonas17}.
 
 \subsection{Architecture of \SymDIVINE}
 Talking about \SymDIVINE overall architecture, it mimics the design of \DIVINE.
@@ -570,7 +569,7 @@ and memory management is done solely by the verification core of \SymDIVINE. Exc
 that, we may distinguish 3 parts in the verification core, an interpreter, a state
 generator and exploration manager. They behave similarly as their \DIVINE
 counterparts. Except the \SymDIVINE's state space generator, that needs to
-communicate with \SMT solver, to execute equality and reachability queries.
+communicate with the \SMT solver, to execute equality and reachability queries.
 
 \begin{figure}[!ht]
 \centering
@@ -658,7 +657,7 @@ maintained.
 
 \begin{summary}
 We have seen that \SymDIVINE is able to verify programs with inputs. In order to
-do so, \SymDIVINE uses a bit-vector formulae to represent multi states ---
+do so, \SymDIVINE uses a bit-vector formulae to represent multi states --
 states that correspond to sets of explicit states. In comparison to
 explicit-state model checking, the symbolic approach employs an \SMT solver for
 equality check and reachability check.
@@ -681,7 +680,7 @@ they do not accept \Cpp{} as a form of input. The only tool that we found that
 is able to do a symbolic model checking on \Cpp{} programs is \textsc{redlib}
 \cite{redlib}, which is no longer developed.
 
-In compare to the approaches of symbolic model checkers mentioned earlier, we
+In comparison to the approaches of symbolic model checkers mentioned earlier, we
 want to design a transformation of a verified program in such a way, that the
 program will simulate the symbolic machinery by itself. Hence it will need to
 simulate manipulations with data definitions and similarly with the path
@@ -694,6 +693,16 @@ symbolic, this code is then processed by Java PathFinder \cite{Havelund20}. We
 have designed a similar approach, an abstraction via program transformation for
 \LLVM programs in the \autoref{ch:abstraction}.
 
-\add{ TODO add limitations + comparison of approaches }
+Their approach is designed as source-to-source transformation, which takes a
+Java code and replace the uses of input values by symbolic expressions. They are
+only able to transform integer fields in Java classes. To do so, all possible
+occurrences of symbolic expressions needs to be transformed manually as they
+describe shortly in the paper~\cite{Khurshid03}. Additionally, they insert a
+path condition and calls to the solver directly into the code.
+
+In comparison to their approach we have designed a value propagation analysis
+(see \autoref{ch:abstraction}), that gets rid of necessity to manually transform
+the program. Moreover, our approach is much more general, since we provide
+ability to use an arbitrary abstraction not just symbolic representation.
 
 

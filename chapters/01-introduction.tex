@@ -34,18 +34,18 @@ by testing we are not able to predict all thread interleavings and the tests may
 behave nondeterministically. Besides all the advantages of model checking, it
 comes with a drawback, that it is useless on programs that interact with an
 environment. In this case model checking has to verify executions for each
-possible input, what requires unmanageable amount of work --- exploration of an
+possible input, what requires unmanageable amount of work -- exploration of an
 enormous state space (also known as a \emph{state space explosion problem}).
 
 To tackle the problem with program inputs, a few extensions of explicit-state
-model checking have been introduced over the time --- abstraction-based model
+model checking have been introduced over the time -- abstraction-based model
 checking~\cite{Clarke94} and symbolic model checking~\cite{Clarke96}. These
 techniques try to group inputs that do not induce changes in the behaviour of the
 program, and verify programs only according to those groups (or a representant
 taken form the group). For example, take a function that checks whether a
-number is greater than zero: we can separate all the possible inputs into 2 groups --- numbers
-bigger than zero, and the rest. Then we need to verify
-the program only according to those groups (i.e. only for the two possible runs).
+number is greater than zero: we can separate all the possible inputs into 2
+groups -- numbers bigger than zero, and the rest. Then we need to verify the
+program only according to those groups (i.e. only for the two possible runs).
 
 In this thesis, we would like to introduce a new approach to deal with inputs.
 In the approaches mentioned before, the nondeterminism brought by inputs is

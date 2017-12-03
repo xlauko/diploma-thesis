@@ -1,80 +1,69 @@
 \chapter{Program abstractions}\label{ch:abstraction}
 
-As we have already seen, abstractions are applicable in many ways for model
-checking and in verification in general. In this chapter we will propose a novel
-approach for verification of programs with inputs. We aim to provide a tool to
-enable abstraction of inputs, with only minor modifications to the model
-checker.
+As we have already seen, abstractions are applicable in many ways in model
+checking and in software verification in general. In this chapter, we propose a novel
+approach for verification of programs with inputs. We aim to provide a tool for
+abstraction of inputs with only minor modifications to the model checker.
 
-One of the approaches, as mentioned in \autoref{ch:divine}, is symbolic model
-checking. We may look on the symbolic representation as on form of abstraction,
-since input data are abstracted into the sets of values. In this chapter, we will
-review how programs are abstracted more generally. Firstly we will introduce
-simpler abstract domain, which does not require that much technicalities as
-the symbolic abstraction. Thereafter we will present an approach to abstractions via
-program transformation. At the end of the chapter we explore how the transformed
-program with the symbolic abstraction interacts with \DIVINE.
+One of the approaches to handle inputs is the symbolic model checking (described
+in \autoref{ch:divine}). We may consider the symbolic representation as a form
+of abstraction, since input data are abstracted into the sets of values. In this
+chapter, we review how programs are abstracted more generally. First, we
+introduce a simpler abstract domain, which does not require that much
+technicalities as the symbolic abstraction. Thereafter, we present an
+approach to abstractions via program transformation. At the end of the chapter,
+we explore how the transformed program interacts with \DIVINE.
 
 \section{Approaches to abstraction}
 
-In general there are two main approaches how to do abstraction of programs.  A
+In general, there are two main approaches to do abstraction of programs. A
 traditional way of abstraction engines is to interpret the given
 program~\cite{Cousot79}. During interpretation, the abstraction tool needs to
 interpret code according to some semantics (either encoded in the tool or
-given). Also \SymDIVINE works in similar manner. During the interpretation of \LLVM
-bitcode \SymDIVINE manipulates a formula representing a multi
-state, see \autoref{sub:symdivine}.
+given). Also \SymDIVINE works in similar manner. During the interpretation of
+the \LLVM bitcode, \SymDIVINE manipulates a formula representing a multi state,
+as described in \autoref{sub:symdivine}.
 
-The other alternative to do abstraction is to compile the abstraction into the
+Another alternative to do abstraction is to compile the abstraction into the
 program. It means that the program will be transformed in such manner that it will
 manipulate with abstract values instead of concrete ones. For example, in the
 case of symbolic abstraction, the abstracted program manipulates directly
-formulae, instead of concrete variables. The abstracted program after such
+formulae, instead of concrete variables. The abstracted program after the
 transformation behaves almost as a traditional program. The main difference is
 that the abstracted program may become nondeterministic.
 
 When comparing the above mentioned approaches, each of them comes with its pros
-and cons. The transformation approach does not complicate the design of the
-verification tool since it is done before the verification process starts, hence
-it minimize the probability of creating a bug in the verification tool itself.
-
-Further, the verification over the transformed program checks the correctness of
-the inserted abstraction, since it is encoded into the program. This is not
-possible in interpretation approach, because the abstraction is part of the
-interpreter.
-
-Both approaches enable pluggable abstract domains, by generalizing their
-common analysis, as will be shown in this chapter.
+and cons. The transformation approach does not complicate the verification tool
+since it is done before the verification process starts, hence it minimizes the
+probability of creating a bug in the verification tool itself.  Further, we can
+benefit from the verification of the transformed program in the way that it will
+also check the correctness of the inserted abstraction, since it is encoded into
+the program. This is not possible in interpretation approach, because the
+abstraction is part of the interpreter.
 
 On the other hand, the transformation approach requires a more complicated
 design, since most of the computation has to be done statically. Also the
-verification of transformed program may potentially become slower, since
+verification of the transformed program may potentially become slower, since
 abstract operations have to be interpreted by the verification tool.
+Both approaches enable pluggable abstract domains, by generalizing their
+common analysis, as will be shown in this chapter.
 
-Since \DIVINE is strong a foundation for explicit model checking, we have
-decided not to complicate the precisely crafted interpreter (\DIVM), and take
-the path of the second approach. We expect the program transformation approach
-to generalize the common analysis used for abstraction, hence provide a
-toolset that will be easily extended to other abstractions.
-
-Besides having symbolic abstraction as a main goal, we have realized that the
-core of transformation is usable for arbitrary abstraction, as will be shown in
-this chapter.
+Since \DIVINE is a powerful explicit-state model checker, we have decided not to
+complicate the precisely crafted interpreter (\DIVM), and take the second
+approach. Besides having a symbolic abstraction as the main goal, we have
+realized that the core of transformation is usable for arbitrary abstraction, as
+will be shown in this chapter.
 
 \section{Abstract domains} \label{sec:absdom}
 
 When dealing with abstraction of programs, first of all, one has to define an
-abstract domain for program variables and operations(transformers) based on
-operational semantics of a program. From model checking point of view, we want
-to define an abstraction function $\alpha \colon C \to A$, that defines a
-transformation from a concrete state $C$ to an abstract state $A$, where $C$
-corresponds to some memory valuation (tuple of concrete values) and $A$
-corresponds to a tuple representing a state in the abstract world, see
-\autoref{subsec:amc}. Additionally we have to define abstract instructions that
-manipulates with abstract values (in our case abstract equivalents of \LLVM
-instructions).
+abstract domain for program variables and semantics of operations on them. From
+a model checking point of view, we want to define a transformation from
+concrete states to abstract states, as described in \autoref{subsec:amc}. To
+formulate the transformation we need to define how concrete types are mapped to
+abstract types, similarly with values and operations on then.
 
-\bigskip
+\newpage
 
 \hrule
 
@@ -92,169 +81,192 @@ commands in the abstract program. Abstract domains are often complete lattices.
 \bigskip
 
 In order to define the transformation from a concrete domain to an abstract
-domain, we have to describe the concrete domain first. Values of concrete domain
-in \LLVM are partitioned according to their types. For simplicity, we will work
+domain, we have to describe the concrete domain first. Values of the concrete domain
+for \LLVM are partitioned according to their types. For simplicity, we work
 only with a subset of \LLVM types -- integer types, pointer types and aggregate
-types. Moreover we do not permit abstraction of pointers, since pointer analysis is
-beyond the scope of this thesis, but we will permit pointers to abstract values.
+types. Moreover, we do not permit abstraction of pointers, since pointer analysis is
+beyond the scope of this thesis, but we permit concrete pointers to abstract values.
 
-We define integer types as a set $C_{i}$ containg all \LLVM integer
-types (i.e.~a type for each bitwidth).
-Aggregate types $C_a$ are then defined as all finite products of integer types and
-pointer types, and set of pointer types $C_p$ consists of pointers to all integer
-and aggregate types and pointers to pointers and so on. The whole type system of concrete domain is
-then defined as union of these sets: $C = C_i \cup C_a \cup C_p$. We will denote
-the set of all the possible concrete values by $V_C$. These are all \LLVM values
-of types given by $C$. To set up abstraction of \LLVM, we define an arbitrary
-abstract domain $A$ as:
 \begin{definition}
-An abstract domain $A$ is defined as an ordered tuple $(V_A,\alpha_A, lift, lower,
-    T)$ where:
+    The set of considered concrete types, called $C_T$, is defined inductively as follows:
 \begin{itemize}
-    \item $V_A$ is a set of possible abstract values,
-    \item $\alpha_A \colon C \to A$ is conversion from concrete types to
-        abstract types,
-    \item $\textit{lift} \colon \mathcal{P}(V_C) \to V_A$ defines a function for
-        value abstraction, where $\mathcal{P}(V_C)$ denotes a power set of
-        $V_C$\sidenote{We remark that elements of $V_C$ are sets of possible
-        values.},
-    \item $\textit{lower} \colon V_A \to \mathcal{P}(V_C)$ defines a
-        transformation from abstract value to concrete values,
-    \item $T$ is a set of abstract instructions.
+    \item each integer type $C_i \in C_T$, where $i \in \mathbb{N}$
+        is a bitwidth of the type,
+    \item if types $t_1, \dots, t_n \in C_T$ then an aggregate type composed of
+        them is also concrete type $t_1 \times \dots \times
+        t_n~\in~C_T$,\sidenote{A \code{void} type corresponds to an empty product
+        of types.}
+    \item if $t \in C_T$ then pointer to it also a concrete type $t^* \in C_T$.
+\end{itemize}
+\end{definition}
+
+\begin{definition}
+    A concrete domain $C$ is a tuple $(C_T, C_V, v_C, C_{ops})$, where:
+    \begin{itemize}
+        \item $C_T$ is a set of types,
+        \item $C_V$ is a set of all possible \LLVM values,
+        \item $v_C \colon C_T \to \mathcal{P}(C_V)$ assigns to a type a set of all possible values,
+        \item $C_{ops}$ is a set of \LLVM operations, where each operation has
+            assigned input types and output types.\sidenote{\LLVM operations are not
+            functions, because they can have side effects.}
+    \end{itemize}
+\end{definition}
+
+To set up an abstraction of \LLVM, we define an abstract domain~$A$. Additionally
+to concrete domain an abstract domain has to describe how concrete types are
+mapped to abstract types, concrete values to abstract values and similarly
+concrete operations to abstract operations:
+\begin{definition}
+    An abstract domain $A$ is defined as a tuple
+    \[(A_T, A_V, v_A, A_{ops}, \alpha, (lift_T)_{T \in C_T}, (lower_T)_{T \in
+    A_T}, lift_{ops}),\] where:
+\begin{itemize}
+    \item $A_T$ is a set of abstract types,
+    \item $A_V$ is a set of all possible abstract values,
+    \item $v_A \colon A_T \to \mathcal{P}(A_V)$ assigns to a type a set of
+        abstract values,
+    \item $A_{ops}$ is a set of abstract operations,
+    \item $\alpha \colon C_T \to A_T$ is a bijection between concrete and abstract
+        types,
+    \item $lift_T \colon v_C( T ) \to v_A( \alpha( T ) )$ defines a function
+        for value abstraction of concrete type $T \in C_T$,
+    \item $lower_T \colon v_A( T ) \to \mathcal{P}( v_C( \alpha^{-1}( T ) ) )$ defines a
+        transformation from abstract value to a corresponding set of concrete values,
+    \item $lift_{ops} \colon C_{ops} \to A_{ops}$ defines a transformation of
+        concrete operations to abstract operations.\sidenote{$lift_{ops}$ has to
+        preserve a type correspondence of operations. When instruction returns
+        type $t$, abstract instruction has to return type $\alpha(t)$. Similarly
+        with operation arguments.}
 \end{itemize}
 
 \end{definition}
 
-%Since we do not permit abstract pointers, the $\alpha$ function for pointer
-%types and will be always defined as transformation from concrete pointer type to
-%abstract pointer type with corresponding abstracted base type. Similarly the
-%transformation of aggregate types may be done in per element manner. Hence only
-%the definition of integer types transformation is interesting. Similar reasoning
-%applies to \textit{lift} and \textit{lower} functions, where only transformation
-%of the integer values is needed to by specified.
-
-As an example of a simple domain, we define a three-value domain $Z$ where only
-one type exists with following possible values:
-\[ V_{Z} = \{ \textit{zero}, \textit{nonzero}, \textit{unknown} \}\]
-
+As an example of a simple domain, we define a three-valued domain $Z$.
+This domain simplifies all integer values to only three possible values:
+\[ Z_V = \{ \textit{zero}, \textit{nonzero}, \textit{unknown} \}.\]
 
 The values represent whether the abstracted variable is zero, non-zero or that
-we do not know anything about the value of the variable (\emph{unknown}). Since
-we have only one type $\alpha_{Z}$ maps all integer types to single possible
-type.  The definition of $\textit{lift}$ and $\textit{lower}$ for integer types
+we do not know anything about the value of the variable (\emph{unknown}).
+Hence, to all abstract integer types correspond only those three possible
+values. The definition of $lift_T$ and $lower_T$ for integer types
 in the domain $Z$ is straightforward:
 
 \[
-  lift(c) =
+  lift_T(v) =
   \begin{cases}
-    \textit{zero}    & \text{if } \{0\} = c, \\
-    \textit{nonzero} & \text{if } 0 \not \in c, \\
-    \textit{unknown} & \text{else.}
+    \textit{zero},    & \text{if } 0 = v, \\
+    \textit{nonzero}, & \text{if } 0 \not = v. \\
   \end{cases}
 \]
 
 \noindent
-Because lower depends on resulting bitwidth of \LLVM integer type we define separate
-function for each bitwidth ($b$):
+The function $lift$ for the aggregate types\sidenote{Note that in abstracted
+program aggregates may contain both types of values -- concrete and abstract.}
+is defined in per value manner:
+\[lift_{T_1 \times \dots \times T_n}(v_1 \times \dots \times v_n) =
+lift_{T_1}(v_1) \times \dotd \times lift_{T_n}(v_n).\]
 
+Moreover we define a result of the $lift$ of a pointer as a pointer to the lifted base
+value (with a same amount of *).
+
+\bigskip
+The function $lower$ for integer types is defined in similar way. When we lower an
+abstract value the result is a set that represents all values that were
+represented by the abstract value. The resulting values depends also on the
+bitwidth $bw$ of the concrete integer type $T$:
 \[
-  lower_{b}(a) =
+  lower_T(a) =
   \begin{cases}
-    \{0\}      & \text{if } a = \textit{zero},\\
-    \{1, 2^b\} & \text{if } a = \textit{nonzero}, \\
-    \{0, 2^b\} & \text{else}. \\
+        \{0\},      & \text{if } a = \textit{zero},\\
+        \big\{1, \dots ,2^{bw - 1}\big\}, & \text{if } a = \textit{nonzero}, } \\
+        \big\{0, \dots ,2^{bw - 1}\big\}, & \text{else}. \\
   \end{cases}
 \]
+The $lower$ for aggregate types is defined similarly in per value manner, and
+creates all possible aggregates. When lowering an aggregate value, we consider
+only those elements that are abstract. The concrete elements in lowered
+aggregate remain the same. For the pointers, $lower$ processes the base value
+and returns a pointer to it.
 
-The abstract instructions $T_Z$ correspond to \LLVM instructions, but they
-manipulate with values from $V_Z$. For example, abstract instruction \emph{mul}
-has type $V_Z \times V_Z \rightarrow V_Z$, and it defines a multiplication in
-domain $Z$:
+The abstract operations $A_{ops}$ correspond to \LLVM instructions, but they
+manipulate values from $Z_V$. For example, abstract instruction $add_{i32}$
+has type $Z_{i32} \times Z_{i32} \to Z_{i32}$, and it defines an addition of
+two 32-bit integer types in the domain $Z$:
 
 \[
-  mul_Z(a, b) =
+    add_{i32}(a, b) =
   \begin{cases}
-    \textit{zero}      & \text{if } a = \textit{zero} \text{ or } b = \textit{zero},\\
-    \textit{nonzero}   & \text{if } a = \textit{nonzero} \text{ and } b = \textit{nonzero}, \\
-    \textit{unknown}   & \text{else}. \\
+    a,      & \text{if } b = \textit{zero},\\
+    b,      & \text{if } a = \textit{zero},\\
+    \textit{unknown},   & \text{else}. \\
   \end{cases}
 \]
 
 Our main goal is to allow the domain to be implemented in some common higher-level
-language and consequently compiled into the verified program. For this purpose,
-we have chosen \Cpp{} language. To represent the $Z$ domain in
-\Cpp{} we have created a simple enumeration type:
+language and compiled into the verified program. For this purpose,
+we have chosen language \Cpp{}. To represent domain $Z$, we have created a
+structure that holds value and bitwidth of abstract value:
 \begin{minted}{cpp}
 struct Zero {
     enum Domain { ZeroValue, NonzeroValue, Unknown }
+    int bitwidth;
     Domain value;
 };
 \end{minted}
-Domain defined in this way, can be then compiled and linked with a verified
-program. In compiled code abstraction leverages the existing type system of
-\LLVM, since the compiled definition of abstraction is encoded by \LLVM scalars.
+A domain defined in this way can be compiled and linked with a verified
+program. In compiled code, abstraction leverages the existing type system of
+\LLVM, since the compiled definition of the abstraction is encoded by \LLVM scalars.
 
-To cover all the \LLVM instructions that can manipulate with abstract values we
-need to implement binary arithmetic operations, bitwise binary operations,
-memory accesses, conversion operations and comparison instructions.
+To cover all \LLVM instructions that can manipulate abstract values, we need to
+implement all binary arithmetic operations, bitwise operations, memory
+accesses, conversion operations and comparison instructions.
 
 Implementation of abstract instructions may be delivered as \Cpp{} functions over
 the corresponding abstract types. For example, an abstract equivalent of the
-\code{mul} instruction in the domain $Z$ may be implemented as follows.\footnote{The whole
-\code{zero} domain implementation can be found in thesis attachments, with
-only minor technical differences. Code in the text is cleaned for a readability.}
+\code{add} instruction in the domain $Z$ may be implemented as
+follows.\footnote{The whole domain $Z$ implementation can be found in thesis
+attachments, with only minor technical differences. Code in the text is cleaned
+for readability.}
 
-\bigskip
-\noindent
-\begin{minipage}[bt]{\fullwidth}
 \begin{minted}{cpp}
-Zero __abstract_zero_mul( Zero a, Zero b ) {
-    if ( a.value == Zero::Domain::ZeroValue || b.value == Zero::Domain::ZeroValue )
-        return Zero::Domain::Zero;
-    if ( a.value == Zero::Domain::NonzeroValue && b.value == Zero::Domain::NonzeroValue )
-        return Zero::Domain::Nonzero;
+Zero __abstract_zero_add( Zero a, Zero b ) {
+    if ( b.value == Zero::Domain::ZeroValue )
+        return a;
+    if ( a.value == Zero::Domain::ZeroValue )
+        return b;
     return Zero::Domain::Unknown;
 }
 \end{minted}
-\end{minipage}
-\bigskip
 
-Generally the binary bitwise, arithmetic and comparison operations are of
-type $V_Z \times V_Z \to V_Z$. Moreover we define coinversion operations of type
-$V_Z \to V_Z$,
-and operations for memory accesses \code{alloca}, \code{store} and \code{load}. The abstract \code{alloca} instruction allocates a new \code{Zero}
-variable and returns a pointer to it. The \code{load} and \code{store} access memory as expected.
+\add{ describe general binary and unary operations + add store, load and alloca
+to the appendis}
 
 \subsection{Domain interactions} \label{sec:interactions}
-In cases when different concrete domains interact, special care needs to be
-taken. We need to solve two major types of interactions. First one occurs
-with casting operations (bit-casting, width extension, truncation, etc.), when
-values are transformed from one domain to another. The second
-interaction between domains occurs during comparisons, where \LLVM produces from
-a predicate over various values a boolean result. On the boolean result
-usually depends some branching, which needs to take concrete
-value.\sidenote{Since we aim for control explicit verification, we can not
-abstract branching instructions.} Hence the
-abstract result from comparison needs to produce a concrete value. But since the
-result of the comparison may be uncertain\sidenote{In the domain $Z$, this may happen when the
-comparison result is an \emph{unknown} value.}, we need to do a nondeterministic
-choice to produce both \emph{true} or \emph{false}.
+In cases when multiple domains interact, special care needs to be
+taken. We need to solve two major types of interactions.
+We have already seen an interaction between abstract domain and concrete in a
+form of $lift$ and $lower$.
+
+\add{ add use with constatnts etc }
+
+Another interaction between domains occurs when control flow depends on an
+abstract value (i.e.~a conditional branch depends on an abstract value).
+But in order to maintain explicit control flow, the branching instruction needs
+to take an explicit value. Hence the abstract Boolean, on which the branching
+depends, needs to be lowered to the concrete domain. This can be easily done
+when we know whether the value is \emph{true} or \emph{false}. But in case when
+the value is unknown, we need to do a nondeterministic choice and proceed in
+both possible directions.
 
 To unify this interaction with control flow between domains, we introduce a
 tristate domain (\emph{true, false, maybe}), and require all abstract domains to
-define an operation that takes their abstract boolean and transform it to the
-tristate domain. We will refer to it as \code{bool\_to\_tristate}.  Hence before
-each branching on an abstract value we need to transform it to generalized form
-of tristate and according to value of the tristate decide whether to do the
+define an operation that takes their abstract Boolean and transforms it to the
+tristate domain. We will refer to it as \code{bool\_to\_tristate}. Hence before
+each branching on an abstract value, we need to transform it to a generalized form
+of tristate and according to the value of the tristate decide whether to do the
 nondeterministic choice.\sidenote{Nondeterministic choice is made only when the
 tristate has a value \emph{maybe}.} The abstract control flow will be further
 described in \autoref{subsec:cf}.
-
-Handling of cast interactions is much more tricky, generally a combinatorial
-amount of code is required for transformation between abstract domains. The
-simplest way is to treat bit-casts as a way of aliasing and enforce both
-variables to be abstracted into the same abstract domain \cite{Rockai15}.
-
 
 \subsection{Control flow of abstract programs} \label{subsec:cf}
 When a branch is taken due to a \emph{maybe} result of some boolean expression,

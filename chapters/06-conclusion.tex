@@ -27,7 +27,7 @@ large amount of programming work.
     algorithms for analysis }
 
 First and foremost, we would like to point out that the most significant part of
-this thesis is contained in the implementation. The transformation alone required
+this thesis concerns the implementation. The transformation alone required
 a lot of static analysis as was described in \autoref{ch:abstraction}. The
 implementation was done as an extension of the tool \LART, where all building
 blocks of the transformation are located.
@@ -68,12 +68,12 @@ The current implementation is also restricted in the abstraction of aggregate
 types, where we are not able to abstract array types, and there are limitations
 in abstraction of struct types. In this case, we can also let the runtime do the
 hard work and maintain the tables of abstract values, but for faster
-verification we can extend the transformation with a shape analysis and
-precompute the abstract values. Finally, the transformation can be easily
-extended to abstract floating point operations similarly to integers.For domains
-other than symbolic, better constraint propagation can be implemented. To do so,
-we need to find a compromise between analysis and the constraint
-computation during the runtime.
+verification we can extend the transformation with a shape analysis. Finally,
+the transformation can be easily extended to abstract floating
+point operations similarly to integers.For domains other than
+symbolic, better constraint propagation can be implemented. To do
+so, we need to find a compromise between analysis and the
+constraint computation during the runtime.
 
 Finally, as in every software, there is a lot of potential for optimization.
 This includes optimizations of the transformation and also of the abstracted program.
