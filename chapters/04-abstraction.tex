@@ -20,33 +20,37 @@ In general, there are two main approaches to do abstraction of programs. A
 traditional way of abstraction engines is to interpret the given
 program~\cite{Cousot79}. During interpretation, the abstraction tool needs to
 interpret code according to some semantics (either encoded in the tool or
-given). Also \SymDIVINE works in similar manner. During the interpretation of
+given). Similar approach is used in \SymDIVINE. During the interpretation of
 the \LLVM bitcode, \SymDIVINE manipulates a formula representing a multi state,
 as described in \autoref{sub:symdivine}.
 
-Another alternative to do abstraction is to compile the abstraction into the
-program. It means that the program will be transformed in such manner that it will
+Another alternative to preform an abstraction is to insert the abstraction
+directly into the program. This can be achieved with a source-to-source
+transformation of the program. After the transformation the program will
 manipulate with abstract values instead of concrete ones. For example, in the
-case of symbolic abstraction, the abstracted program manipulates directly
-formulae, instead of concrete variables. The abstracted program after the
-transformation behaves almost as a traditional program. The main difference is
-that the abstracted program may become nondeterministic.
+case of symbolic abstraction, the abstracted program manipulates formulae that
+represent input values, instead of concrete values. The abstracted program after
+the transformation behaves almost as a traditional program. The main difference
+is that the abstracted program may become nondeterministic. This can happen if
+a branching in the program depends on an abstract value and both directions of
+the branch are possible.
 
 When comparing the above mentioned approaches, each of them comes with its pros
 and cons. The transformation approach does not complicate the verification tool
-since it is done before the verification process starts, hence it minimizes the
-probability of creating a bug in the verification tool itself.  Further, we can
-benefit from the verification of the transformed program in the way that it will
-also check the correctness of the inserted abstraction, since it is encoded into
-the program. This is not possible in interpretation approach, because the
-abstraction is part of the interpreter.
+since it is performed by the stand-alone tool before the verification process
+starts. As consequence, it minimizes the probability of creating a bug in the
+verification tool. Further, we can benefit from the verification of the
+transformed program in the way that it will also check the correctness of the
+inserted abstraction, since it is encoded into the verified program. This is not possible
+in interpretation approach, because the abstraction is part of the interpreter.
 
-On the other hand, the transformation approach requires a more complicated
-design, since most of the computation has to be done statically. Also the
-verification of the transformed program may potentially become slower, since
-abstract operations have to be interpreted by the verification tool.
-Both approaches enable pluggable abstract domains, by generalizing their
-common analysis, as will be shown in this chapter.
+On the other hand, the tool that performs a transformation requires a more
+complicated design, since most of the computation has to be done statically (we
+can not benefit from the values computed during a runtime as interpreters). Also
+the verification of the transformed program may potentially become slower, since
+abstract operations have to be interpreted by the verification tool.  Both
+approaches enable pluggable abstract domains, by generalizing their common
+analysis, as will be shown in this chapter.
 
 Since \DIVINE is a powerful explicit-state model checker, we have decided not to
 complicate the precisely crafted interpreter (\DIVM), and take the second
@@ -113,7 +117,7 @@ beyond the scope of this thesis, but we permit concrete pointers to abstract val
 \end{definition}
 
 To set up an abstraction of \LLVM, we define an abstract domain~$A$. Additionally
-to concrete domain an abstract domain has to describe how concrete types are
+to concrete domain, an abstract domain has to describe how concrete types are
 mapped to abstract types, concrete values to abstract values and similarly
 concrete operations to abstract operations:
 \begin{definition}
@@ -138,8 +142,9 @@ concrete operations to abstract operations:
         type $t$, abstract instruction has to return type $\alpha(t)$. Similarly
         with operation arguments.}
 \end{itemize}
-
 \end{definition}
+
+\add{ rework lift and ower definition to only integer types }
 
 As an example of a simple domain, we define a three-valued domain $Z$.
 This domain simplifies all integer values to only three possible values:
@@ -155,7 +160,7 @@ in the domain $Z$ is straightforward:
   lift_T(v) =
   \begin{cases}
     \textit{zero},    & \text{if } 0 = v, \\
-    \textit{nonzero}, & \text{if } 0 \not = v. \\
+    \textit{nonzero}, & \text{if } 0 \not = v.\\
   \end{cases}
 \]
 
@@ -164,7 +169,7 @@ The function $lift$ for the aggregate types\sidenote{Note that in abstracted
 program aggregates may contain both types of values -- concrete and abstract.}
 is defined in per value manner:
 \[lift_{T_1 \times \dots \times T_n}(v_1 \times \dots \times v_n) =
-lift_{T_1}(v_1) \times \dotd \times lift_{T_n}(v_n).\]
+lift_{T_1}(v_1) \times \dots \times lift_{T_n}(v_n).\]
 
 Moreover we define a result of the $lift$ of a pointer as a pointer to the lifted base
 value (with a same amount of *).
@@ -177,8 +182,8 @@ bitwidth $bw$ of the concrete integer type $T$:
 \[
   lower_T(a) =
   \begin{cases}
-        \{0\},      & \text{if } a = \textit{zero},\\
-        \big\{1, \dots ,2^{bw - 1}\big\}, & \text{if } a = \textit{nonzero}, } \\
+        \{0\},                            & \text{if } a = \textit{zero},\\
+        \big\{1, \dots ,2^{bw - 1}\big\}, & \text{if } a = \textit{nonzero},\\
         \big\{0, \dots ,2^{bw - 1}\big\}, & \text{else}. \\
   \end{cases}
 \]
@@ -238,8 +243,13 @@ Zero __abstract_zero_add( Zero a, Zero b ) {
 }
 \end{minted}
 
-\add{ describe general binary and unary operations + add store, load and alloca
-to the appendis}
+Likewise, we define all binary and unary operations in the given domain. Notice
+that if the operation takes both abstract and concrete value (for example an
+addition of a constant to the abstract value) we need to bring both values to the same
+domain. To do so, we lift the concrete value and perform the operation in the
+abstract domain.
+
+\add{ describe store, load and alloca to the appendis}
 
 \subsection{Domain interactions} \label{sec:interactions}
 In cases when multiple domains interact, special care needs to be
@@ -258,12 +268,12 @@ when we know whether the value is \emph{true} or \emph{false}. But in case when
 the value is unknown, we need to do a nondeterministic choice and proceed in
 both possible directions.
 
-To unify this interaction with control flow between domains, we introduce a
-tristate domain (\emph{true, false, maybe}), and require all abstract domains to
-define an operation that takes their abstract Boolean and transforms it to the
-tristate domain. We will refer to it as \code{bool\_to\_tristate}. Hence before
-each branching on an abstract value, we need to transform it to a generalized form
-of tristate and according to the value of the tristate decide whether to do the
+To unify handling of interaction with control flow, we introduce a tristate
+domain (\emph{true, false, maybe}), and require all abstract domains to define
+an operation that takes their abstract Boolean and transforms it to the tristate
+domain. We will refer to it as \code{bool\_to\_tristate}. Hence before each
+branching on an abstract value, we need to transform it to a generalized form of
+tristate and according to the value of the tristate decide whether to do the
 nondeterministic choice.\sidenote{Nondeterministic choice is made only when the
 tristate has a value \emph{maybe}.} The abstract control flow will be further
 described in \autoref{subsec:cf}.

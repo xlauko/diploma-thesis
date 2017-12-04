@@ -90,6 +90,15 @@
 % ********************************************************************
 % Backmatter
 %*******************************************************
-\cleardoublepage\include{frontback/bibliography}
+\areaset[current]{\dimexpr\textwidth+\marginparwidth+\marginparsep}{\textheight}
+\setlength{\marginparwidth}{0pt}
+\setlength{\marginparsep}{0pt}
+{
+    \emergencystretch 3em
+    \cleardoublepage\include{frontback/bibliography}
+}
+\areaset[current]{312pt}{657pt}
+\setlength{\marginparwidth}{7.5em}%
+\setlength{\marginparsep}{2em}%
 \end{document}
 % ********************************************************************

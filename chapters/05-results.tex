@@ -62,69 +62,105 @@ With benchmarks we want to show, what are we able to transform and verify with \
 \SymDIVINE. We have measured how many benchmarks we were able to correctly
 verify in a timeframe of 15 minutes (as in \svcomp).
 
-In \autoref{tbl:results} we summarize each category for both tools. We count how
-many programs were correctly proved to be valid (\textbf{valid}), in how
-many benchmarks we have found a reachable error (\textbf{error}), number of
-timeouts (\textbf{timeout}) and number of failed verifications, either caused by
-error during the verification or reporting a wrong result (\textbf{failed}).
+In \autoref{tbl:resultsdiv} and \autoref{tbl:resultssym} we summarize each
+category for both tools. We count how many programs were correctly proved to be
+valid (\textbf{valid}), in how many benchmarks we have found a reachable error
+(\textbf{error}), number of timeouts (\textbf{timeout}) and number of failed
+verifications, either caused by error during the verification (\textbf{unknown})
+or reporting a wrong result (\textbf{wrong}).
 
 \begin{table}
-\checkoddpage
-\edef\side{\ifoddpage l\else r\fi}
-\makebox[\textwidth][\side]{
-\begin{minipage}[bt]{\fullwidth}
   \begin{center}
-    \setlength{\tabcolsep}{0.5em}
-    \begin{tabularx}{\textwidth}{l r r r r r X r r r r}
+    \begin{tabularx}{\textwidth}{l r r r r r r }
       \toprule
-      & ~ & \multicolumn{4}{c}{\DIVINE + transformation} & ~ & \multicolumn{4}{c}{\SymDIVINE} \\
-      \cmidrule(l){3-6}
-      \cmidrule(l){8-11}
-      & & valid & error & timeout & failed & & valid & error & timeout & failed \\
+      & ~ & \multicolumn{5}{c}{\DIVINE + transformation} \\
+      \cmidrule(l){3-7}
+        & & valid & error & timeout & unknown & wrong \\
       \midrule
-      pthreads &        & $0$ & $0$ & $0$ & $0$ &   & $0$ & $0$ & $0$ & $0$  \\
-      loops &           & $1$ & $15$ & $13$ & $2$ & & $7$ & $11$ & $12$ & $1$  \\
-      recursion &       & $4$ & $14$ & $22$ & $0$ & & $2$ & $11$ & $27$ & $0$  \\
-      bitvector &       & $7$ & $1$ & $24$ & $12$ & & $6$ & $3$ & $35$ & $0$  \\
-      product-lines &   & $0$ & $0$ & $0$ & $0$ &   & $0$ & $0$ & $0$ & $0$  \\
+        pthreads &        & $0$ & $0$  & $0$  & $0$  & $0$ \\
+        loops &           & $1$ & $16$ & $13$ & $0$  & $1$ \\
+        recursion &       & $4$ & $14$ & $22$ & $0$  & $0$ \\
+        bitvector &       & $7$ & $1$  & $24$ & $12$ & $0$ \\
+        product-lines &   & $0$ & $0$  & $0$  & $0$  & $0$ \\
       \midrule
       \midrule
-      overall &         & $12$ & $30$ & $59$ & $14$ &   & $15$ & $25$ & $74$ & $1$  \\
+        overall &         & $12$ & $31$ & $59$ & $12$ & $1$ \\
       \bottomrule
     \end{tabularx}
   \end{center}
-    \caption{Comparison of \DIVINE and \SymDIVINE on \svcomp benchmarks.}
-  \label{tbl:results}
-\end{minipage}}
+  \caption{Evaluation of \DIVINE with transformation on \svcomp benchmarks.}
+  \label{tbl:resultsdiv}
+\end{table}
+\begin{table}
+  \begin{center}
+    \begin{tabularx}{\textwidth}{l r r r r r r }
+      \toprule
+      & ~ & \multicolumn{5}{c}{\SymDIVINE} \\
+      \cmidrule(l){3-7}
+        & & valid & error & timeout & unknown & wrong \\
+      \midrule
+        pthreads &        & $0$ & $1$  & $4$  & $0$  & $1$ \\
+        loops &           & $7$ & $11$ & $12$ & $0$  & $1$ \\
+        recursion &       & $2$ & $11$ & $27$ & $0$  & $0$ \\
+        bitvector &       & $6$ & $3$  & $35$ & $0$ & $0$ \\
+        product-lines &   & $0$ & $0$  & $0$  & $0$  & $0$ \\
+      \midrule
+      \midrule
+        overall &         & $15$ & $26$ & $78$ & $0$ & $2$ \\
+      \bottomrule
+    \end{tabularx}
+  \end{center}
+  \caption{Evaluation of \SymDIVINE on \svcomp benchmarks.}
+  \label{tbl:resultssym}
 \end{table}
 
 In all benchmarks the transformation successfully finishes in a order of
 seconds. But differences between tools have shown during the verification.
 Surprisingly \SymDIVINE competes with \DIVINE quite well. Why is it so?
 
-Even though \DIVINE utilize a $\tau$-reduction and faster \LLVM interpreter the
-bottleneck of verification is in interface with an \SMT solver. For each \SMT
-query \DIVINE spawns a new process with a solver, and that requires nontrivial
-amount of time. Also a computation with the solver is done ineffectively via a string stream.
+Even though \DIVINE utilizes a $\tau$-reduction and faster \LLVM interpreter,
+the bottleneck of verification is an interface with an \SMT solver. For each
+\SMT query \DIVINE spawns a new process with a solver, and that requires
+nontrivial amount of time. Moreover, a communication with the solver is
+performed ineffectively via a string stream.
 
 In \SymDIVINE, the process with solver is maintained during the entire verification,
-hence it saves a time of process creation. Moreover, the communication with solver
-is treated by a dedicated interface, which is faster. Additionally, \SymDIVINE
-utilize a caching of queries.
+hence it saves a time of a process creation. Moreover, the communication with
+the solver is treated by a dedicated interface, which is faster. Additionally, \SymDIVINE
+utilizes a caching of queries.
 
 Hence, \SymDIVINE can explore a state-space much more faster (around 200 states
 per second), but it encounters larger state spaces, because of missing state
-space reduction techniques. On the other hand, \DIVINE proceeds slower (10
+space reduction techniques. On the other hand, \DIVINE proceeds slower (around 10
 states per second), but profits from smaller state spaces.
 
-In the results, we can see that \DIVINE failed in a few cases. Fails in
-bitvector category were caused by some error in the \DIVINE. Fails in loop
-category were caused by a false positive result. In this case, we presume that
-an implementation of symbolic domain contains a bug.
+Interestingly in benchmarks that contains an error, the results were almost
+incomparable, because depending on the direction of the exploration algorithm,
+the error can be found immediately or after a few thousands of states. This
+phenomenon occurs with both tools in multiple benchmarks:
+  \begin{center}
+      \setlength{\tabcolsep}{0.5em}
+      \begin{tabularx}{\textwidth}{l r r r X r r }
+      \toprule
+        & ~ & \multicolumn{2}{c}{\DIVINE} &  & \multicolumn{2}{c}{\SymDIVINE} \\
+        \cmidrule(l){3-4} \cmidrule(l){6-7}
+        & ~ & time & states &  & time & states \\
+      \midrule
+          \code{Ackermann02\_false} & & $8s$  & $56$   &    & $17s$  & $410$ \\
+          \code{id\_o200\_false}    & & $55s$ & $609$  &    & $1s$   & $3$ \\
+          \code{id\_o1000\_false}   & & $12m 56s$ & $3009$  &    & $1s$   & $3$ \\
+          \code{byte\_add\_false}   & & $7m 2s$ & $232$  &    & $6s$   & $361$ \\
+      \bottomrule
+    \end{tabularx}
+  \end{center}
+
+
 
 \add{ add qunatitative plot of benchmarks }
 
 \add{ add description of plots }
+
+\add{ add reference to data and tables }
 
 \section{Data structures}
 
@@ -132,16 +168,16 @@ The data structure benchmarks show the greatest contribution of a symbolic
 approach. By symbolic representation of elements in data structures we can
 verify all possible behaviours for given amount of inputs. In these benchmarks
 we will demonstrate how much time the transformation takes and how much time
-\DIVINE spends in verification process. Because these benchmarks are in \Cpp, we
-can not compare results with \SymDIVINE.
+\DIVINE spends in the verification process. We will not provide a comparison
+with \SymDIVINE, because it is not able to verify this type of programs.
 
 In all benchmarks we will try to verify insertions and deletions of arbitrary
 values from the data structures. The data structures will be stored on the
 stack, because we are limited in transformation by dynamic memory allocation.
 We set naming convention for benchmarks as \code{\{name\}-\{num. of
-insertion\}-\{num. of deletions\}-\{V/E for validity or error\}}.
+insertion\}-\{num. of deletions\}-\{V/E for validity or an error\}}.
 
-\begin{table}
+\begin{table}[!h]
   \begin{center}
     \begin{tabularx}{\textwidth}{l r r r}
       \toprule
@@ -171,18 +207,18 @@ insertion\}-\{num. of deletions\}-\{V/E for validity or error\}}.
   \caption{Benchmarks of insertions and deletions from the data
     structures. A~name of benchmark represents a data structure, number of
     insertions and number of deletions. \code{V} or \code{E} at the end of
-    name denotes whether the benchmark is valid or contains error.}
+    name denotes whether the benchmark is valid or an contains error.}
 \end{table}
 
-From the results we can see that bottleneck is still a verification. Although,
+From the results we can see that bottleneck is still a verification. Even though,
 we have destroyed the data nondeterminism, we have brought a control flow
 nondeterminism because of nondeterministic choices on branches. The transformation
-time is steadily around 10seconds. An average speed of verification is 2 states
+time is steadily around 10 seconds. An average speed of verification is 2 states
 per second. We believe that this is consequence of slow \API between the model
 checker and the \SMT solver. Since \SymDIVINE was able to generate 200 states
-per seconds in average, with much less optimized exploration algorithm. Hence we
-believe that in future we can optimize the algorithm to cope with larger state
-spaces in reasonable time.
+per seconds in an average, with much less optimized exploration algorithm. Hence we
+believe that in the future we can optimize the algorithm to cope with larger state
+spaces in a reasonable time.
 
 In benchmarks of the \AVL tree, we can see that despite the increasing number of inputs
 the transformation time stays the same, but the verification time exponentially
@@ -190,14 +226,15 @@ grows. The exponential growth is caused by the nature of the \AVL tree. When we
 are inserting an arbitrary value we have to branch the state space on each
 comparison of the inserted value and node into which we are inserting. Branching
 creates two possibilities, first when the value is inserted into the left
-subtree and second for the right subtree. This way, we create during
+subtree and second for the right subtree. This way, we create during a
 verification all possible shapes of the \AVL tree for given amount of elements.
 A similar phenomenon appears in other data structures, where the algorithm branches
 depending on the inserted value.
 
 But since the algorithms on these data structures are simple, the most of errors
 are shallow and can be found much more faster than proving of correctness of
-the algorithms.
+the algorithms. Note the difference of time in benchmarks
+\code{sorted-list-3-0-V} and \code{sorted-list-3-0-V}.
 
 During the evaluation we have encountered the qualities of the proposed
 approach, because besides the verification of the program we have verified the
