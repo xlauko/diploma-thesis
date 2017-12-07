@@ -25,15 +25,17 @@ Moreover, to prove the capabilities of the transformation, we will benchmark
 verification of basic data structures, specifically binary trees and the more
 complicated \AVL tree.
 
-All measurements were performed on \dots
-\add{add description of machine ? }
+All measurements were performed on machine with 24-core cpu (\code{Xeon E5-2630 v2
+@ 2.60GHz}), and sufficient amount of memory 125 GB.\sidenote{Neither of
+benchmarks have reached this bound.} We have restricted benchmarks to use
+only 4 cores.
 
 \section{\textsc{sv-comp} benchmarks}
 
 Out of all \svcomp benchmarks, we have chosen only those that contain
 nondeterminism on integers. The rules of \svcomp define a set of builtins for the
 verification tool, such as assume, assert and nondeterministic
-input~\cite{svcomp}. We have implemented these intrinsics using the annotations.
+input~\cite{svcomp}. We have implemen\-ted these intrinsics using the annotations.
 For example, the implementation of \code{\_\_VERIFIER\_nondet\_int()} is as
 follows:
 

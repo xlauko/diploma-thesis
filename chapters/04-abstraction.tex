@@ -1411,14 +1411,17 @@ symbolic values $p_k$ is considered.\sidenote{Rest of the formula tree is hidden
 behind a special pointer in \DIVINE, which is not included in the memory shape
 comparison.}
 
-Symbolic variables are created as raw inputs to the program. We mark them with a
-numbers in a sequence as we encounter them during the interpretation. Hence,
-when we compare two states, we can match the symbolic values by their indices. We
-denote symbolic variables of both states as $v_1, \dots, v_n$. The values $p_1,
-\dots, p_k$ in the state $s_1$ and $\widehat{p}_1, \dots, \widehat{p}_k$ in
-state $s_2$ are results of operations on the symbolic values. From the logic
-point we consider them as nullary functions, these functions are predicates over
-the symbolic values. For example $p_1$ defines a nullary function $v_1 + 1$.
+Semantically, we consider input values to come from a single source. As they are
+encountered during the interpretation, we number them in linear order. Hence,
+when comparison two states, input values are paired according to this
+given order.\sidenote{In this way, we distinguish when a parallel program loads
+two values in different order, even though it does not depend on the order of
+the loads.} We denote symbolic variables of both states as $v_1, \dots, v_n$.
+The values $p_1, \dots, p_k$ in the state $s_1$ and $\widehat{p}_1, \dots,
+\widehat{p}_k$ in state $s_2$ are results of operations on the symbolic values.
+From the logic point we consider them as nullary functions, these functions are
+predicates over the symbolic values. For example $p_1$ defines a nullary
+function $v_1 + 1$.
 
 Comparing these states, we compare the explicit values directly (i.e.~$c_i =
 \widehat{c}_i$ for all the explicit values in the states).  When explicit parts
@@ -1459,7 +1462,14 @@ values of $v_1, v_2, v_3$.
 Hence to check whether \DIVINE encounters a new state $s$, we query the \SMT solver
 for equality with all already reached states in the same control location with the same memory shape.
 
-\add{ comparison to symdivine }
-\add{ add chapter summary }
+In comparison to \SymDIVINE, we create simpler queries to an \SMT solver.  This
+is because our equality check contains only one inplict existential quantifier
+in compare to an alternation of two quantifiers used in \SymDIVINE formula
+$\notsubseteq$ (see \autoref{subsec:equality}). A difference is created by
+numbering on the input values in \DIVINE, which match the corresponding inputs
+during the equality check. Whereby \SymDIVINE do not utilize numbering on the
+inputs and checks all possible pairings of them (using a quantifier in a
+formula). In this way, \SymDIVINE can merge more states, but for the cost of
+more expensive equality checks.
 
 
