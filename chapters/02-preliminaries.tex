@@ -194,7 +194,7 @@ a command, an initial state and a final state.
 \end{definition}
 
 \noindent
-Since \LLVMIR semantics prevents unnamed value creation, we don't need to
+Since \LLVMIR semantics prevents unnamed value creation, we don not need to
 bother with expression semantics. The only state mutators are instructions, which are
 semantically atomic and operate only on existing named values. Moreover,
 instructions may mutate at most a single value in the program state. Hence, the
@@ -326,7 +326,7 @@ that variable $x$ will be eventually greater then 42. To verify such a property
 an automata-theoretic approach is used \cite{Vardi96}. In this approach, we have
 to denote accepting edges by $acc$ mark. We say that a run is accepting if it
 contains infinitely many accepting edges. To check whether a program satisfies a
-temporal property $\varphi$, we don not have to decide whether all runs starting
+temporal property $\varphi$, we do not have to decide whether all runs starting
 from $s_0$ satisfy $\varphi$, but we can only check whether there does not exist
 a run satisfying~$\neg \varphi$. To do so, we check whether there exists an
 accepting run for property $\neg \varphi$, if not then $\varphi$ hold for the
@@ -392,9 +392,8 @@ the original transition system, we want to have an error transition in the
 abstract system between the corresponding abstract states).
 
 \begin{example} \label{ex:errtrans}
-By abstraction of a transition system on the left, we merge a transitions from
-original states $s_1$ and $s_2$ into a single transition. This transition
-carries a union of actions of original transitions.
+Performing an abstraction on the transition system on the left, we group a transitions from
+original states $s_1$ and $s_2$.
 \begin{center}
 \resizebox{\textwidth}{!}{
 \begin{tikzpicture}[->,>=stealth']
@@ -415,20 +414,20 @@ carries a union of actions of original transitions.
     \node [state, right = 2 cm of s3] (sw1) {$\{s_0, s_2\}$};
     \node [state, right = 1.5 cm of sw1] (sw2) {$\{s_3\}$};
 
+    \draw[flow] (s1) -- (s3) node [midway, above = 1pt] {$\emptyset$};
+    \draw[flow] (s2) -- (s3) node [midway, below = 1pt, sloped] {$\{err\}$};
+    \draw (sw1) edge[out=35, in=145, flow] node [midway, below = 1pt] {$\emptyset$} (sw2);
+    \draw (sw1) edge[out=-35, in=-145, flow] node [midway, below = 1pt,name=err] {$\{err\}$} (sw2);
+
     \begin{pgfonlayer}{background}
-        \node [fun, label = {$\widehat{M}$}, fit = (sw1) (sw2)] (asp) {};
+        \node [fun, label = {$\widehat{M}$}, fit = (sw1) (sw2) (err)] (asp) {};
     \end{pgfonlayer}
 
-    \draw [flow] (s1) -- (s3) node [midway, above = 1pt] {$\emptyset$};
-    \draw[flow] (s2) -- (s3) node [midway, below = 1pt, sloped] {$\{err\}$};
-    \draw[flow] (sw1) -- (sw2) node [midway, above = 1pt] {$\{err\}$};
     \draw[flow, very thick, shorten >= 7pt, shorten <= 7pt] (sp.east |- asp.west) -- (asp.west) node [midway, above = 1pt] {$\alpha$};
 \end{tikzpicture}
 }
 \end{center}
 \end{example}
-
-\add{ what about merged edges - multi edge }
 
 Once we have an abstract transition system $\widehat{M}$, model checking is
 straightforward. Exploration of the abstract state space is done in the same

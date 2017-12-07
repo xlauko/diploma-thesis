@@ -93,28 +93,38 @@ since pointer analysis is beyond the scope of this thesis, but we permit
 concrete pointers to abstract values.
 \begin{definition}
 A set of concrete scalar types $S$ is a set of all integer types $S = \{
-s_i \mid i \in \mathbb{N} \}$, where $i$ is the bitwidth of the integer type
+s_i \mid i \in \mathbb{N}^+ \}$, where $i$ is the bitwidth of the integer type
 $s_i$.
 \end{definition}
-\add{ add text }
-\begin{definition}
-    The set of considered concrete types, called $T_C$, is defined inductively as follows:
-\begin{itemize}
-    \item all scalar types are concrete types $S \subseteq T_C$,
-    \item if types $t_1, \dots, t_n \in T_C$ then an aggregate type composed of
-        them is also concrete type $t_1 \times \dots \times
-        t_n~\in~T_C$,\sidenote{A \code{void} type corresponds to an empty product
-        of types.}
-    \item if $t \in T_C$ then pointer to it is also a concrete type $t^* \in T_C$.
-\end{itemize}
-\end{definition}
+From the scalar types, we want to built all possible pointer types and
+aggregate types. We denote a pointer to type $t$ as $t*$, and an aggregate type
+consisting of types $t_1, \dots, t_n$ as a tuple~$(t_1, \dots, t_n)$.
 
+\begin{definition}
+    For each set of scalar types $T$, we define a set of types $\Gamma_T$
+    inductively as follows:
+    \begin{itemize}
+        \item $T \subseteq \Gamma_T$, i.e.~each scalar type is contained in the
+            $\Gamma_T$,
+        \item if types $t_1, \dots, t_n \in \Gamma_S$ then
+            $(t_1, \dots, t_n) \in \Gamma_T$, where $n \in \mathbb{N}^+$,
+        \item if $t \in \Gamma_T$ then $t* \in \Gamma_S$.
+    \end{itemize}
+\end{definition}
+Note, that a $void$ type is not in the set of created types, because \LLVM does
+not permit a pointer to $void$ or an aggregate to contain a $void$. Hence we
+will add the $void$ type as an extra type in the domain definition. With a
+created type system we define a concrete domain, which assigns values to
+concrete types and defines a set of possible operations over them. A set of
+values in concrete domain consists of \LLVM values that correspond to the
+restricted type system.
 \begin{definition}
     A concrete domain $C$ is a tuple $(T_C, V_C, I_C, O_C)$, where:
     \begin{itemize}
-        \item $T_C$ is a set of types,
+        \item $T_C = \Gamma_S \cup \{ void \}$ is a set of concrete types,
         \item $V_C$ is a set of all possible \LLVM values,
-        \item $I_C \colon T_C \to \mathcal{P}(V_C)$ assigns to a type a set of values,
+        \item $I_C \colon T_C \to \mathcal{P}(V_C)$ assigns to a type a set of
+            all values, of that type,
         \item $O_C$ is a set of \LLVM operations, where each operation has
             input types and an output type.\sidenote{\LLVM operations are not
             functions, because they can have side effects.}
@@ -124,52 +134,38 @@ $s_i$.
 To set up an abstraction of \LLVM, we define an abstract domain~$A$. First we
 define an abstract type system $T_A$. Besides all abstract types, the abstract type
 system needs to define aggregates that may contain both abstract and concrete
-values. We require that for each concrete scalar exists an abstract scalar.
-A bijection between concrete scalars and abstract scalars is defined by $\alpha \colon S
-\to T_A$.
-\add{ TODO alpha recursion }
-\begin{definition}
-A set of abstract types $T_A$ is defined inductively:
-    \begin{itemize}
-        \item $S \subseteq T_A$ and $\alpha(S) \subseteq T_A$,
-        \item if types $t_1, \dots, t_n \in T_A$ then an aggregate type composed of
-        them is also concrete type $t_1 \times \dots \times
-        t_n~\in~T_A$,
-        \item if $t \in T_A$ then pointer to it is also a concrete type $t^* \in
-            T_A$.
-    \end{itemize}
-\end{definition}
+values. Moreover, we require that for each concrete scalar there exists an abstract scalar.
+We call a bijection between concrete scalars and abstract scalars $\alpha$. The
+function $\alpha$ can be naturally extended to all abstract types as $\overline{\alpha}$.
 
-
-Additionally to concrete domain, an abstract domain has to describe how concrete
+In addition to the concrete domain, an abstract domain has to describe how concrete
 types are mapped to abstract types, concrete values to abstract values and
 similarly concrete operations to abstract operations:
 \begin{definition}
     An abstract domain $A$ is defined as a tuple
-    \[(T_A, V_A, I_A, O_A, \alpha, (lift_s)_{s \in S}, (lower_s)_{s \in
+    \[(\alpha, T_A, V_A, I_A, O_A, (lift_s)_{s \in S}, (lower_s)_{s \in
     S}, lift_O),\] where:
 \begin{itemize}
-    \item $T_A$ is a set of abstract types,
+    \item $\alpha$ is a bijection between concrete and abstract scalars,
+    \item $T_A = \Gamma_{S \cup \alpha( S )} \cup \{void\}$ is a set of all abstract types,
+        which is generated from concrete and abstract scalars,
     \item $V_A$ is a set of all possible abstract values,
     \item $I_A \colon T_A \to \mathcal{P}(V_A)$ assigns to a type a set of
-        abstract values,
+        abstract values, of that type; we require that interpretation of
+        concrete types remains the same, i.e.~$\forall t \in T_C . I_A( t ) =
+        I_C( t )$,
     \item $O_A$ is a set of abstract operations,
-    \item $\alpha \colon S \to T_A$ is a bijection between concrete and abstract
-        scalars,
     \item $lift_s \colon I_C( s ) \to I_A( \alpha( s ) )$ is a function
         for scalar value abstraction of concrete type $s \in S$,
-    \item $lower_s \colon I_A( \alpha^{-1}( s ) ) \to \mathcal{P}( V_C( s ) )$ defines a
-        transformation from an abstract value to a corresponding set of concrete values,
+    \item $lower_s \colon I_A( \alpha( s ) ) \to \mathcal{P}( I_C( s ) )$ defines a
+        transformation from an abstract scalar value to a corresponding set of concrete values,
     \item $lift_O \colon O_C \to O_A$ is a transformation of
         concrete operations to abstract operations.\sidenote{$lift_O$ has to
         preserve a type correspondence of operations. When instruction returns
-        type $t$, the abstracted instruction has to return type $\alpha(t)$. Similarly
-        with operation arguments.}
+        type $t$, the abstracted instruction has to return type
+        $\overline{\alpha}(t)$. Similarly with operation arguments.}
 \end{itemize}
-    \add{ lift of operations what about alpha }
 \end{definition}
-
-\add{ rework lift and ower definition to only integer types }
 
 As an example of a simple domain, we define a three-valued domain $Z$.
 This domain simplifies all integer values to only three possible values:
@@ -177,8 +173,7 @@ This domain simplifies all integer values to only three possible values:
 The values represent whether the abstracted variable is zero, non-zero or that
 we do not know anything about the value of the variable (\emph{unknown}).
 Hence, to all abstract integer types correspond only those three possible
-values. The definition of $lift_s$ and $lower_s$ for integer types
-in the domain $Z$ is straightforward:
+values. The definition of $lift_s$ and $lower_s$ in the domain $Z$ is straightforward:
 \[
   lift_s(v) =
   \begin{cases}
@@ -187,7 +182,7 @@ in the domain $Z$ is straightforward:
   \end{cases}
 \]
 The function $lower_s$ is defined in similar way. When we lower an
-abstract value the result is a set that represents all values that were
+abstract value, the result is a set that represents all values that can be
 represented by the abstract value. The resulting values depends also on the
 bitwidth $bw$ of the scalar type $s$:
 \[
@@ -204,8 +199,8 @@ manipulate values from $V_Z$. We require that abstract operations preserve the
 type correspondence. For example, an abstract instruction $add_{i32}$ is
 abstracted \LLVM instruction that adds two 32-bit integers and returns 32-bit
 result. The type signature of the abstract operation has to correspond with the
-types in the domain $Z$: ${i32}_Z \times {i32}_Z \to {i32}_Z$. The operation
-semantics is then defined as:
+types in the domain $Z$: ${i32}_Z \times {i32}_Z \to {i32}_Z$. A semantic of
+operation is then defined as:
 \[
     add_{i32}(a, b) =
   \begin{cases}
@@ -217,7 +212,7 @@ semantics is then defined as:
 
 Our main goal is to allow the domain to be implemented in some common higher-level
 language and compiled into the verified program. For this purpose,
-we have chosen language \Cpp{}. To represent domain $Z$, we have created a
+we have chosen language \Cpp{}. To represent the domain $Z$, we have created a
 structure that holds a value and a bitwidth of an abstract value:
 \begin{minted}{cpp}
 struct Zero {
@@ -236,7 +231,7 @@ accesses, conversion operations and comparison instructions.
 
 Implementation of abstract instructions may be delivered as \Cpp{} functions over
 the corresponding abstract types. For example, an abstract equivalent of the
-\code{add} instruction in the domain $Z$ may be implemented as
+\code{add} instruction in the domain $Z$ is implemented as
 follows.\footnote{The whole domain $Z$ implementation can be found in thesis
 attachments, with only minor technical differences. Code in the text is cleaned
 for readability.}
@@ -255,11 +250,9 @@ Likewise, we define all binary and unary operations in the given domain. Notice
 that if the operation takes both an abstract and a concrete value (for example an
 addition of a constant to the abstract value) we need to bring both values to the same
 domain. To do so, we lift the concrete value and perform the operation in the
-abstract domain.
-
-Additionally, we define memory operations \code{load},
-\code{store} and \code{alloca}. Thier prototypes can be found in appendix.
-\add{ describe store, load and alloca to the appendix}
+abstract domain. Additionally, we define memory operations \code{load},
+\code{store} and \code{alloca}. Their prototypes and implementation can be found
+in attachments of the thesis.
 
 \subsection{Domain interactions} \label{sec:interactions}
 In cases when multiple domains interact, special care needs to be
