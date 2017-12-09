@@ -42,7 +42,7 @@ library and \textsc{posix} threading library suited for \DIVINE interpreter. To
 simulate the real world conditions, user's program is executed on top of \DIVINE
 operating system (\DIOS). Besides error handling, the main purpose of \DIOS is
 to manage threads and their scheduling. The communication between program and
-the \DIOS is done through a set of `syscalls` that are implemented by \DIOS.
+the \DIOS is performed through a set of `syscalls` that are implemented by \DIOS.
 
 The verification core consists of 2 main components: a \DIVINE virtual machine
 (\DIVM) that interprets \LLVM bitcode and provides a state space generator, and
@@ -102,7 +102,7 @@ further described in next section.
 
 \subsection{\DIVINE virtual machine}
 
-The \DIVINE virtual machine aims to provide a bare minimum for \LLVM-based model
+The \DIVINE virtual machine aims to provide a bare mini\-mum for \LLVM-based model
 checking. This involves execution of instructions, memory management and support
 for nondeterministic choice\sidenote{Nondeterministic choice
 is mainly used for scheduling of threads.} \cite{RockaiCB17}.
@@ -111,7 +111,7 @@ Besides interpretation of \LLVM bitcode, \DIVM stores a representation of a
 program state. The verification algorithm may ask \DIVM for successors of a
 given state. Afterwards \DIVM interprets \LLVM bitcode from that state until it
 reaches some interrupt.\sidenote{Interpreted \LLVM instructions then represent
-an edge between two states.} We will call this process edge generation. During
+an edge between two states.} We~call this process edge generation. During
 the interpretation \DIVM checks for potential property violation.
 
 A program state is represented by memory configuration encoded as a graph.
@@ -122,7 +122,7 @@ For precise verification, the runtime environment is equipped with scheduler,
 that defines an interleaving of threads. In order to simulate all interleavings,
 \DIVM delivers a hypercall for nondeterministic choice. This hypercall can be
 used from the runtime to branch the state space (i.e.~simulate all possible
-thread interleavings). Hence it will be useful also/
+thread interleavings). Hence it will be useful also
 for us to simulate a nondeterminism in abstracted programs.
 
 \begin{example}
@@ -157,7 +157,7 @@ the resulting state space, edges correspond to sequences of non-observable
 instructions.
 
 In \DIVM, a support for the $\tau$-reduction is implemented by
-\code{interrupt\_mem} and \code{interrupt\_cfl} hypercalls. These calls enable
+\code{in\-ter\-rupt\_mem} and \code{interrupt\_cfl} hypercalls. These calls enable
 signalization of an observable action to the state space generator and may cause
 an interrupt in the edge generation. The \code{interrupt\_mem} hypercall
 signals to \DIVM that a memory operation was executed. For signalization of
@@ -260,7 +260,7 @@ To extend \DIVINE abilities a prototype tool with capability of handling inputs
 was designed -- \SymDIVINE.  This tool is proof-of-concept that is based on the
 idea of \emph{control-explicit data-symbolic} model checking \cite{Barnat14}.
 Since this was only prototype project, we would like to incorporate its
-abilities into the fully powered \DIVINE. In following text we will describe
+abilities into the fully powered \DIVINE. In following text we describe
 differences between both tools, in order to recognize which parts need to be added
 to \DIVINE verification toolchain. Especially we want to detect, what are we
 able to simulate by transformed program directly and what parts of \SymDIVINE
@@ -291,6 +291,7 @@ representation of symbolic data may be quite challenging. Since \SymDIVINE aims
 for bit-precise verification a suitable choice is representation of data
 by fixed sized bit-vector formulae~\cite{Bauch14}.
 
+\emergencystretch=1em
 The theory over fixed sized bit-vectors is a many-sorted first-order theory with
 infinitely many sorts $\sort{n}$ corresponding to bit-vectors of length $n$. The
 only predicate symbols in the BV theory are $=$, $\leq_u$, and $\leq_s$,
@@ -301,8 +302,8 @@ respectively. Functions symbols in the theory are $+, \times, \div, \&, \mid,
 unsigned division, bit-wise and, bit-wise or, bit-wise exclusive or, left-shift,
 right-shift, concatenation, and extraction of $n$ bits starting from position
 $p$, respectively~\cite{Jonas17}. For a precise description of the syntax and
-semantics of the bit-vector theory, we refer the reader to Hadarean
-\cite{Hadarean14}.
+semantics of the bit-vector theory, we refer the reader to
+Hadarean~\cite{Hadarean14}.
 
 Since \SymDIVINE does not support dynamic memory allocation, representation
 of symbolic data becomes much simpler. In representation via bit-vector
@@ -460,12 +461,12 @@ execution continues in a sequential manner:
 
 \noindent
 On the other hand, in \SymDIVINE the \code{input} call generates a single multi
-state, where '\code{i}' represents a set of all possible 32-bit values. State
+state, where \code{i} represents a set of all possible 32-bit values. State
 space is then branched when a comparison instruction \code{icmp} is executed. In
-this case, two possible scenarios may happen. First, when '\code{i}' is smaller
+this case, two possible scenarios may happen. First, when \code{i} is smaller
 than 65535, a multi state with \code{b = 0}, as a result of comparison, is
 generated. Similarly for the second case, when the condition is satisfied, a
-state with appropriately constrained '\code{i}' is generated:
+state with appropriately constrained \code{i} is generated:
 
 \bigskip
 
@@ -528,7 +529,7 @@ stores this constrain to the path condition).
 
 To recognize that two multi states are equal, \SymDIVINE checks by \SMT solver
 whether the symbolic parts of two multi states represent the same set of values.
-Formally we will describe a multi state as a triplet $(c, m, \varphi)$, where
+Formally we describe a multi state as a triplet $(c, m, \varphi)$, where
 $c$ is a control part, $m$ is a memory shape and $\varphi$ is a symbolic part of
 the state~\cite{Jonas17}.
 
@@ -665,7 +666,7 @@ equality check and reachability check.
 In the transformation for \DIVINE we will need to reflect all those additions.
 Concretely we will define the formula representation of a state and insert
 the manipulations with it directly into the program. Similarly with path
-condition.  Further, an interface to \SMT solver needs to be added to
+condition. Further, an interface to \SMT solver needs to be added to
 \DIVINE's exploration algorithm in order to facilitate the \SMT queries.
 \end{summary}
 

@@ -4,18 +4,18 @@ In this chapter, we will introduce foundations for the proposed
 abstraction-based model checking approach. We will cover \LLVM bitcode as the
 input language for verification. Focus will be on the instruction set for
 value manipulation and its semantics, the \LLVM type system and the control flow
-of programs. Subsequently, the notion of model checking will be explored in
+of programs. Subsequen\-tly, the notion of model checking will be explored in
 the context of \LLVM programs. The exposition of model checking is mainly based on
 Petr Ročkai's dissertation \cite{Rockai15} and is further covered in \autoref{ch:divine}.
 
 \section{Intro to \LLVMIR} \label{sec:introtollvm}
-\marginpar{The \LLVM project is a collection of modular and
+
+Besides \marginpar{The \LLVM project is a collection of modular and
 reusable compiler and toolchain technologies. Despite its name -- low level
 virtual machine, \LLVM has little to do with traditional virtual
 machines. The name \LLVM itself is not an acronym; it is the full name
 of the project. \href{http://llvm.org/}{[llvm.org]}}
-
-Besides defining the semantics of bitcode in the form of \LLVMIR (intermediate
+defining the semantics of bitcode in the form of \LLVMIR (intermediate
 representation), \LLVM{}~\cite{LLVM:web} is primarily a toolkit for building
 compilers. It was first introduced by Ch. Lattner and V. Adve \cite{Lattner04}
 as an optimization framework. Nowadays, \LLVM represents a set of libraries for
@@ -45,8 +45,8 @@ basic blocks.
 \begin{definition}\label{def:basicblock}
 A basic block is a sequence of instructions that ends with a terminator
 instruction (such as a branch or function return). The computation of a program
-within a basic block is entirely sequential, performing instructions in their
-order of appearance in the block~\cite{Rockai15}.
+within a basic block is entirely sequential, performing instructions in order of
+their appearance~\cite{Rockai15}.
 \end{definition}
 
 Instructions from basic blocks manipulate values in virtual registers or
@@ -77,7 +77,7 @@ found in the \LLVM language reference manual \cite{LLVM:langref}. For better
 understanding of \LLVM bitcode, please look at the following example.
 
 \begin{example} \label{ex:factorial}
-shows an implementation of \code{factorial} in \Cpp{} and its corresponding \LLVM bitcode.
+An implementation of a function \code{factorial} in \Cpp{} is straightforward:
 
 \begin{minted}{cpp}
 int factorial(int n) {
@@ -86,6 +86,9 @@ int factorial(int n) {
     return n * factorial(n - 1);
 }
 \end{minted}
+
+\noindent
+A corresponding \LLVM bitcode naturally follows a logic of the previous program:
 
 \begin{minted}{llvm}
 define i32 @factorial(i32 %n) {
@@ -103,7 +106,7 @@ else:
 \end{minted}
 \end{example}
 
-\autoref{ex:factorial} demonstrates a code of \code{factorial} function. In
+\autoref{ex:factorial} demonstrates a code of \texttt{factorial} function. In
 \LLVM, the \code{factorial} function is defined as a global object (prefixed by
 \code{@}) \marginpar{To distinguish between register values and mutable
 address-taken variables \LLVM use two types of prefixes, \code{\%} for register
@@ -117,17 +120,15 @@ block, contains equality comparison (\code{icmp} instruction) of the input
 argument \code{\%n} and \code{0}, followed by a conditional branching
 instruction \code{br}.
 
-The branching instruction connects basic blocks and determines control flow
-depending on the value of register \code{\%1}. Branching jumps to basic
-block labeled with \code{\%then} if the value \code{\%1} is true,
-otherwise it jumps to \code{\%else} basic block. Besides branching, \LLVM
-uses \code{br} instructions to represent loops, by jumping backwards in the
-control flow graph.
-
-In the basic block \code{\%then}, value 1 is returned with \code{ret}
-instruction. Further, in the \code{\%else} branch, besides arithmetic operations
-(\code{sub} representing subtraction and \code{mul} multiplication), a
-recursive call is made using a \code{call} instruction.
+The branching instruction determines control flow depending on the value of
+register \code{\%1}.  It jumps to basic block labeled with \code{then} if the
+value \code{\%1} is true, otherwise it jumps to \code{else} basic block. Besides
+branching, \LLVM uses \code{br} instructions to represent loops, by jumping
+backwards in the control flow graph. In the basic block \code{then}, value 1 is
+returned with \code{ret} instruction. Further, in the \code{else} branch,
+besides arithmetic operations (\code{sub} representing subtraction and
+\code{mul} multiplication), a recursive call is made using a \code{call}
+instruction.
 
 \subsection{Type system} \label{subsec:typesystem}
 
@@ -270,10 +271,12 @@ language and producing \LLVMIR in the front-end part, optimization of produced
 \section{Model checking} \label{sec:mc}
 Model checking is an automated technique that, given a finite-state model of a
 system and a formal property, systematically checks whether the property holds
-for the model \cite{Baier08}. To define a model checking problem,
-we need to set up a transition system that describes the system to be
-verified. For our purposes, we will talk about transition-based model checking,
-which checks satisfaction of the property on the transitions of the system.
+for the model \cite{Baier08}.
+
+To define a model checking problem, we need to set up a transition system that
+describes the system to be verified. For our purposes, we will talk about
+transition-based model checking, which checks satisfaction of the property on
+the transitions of the system.
 
 \noindent
 \begin{minipage}{\textwidth}
@@ -305,7 +308,7 @@ sequence of states and actions starting from $s_0$ \cite{Baier08}:
     \xrightarrow[]{a_{i+1}} s_{i+1} \text{ for all } 0 \leq i.
 \]
 
-We will mark transitions by two types of actions -- $acc$ for an accepting edge,
+We mark transitions by two types of actions -- $acc$ for an accepting edge,
 and $err$ for an erroneous edge. One edge may contain both markings or neither of
 them, hence the set of all possible actions is $Act = \mathcal{P}(\{acc,
 err\})$.
@@ -319,7 +322,7 @@ is never reachable. This is achieved by exhaustive exploration of the transition
 system $M = (S, s_0, Act, T)$ of the program. To be precise we check whether all
 runs starting from $s_0$ do not contain $err$ mark on any of their edges.
 
-Besides safety properties, we may want to verify temporal properties
+Besides safety properties, we may want to verify temporal pro\-perties
 \cite{Manna92}. Temporal properties can describe not just properties about
 edges, but also properties about runs of a program. For example, we can check
 that variable $x$ will be eventually greater then 42. To verify such a property

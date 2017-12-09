@@ -111,9 +111,9 @@ consisting of types $t_1, \dots, t_n$ as a tuple~$(t_1, \dots, t_n)$.
         \item if $t \in \Gamma_T$ then $t* \in \Gamma_S$.
     \end{itemize}
 \end{definition}
-Note, that a $void$ type is not in the set of created types, because \LLVM does
-not permit a pointer to $void$ or an aggregate to contain a $void$. Hence we
-will add the $void$ type as an extra type in the domain definition. With a
+Note, that a $\void$ type is not in the set of created types, because \LLVM does
+not permit a pointer to $\void$ or an aggregate to contain a $\void$. Hence we
+will add the $\void$ type as an extra type in the domain definition. With a
 created type system we define a concrete domain, which assigns values to
 concrete types and defines a set of possible operations over them. A set of
 values in concrete domain consists of \LLVM values that correspond to the
@@ -121,7 +121,7 @@ restricted type system.
 \begin{definition}
     A concrete domain $C$ is a tuple $(T_C, V_C, I_C, O_C)$, where:
     \begin{itemize}
-        \item $T_C = \Gamma_S \cup \{ void \}$ is a set of concrete types,
+        \item $T_C = \Gamma_S \cup \{ \void \}$ is a set of concrete types,
         \item $V_C$ is a set of all possible \LLVM values,
         \item $I_C \colon T_C \to \mathcal{P}(V_C)$ assigns to a type a set of
             all values, of that type,
@@ -143,11 +143,11 @@ types are mapped to abstract types, concrete values to abstract values and
 similarly concrete operations to abstract operations:
 \begin{definition}
     An abstract domain $A$ is defined as a tuple
-    \[(\alpha, T_A, V_A, I_A, O_A, (lift_s)_{s \in S}, (lower_s)_{s \in
-    S}, lift_O),\] where:
+    \[(\alpha, T_A, V_A, I_A, O_A, (\lift_s)_{s \in S}, (\low_s)_{s \in
+    S}, \lift_O),\] where:
 \begin{itemize}
     \item $\alpha$ is a bijection between concrete and abstract scalars,
-    \item $T_A = \Gamma_{S \cup \alpha( S )} \cup \{void\}$ is a set of all abstract types,
+    \item $T_A = \Gamma_{S \cup \alpha( S )} \cup \{\void\}$ is a set of all abstract types,
         which is generated from concrete and abstract scalars,
     \item $V_A$ is a set of all possible abstract values,
     \item $I_A \colon T_A \to \mathcal{P}(V_A)$ assigns to a type a set of
@@ -155,12 +155,12 @@ similarly concrete operations to abstract operations:
         concrete types remains the same, i.e.~$\forall t \in T_C . I_A( t ) =
         I_C( t )$,
     \item $O_A$ is a set of abstract operations,
-    \item $lift_s \colon I_C( s ) \to I_A( \alpha( s ) )$ is a function
+    \item $\lift_s \colon I_C( s ) \to I_A( \alpha( s ) )$ is a function
         for scalar value abstraction of concrete type $s \in S$,
-    \item $lower_s \colon I_A( \alpha( s ) ) \to \mathcal{P}( I_C( s ) )$ defines a
+    \item $\low_s \colon I_A( \alpha( s ) ) \to \mathcal{P}( I_C( s ) )$ defines a
         transformation from an abstract scalar value to a corresponding set of concrete values,
-    \item $lift_O \colon O_C \to O_A$ is a transformation of
-        concrete operations to abstract operations.\sidenote{$lift_O$ has to
+    \item $\lift_O \colon O_C \to O_A$ is a transformation of
+        concrete operations to abstract operations.\sidenote{$\lift_O$ has to
         preserve a type correspondence of operations. When instruction returns
         type $t$, the abstracted instruction has to return type
         $\overline{\alpha}(t)$. Similarly with operation arguments.}
@@ -173,9 +173,9 @@ This domain simplifies all integer values to only three possible values:
 The values represent whether the abstracted variable is zero, non-zero or that
 we do not know anything about the value of the variable (\emph{unknown}).
 Hence, to all abstract integer types correspond only those three possible
-values. The definition of $lift_s$ and $lower_s$ in the domain $Z$ is straightforward:
+values. The definition of $\lift_s$ and $\low_s$ in the domain $Z$ is straightforward:
 \[
-  lift_s(v) =
+  \lift_s(v) =
   \begin{cases}
     \textit{zero},    & \text{if } 0 = v, \\
     \textit{nonzero}, & \text{if } 0 \not = v.\\
@@ -186,7 +186,7 @@ abstract value, the result is a set that represents all values that can be
 represented by the abstract value. The resulting values depends also on the
 bitwidth $bw$ of the scalar type $s$:
 \[
-  lower_s(a) =
+  \low_s(a) =
   \begin{cases}
         \{0\},                            & \text{if } a = \textit{zero},\\
         \big\{1, \dots ,2^{bw - 1}\big\}, & \text{if } a = \textit{nonzero},\\
@@ -196,13 +196,13 @@ bitwidth $bw$ of the scalar type $s$:
 
 The abstract operations $O_A$ correspond to \LLVM instructions, but they
 manipulate values from $V_Z$. We require that abstract operations preserve the
-type correspondence. For example, an abstract instruction $add_{i32}$ is
+type correspondence. For example, an abstract instruction $\mathit{add}_{i32}$ is
 abstracted \LLVM instruction that adds two 32-bit integers and returns 32-bit
 result. The type signature of the abstract operation has to correspond with the
 types in the domain $Z$: ${i32}_Z \times {i32}_Z \to {i32}_Z$. A semantic of
 operation is then defined as:
 \[
-    add_{i32}(a, b) =
+  \mathit{add}_{i32}(a, b) =
   \begin{cases}
     a,      & \text{if } b = \textit{zero},\\
     b,      & \text{if } a = \textit{zero},\\
@@ -232,7 +232,7 @@ accesses, conversion operations and comparison instructions.
 Implementation of abstract instructions may be delivered as \Cpp{} functions over
 the corresponding abstract types. For example, an abstract equivalent of the
 \code{add} instruction in the domain $Z$ is implemented as
-follows.\footnote{The whole domain $Z$ implementation can be found in thesis
+follows.\sidenote{Complete implementation of the domain $Z$ can be found in thesis
 attachments, with only minor technical differences. Code in the text is cleaned
 for readability.}
 
@@ -258,7 +258,7 @@ in attachments of the thesis.
 In cases when multiple domains interact, special care needs to be
 taken. We need to solve two major types of interactions.
 We have already seen an interaction between abstract domain and concrete in a
-form of a $lift$ and a $lower$. This interaction occurs when a concrete value
+form of a $\lift$ and a $\low$. This interaction occurs when a concrete value
 has engaged in the abstract instruction, hence it has to be lifted to the
 abstract domain.
 
@@ -353,7 +353,7 @@ int b = a * x;
 \end{tikzpicture}
 \end{minipage}}
 
-The trees are induced from the \SSA form of the program --- see that each
+The trees are induced from the \SSA form of the program -- see that each
 variable points to the root of its formula tree. The input values $x$ and $y$
 point to the nodes representing atoms the formula, i.e.~arbitrary values.
 However, $a$ and $b$ point to nodes that represents on the abstract values.
@@ -407,18 +407,6 @@ together in \autoref{fig:transformation}.
 \tikzstyle{every node}=[align=center, minimum width=1.25cm, minimum height=0.6cm]
 \tikzset{empty/.style = {minimum width=0cm,minimum height=1cm, text width = 2
     cm, color = pruss}}
-\tikzset{pass/.style = {
-    draw,
-    inner sep=3pt,
-    rounded corners= 3pt,
-    minimum width = 0cm,
-    minimum height = 1.5cm,
-    text width = 3cm,
-    node distance = 4cm,
-    text centered,
-    color=pruss,
-    fill=pruss!10
-}}
 
 \node [pass] (VPA) {Value\\propagation};
 \node [pass, right of = VPA] (AI) {Abstraction of instructions};
@@ -477,7 +465,7 @@ work schematically on control flow diagrams, on which the mapping to actual
 flow graph for the example program is displayed in \autoref{fig:exampleprogram}.
 
 \begin{example}\label{fig:exampleprogram}
-Control flow graph of the example program. The gray
+Control flow graph of the example program. The green
 boxes correspond to \LLVM basic blocks and the yellow diamond to conditional branching
 using the result of a corresponding Boolean expression.
 
@@ -511,11 +499,10 @@ using the result of a corresponding Boolean expression.
 }
 \end{center}
 \end{example}
-
 In the program with annotations of abstract variables, we need to examine all the
 reachable instructions from those variables. We call them the
 \emph{roots} of the abstraction. The examination of the reachable instructions is
-done in the first step by \emph{value propagation analysis}~(VPA).
+performed in the first step by \emph{value propagation analysis}~(VPA).
 
 In order to generalize the process and to enable additional analysis, we
 postpone abstract domain insertion until the entire program is analyzed and
@@ -548,18 +535,22 @@ result of VPA is a list of functions with corresponding abstract roots.
     When analyzing the function \code{foo} from \autoref{fig:exampleprogram}, we
     compute the reachable set of instructions using DFS from root the
     \code{x}~through all its uses \cite{LLVM:langref}. We investigate all
-    instructions where \code{x}~appears on the right hand side (marked green on
-    the picture below).
+    instructions where \code{x}~appears on the right hand side (marked orange on
+    the picture).
 
+    The analysis find a \code{store} to variable \code{y} (in instruction the
+    \code{y = x + 4}). Hence \code{y} is added to set of roots of the function
+    \code{foo} and lifted into the domain that \code{x} belongs to. Further the
+    analysis is repeated from the new root.
 \begin{center}
-\resizebox{.90\textwidth}{!}{
+\resizebox{.93\textwidth}{!}{
 \begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
 \tikzset{>=latex}
 \tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
-    \node [llvm, fill = apple!40] (declx) {\_SYM i32 x };
+    \node [clllvm] (declx) {\_SYM i32 x };
     \node [llvm, below = 0.5 cm of declx] (decly) {i32 y};
     \node [br, below = 0.5 cm of decly] (br) { x < a };
-    \node [llvm, fill = apple!40, below left = 0.5 cm of br] (brtrue) { y = x + 4 };
+    \node [clllvm, below left = 0.5 cm of br] (brtrue) { y = x + 4 };
     \node [llvm, below right = 0.5 cm of br] (brfalse) { y = bar(a, b) };
     \node [llvm, below = 1.5 cm of br] (retcall) { y = bar(a, y) };
     \node [llvm, below = 0.5 cm of retcall] (ret) { ret y };
@@ -579,32 +570,22 @@ result of VPA is a list of functions with corresponding abstract roots.
     \draw [flow, very thick] (brfalse.south) |- (retcall.east);
 \end{tikzpicture}}
 \end{center}
-
 \noindent
-Since the analysis found a \code{store} to variable \code{y} (in instruction the
-\code{y = x + 4}), \code{y} is added to set of roots of the function
-    \code{foo} and lifted into the domain that \code{x} belongs to. Further the
-analysis is repeated from the new root.
-
 During the propagation analysis of \code{y}, we find that \code{y} is an
 argument of the function \code{bar}, hence we need to analyze the function
-\code{bar} and compute the roots for it. Note that even though the function
-\code{bar} in the bottom basic block is called with an abstract argument, we want
-the call to \code{bar} in the \code{else} branch to remain explicit.
-
-
+\code{bar} and compute the roots for it. Resulting reachable instructions are illustrated below.
 \begin{center}
-\resizebox{.90\textwidth}{!}{
+\resizebox{.93\textwidth}{!}{
 \begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
 \tikzset{>=latex}
 \tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
-    \node [llvm, fill = apple!40] (declx) {\_SYM i32 x };
-    \node [llvm, fill = apple!40, below = 0.5 cm of declx] (decly) { i32 y};
+    \node [clllvm] (declx) {\_SYM i32 x };
+    \node [clllvm, below = 0.5 cm of declx] (decly) { i32 y};
     \node [br, below = 0.5 cm of decly] (br) { x < a };
-    \node [llvm, fill = apple!40, below left = 0.5 cm of br] (brtrue) { y = x + 4 };
+    \node [clllvm, below left = 0.5 cm of br] (brtrue) { y = x + 4 };
     \node [llvm, below right = 0.5 cm of br] (brfalse) { y = bar(a, b) };
-    \node [llvm, fill = apple!40, below = 1.5 cm of br] (retcall) { y = bar(a, y) };
-    \node [llvm, fill = apple!40, below = 0.5 cm of retcall] (ret) { ret y };
+    \node [clllvm, below = 1.5 cm of br] (retcall) { y = bar(a, y) };
+    \node [clllvm, below = 0.5 cm of retcall] (ret) { ret y };
 
     \begin{pgfonlayer}{background}
         \node [bb, fit = (declx) (decly)] (bb1) {};
@@ -621,6 +602,9 @@ the call to \code{bar} in the \code{else} branch to remain explicit.
     \draw [flow, very thick] (brfalse.south) |- (retcall.east);
 \end{tikzpicture}}
 \end{center}
+Note that even though the function
+\code{bar} in the bottom basic block is called with an abstract argument, we want
+the call to \code{bar} in the \code{else} branch to remain explicit.
 
 Another reachable instruction worth mentioning is \code{ret}, since it means
 that we need to change the signature of the function \code{foo} (returns an
@@ -637,7 +621,7 @@ Since the called function may have some annotated values, we will distinguish
 two types of roots: annotation-dependent and argument-dependent. Let us
 illustrate the meaning of this distinction of roots using an example.
 
-\begin{example} \label{ex:roots} Let's have following two functions.
+\begin{example} \label{ex:roots} Consider following two functions.
     \begin{minted}[linenos]{cpp}
 int bar(int arg) {
     _SYM int y;
@@ -700,12 +684,10 @@ void init(int *x) {
     _SYM int v;
     *x = v;
 }
-
 int main() {
     int x;
     init(&x);
 }
-
 \end{minted}
 
 To handle the backwards propagation, we mark the output argument as a root of the
@@ -841,9 +823,9 @@ that work with abstract values to be replaced by abstract intrinsics.
 Additionally all the required function prototypes have to be created, and
 appropriate abstract implementation inserted into them.
 
-From the abstraction roots computed in VPA we can do the transformation per
+From the abstraction roots computed in VPA we can perform the transformation per
 function. But first of all, the function prototypes are created. This is done
-because during the transformation we may need to call some abstract function,
+because we may need to call some abstract function during the transformation,
 that has not been abstracted yet, but to create a call of function its prototype
 is sufficient. This approach also elegantly deals with recursive calls.
 \begin{marginfigure}
@@ -892,7 +874,7 @@ declare %lart.sym.i32 @foo.2(i32, i32)
 declare %lart.sym.i32 @bar.2(i32, %lart.sym.i32)
 \end{minted}
 Since \LLVM requires distinct names for each function, indices are added in
-the order of prototype creation. The transformation is done per function,
+the order of prototype creation. The transformation is performed per function,
 specifically for each set of roots separately.
 
 From given roots we compute the reached set of instructions and sequentially
@@ -910,14 +892,14 @@ For example for the \code{add} operation, we create an abstract equivalent:
 \end{minted}
 
 When an instruction takes both a concrete and an abstract argument, we need to
-transform the concrete value into the correct domain. This is done by a \code{lift}
-operation, which creates an abstract constant (described in
+transform the concrete value into the correct domain. To do so, we perform an
+operation \code{lift}, which creates an abstract constant (described in
 \autoref{sec:absdom}).
 
 Besides within-domain operations\sidenote{Within-domain operations are those
 that take and return values from the same domain.}, we need to solve interactions between domains.
 As mentioned in \autoref{sec:interactions}, we need to transform in-domain
-Booleans into tristate manipulations. This has to be done to unify control flow
+Booleans into tristate manipulations. We do this to unify control flow
 handling when dealing with multiple domains. Let us consider the following
 condition to be abstracted:
 \begin{minted}{llvm}
@@ -934,9 +916,8 @@ Immediately we lower the tristate into a concrete Boolean in order to preserve
 deterministic choice if its value is uncertain i.e.~\emph{maybe}.}
 explicit control flow:
 \begin{minted}{llvm}
-%cond = call %lart.sym.i1
-             @lart.sym.icmp_sgt.i32(%lart.sym.i32 %a,
-                                    %lart.sym.i32 %b)
+%cond = call %lart.sym.i1 @lart.sym.icmp_sgt.i32(%lart.sym.i32 %a,
+                                                 %lart.sym.i32 %b)
 %tris = call %lart.tristate
              @lart.sym.bool_to_tristate(%lart.sym.i1 %cond)
 
@@ -945,11 +926,10 @@ br i1 %bool, label %then, label %else
 \end{minted}
 
 \begin{example}
-With created prototypes the whole transformation of the example program from
+With created prototypes the whole transformation of the program from
 \autoref{fig:exampleprogram}:
-    \add{ fix space }
 \begin{center}
-\resizebox{.90\textwidth}{!}{
+\resizebox{\textwidth}{!}{
 \begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
 \tikzset{>=latex}
 \tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
@@ -1012,6 +992,7 @@ stored (see \autoref{ex:storeagg}).
 An access to an aggregate type may look as follows (\Cpp{} on the left side and interesting
 part of the corresponding \LLVM on the right side):
 
+\bigskip
 \noindent
 \adjustbox{valign=t}{
 \begin{minipage}{.4\textwidth}
@@ -1053,13 +1034,11 @@ transformation the \LLVM bitcode looks like this:
 %S = type { i64 }
 ...
 %s = alloca %S
-%v = call %lart.sym.i64*
-          @lart.sym.alloca.i64()
+%v = call %lart.sym.i64* @lart.sym.alloca.i64()
 %a = getelementptr %S, %S* %s, i32 0, i32 0
 %b = bitcast i32* to %lart.sym.i64*
 %l = call %lart.sym.i64 @lart.sym.load.i64( %lart.sym.i64* %v )
-call void @lart.sym.store.i64( %lart.sym.i64 %l,
-                               %lart.sym.i64* %b )
+call void @lart.sym.store.i64( %lart.sym.i64 %l, %lart.sym.i64* %b )
 \end{minted}
 \end{example}
 
@@ -1102,7 +1081,7 @@ long as the abstract domain provides the right set of primitives. Specifically w
 need to be able to obtain a new restricted value from a value and a predicate
 instruction on which we want to base the restriction, along with the actual
 result of the predicate. For this purpose, we have established
-an \code{assume} operation:
+an \code{assume} operation.
 \begin{minted}{llvm}
 %x = call %lart.sym.i32
           @lart.sym.assume(%lart.sym.i32 %a,
@@ -1112,7 +1091,7 @@ an \code{assume} operation:
 Meaning that value \code{\%x} carries the restricted value of \code{\%a}
 according to the satisfied condition \code{\%cond}.
 
-The insertion of assumes is done in two steps: first, we restrict only the
+The insertion of assumes is performed in two steps: first, we restrict only the
 tristates that are directly lowered and used in conditional branching. By this
 transformation we simply denote which path is taken based on the nondeterministic
 choice. We then proceed in restriction of variables that are engaged in the condition
@@ -1120,7 +1099,7 @@ predicate. It may seem reasonable to carry on backwards in the program history t
 provide more precise restriction, but backwards constraint propagation has some
 limitations.
 
-Since the whole computation has to be done statically, it is not clear how far the
+Since the whole computation has to be performed statically, it is not clear how far the
 backwards look up should proceed. The other limitation is that, the propagation
 can only sufficiently analyze only the local static scope and cannot infer
 information from function arguments and global state.
@@ -1148,8 +1127,7 @@ basic block (illustrated in the \autoref{ex:assumes}).
 \begin{example} \label{ex:assumes}
 Analyzing the example program (from \autoref{fig:exampleprogram}), we need to
 restrict values depending on one conditional branching:
-\begin{center}
-\resizebox{.90\textwidth}{!}{
+\resizebox{\textwidth}{!}{
 \begin{tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=4em, <->]
 \tikzset{>=latex}
 \tikzset{empty/.style = {minimum width=0cm,minimum height=1cm}}
@@ -1160,13 +1138,13 @@ restrict values depending on one conditional branching:
     \node [llvm, below = 0.2 cm of lifta] (cond) { \textoverline{cond} =
     \textoverline{x} <\textsubscript{sym} \textoverline{a} };
     \node [br, below = 0.5 cm of cond] (br) { lower(\textoverline{cond}) };
-    \node [llvm, fill=apple!40, below left = 0.5 cm of br] (asstrue)
+    \node [clllvm, below left = 0.5 cm of br] (asstrue)
     {\textoverline{x} = assume(\textoverline{x} <\textsubscript{sym} \textoverline{a})};
     \node [llvm, below = 0.5 cm of asstrue] (lift4) { \textoverline{4} =
     lift\textsubscript{sym}(4) };
     \node [llvm, below = 0.2 cm of lift4] (brtrue) { \textoverline{y} =
     \textoverline{x} +\textsubscript{sym} \textoverline{4} };
-    \node [llvm, fill=apple!40, below right = 0.5 cm of br] (assfalse)
+    \node [clllvm, below right = 0.5 cm of br] (assfalse)
     {\textoverline{x} = assume(\textoverline{x} >=\textsubscript{sym}
     \textoverline{a})};
     \node [llvm, below = 0.5 cm of assfalse] (liftbar) { y = bar(a, b) };
@@ -1195,24 +1173,23 @@ restrict values depending on one conditional branching:
     \draw [flow, very thick] (brfalse.south) |- (retcall.east);
 \end{tikzpicture}
 }
-\end{center}
 
 In this simple case, proper assumes are inserted on the edges between branching
-and consequent basic blocks. Remark that a new basic blocks were created for each
-assume. Creation of new basic blocks does not make any diffence in this
+and consequent basic blocks. Remark that a new basic blocks were created for
+each assume. Creation of new basic blocks does not make any diffence in this
 program, but for more complicated functions with loops edge splitting needs
 to be done in order to enable $\varphi$ nodes creation.
 
-We may see, that assumes return a new value for restricted variable, that is
-used in following code. After an inspection we may notice that assume in
-\emph{false} branch is unnecessery since the value of restricted
-\code{\textoverline{x}} is never used afterwards, but we don't do any
+Notice, that each assume returns a new value for restricted variable, which
+is used in following code.  After an inspection we may observe that assume
+in \emph{false} branch is unnecessery since the value of restricted
+\code{\textoverline{x}} is never used afterwards, but we do not perform any
 optimizations in this case.
 \end{example}
 
 \begin{summary}
 When an abstract program executes a nondeterministic choice on a branch, it
-needs to constrain abstract values that appeard in the condition of the
+needs to constrain abstract values that appeared in the condition of the
 branching. For this purpose, we have introduced \code{assume} calls. Given
 the abstract value, the condition predicate, and the result of the
 predicate, an \code{assume} call computes the constrained value. In this
@@ -1240,7 +1217,7 @@ bitcode.
 
 From the domain implementation point of view, there are two things to be
 provided. First, the implementation of operations in the domain, including
-the special ones --- \code{assume}, \code{lift} and \code{bool\_to\_tristate}.
+the special ones -- \code{assume}, \code{lift} and \code{bool\_to\_tristate}.
 And secondly, the implementation of lowering function that, given an abstract
 \LART intrinsic and its arguments, produces a corresponding call to a domain
 operation.
@@ -1265,7 +1242,7 @@ The exact comparison is described in the next section.
 
 \begin{summary}
 In this section we have shown, how the actual domain is inserted into the
-program. Insertion is done in per-instruction manner: given an abstract
+program. Insertion is performed in per-instruction manner: given an abstract
 instruction (intermediate intrinsic call), we replace it by corresponding code
 that implements manipulation in a given domain. We have also illustrated
 problems with more complicated data representation.
@@ -1281,7 +1258,7 @@ symbolic states cannot be decided in an explicit manner. Therefore we need to
 employ an exploration algorithm similar to
 \SymDIVINE (see \autoref{sub:symdivine}).
 
-During interpretation of program, we need to check whether the state is
+During interpretation of a program, we need to check whether the state is
 reachable. This is done by querying an \SMT solver, to decide if the path
 condition is satisfiable. In current implementation a path condition is
 represented by a global formula, which is edited each time an assume is called.
@@ -1322,8 +1299,8 @@ implementation of the call \code{assume} in the symbolic domain
 the example, the path condition on the 4.~line is represented by two
 restrictions: $(x < 10)$ and $(x > 5)$.
 
-When a new state is generated we need to check whether the state is reachable,
-this is done similarly as in \SymDIVINE, by checking the satisfiability of the
+When a new state is generated we need to check whether the state is reachable.
+We do an equality check similarly as in \SymDIVINE, by checking the satisfiability of the
 path condition. The path condition for \SMT query is created as conjunction of
 all restrictions taken so far, i.e.~for line 4, the path condition looks like:
 \[ (x < 10) \wedge (x > 5).\]

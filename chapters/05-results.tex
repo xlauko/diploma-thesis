@@ -25,8 +25,8 @@ Moreover, to prove the capabilities of the transformation, we will benchmark
 verification of basic data structures, specifically binary trees and the more
 complicated \AVL tree.
 
-All measurements were performed on machine with 24-core cpu (\code{Xeon E5-2630 v2
-@ 2.60GHz}), and sufficient amount of memory 125 GB.\sidenote{Neither of
+All measurements were performed on machine with 24-core cpu (\code{Xeon E5-2630
+v2, 2.60GHz}), and sufficient amount of memory 125 GB.\sidenote{Neither of
 benchmarks have reached this bound.} We have restricted benchmarks to use
 only 4 cores.
 
@@ -61,7 +61,7 @@ partitioned into the following categories:
 
 Using those benchmarks, we have compared our implementation to \SymDIVINE. In
 particular, we have measured how many benchmarks we were able to correctly verify in a
-timeframe of 15 minutes (as in \svcomp).
+timeframe of 1 hour.
 
 In \autoref{tbl:resultsdiv} and \autoref{tbl:resultssym} we summarize each
 category for both tools. We count how many programs were correctly decided to be
@@ -78,14 +78,14 @@ or reporting a wrong result (\textbf{wrong}).
       \cmidrule(l){3-7}
         & & valid & error & timeout & unknown & wrong \\
       \midrule
-        pthreads &        & $0$ & $1$  & X & $0$  & $1$ \\
-        loops &           & $1$ & $13$ & X & $0$  & $2$ \\
-        recursion &       & $4$ & $15$ & X & $0$  & $0$ \\
-        bitvector &       & $7$ & $0$  & X & $2$  & $1$ \\
-        product-lines &   & $2$ & $2$  & X & $0$  & $0$ \\
+        pthreads &        & $0$ & $1$  & $4$ & $0$  & $1$ \\
+        loops &           & $4$ & $14$ & $5$ & $0$  & $0$ \\
+        recursion &       & $4$ & $15$ & $18$ & $3$  & $0$ \\
+        bitvector &       & $7$ & $2$  & $16$ & $2$  & $0$ \\
+        product-lines &   & $2$ & $6$  & $2$  & $0$  & $0$ \\
       \midrule
       \midrule
-        overall &         & X & X & X & X & X \\
+        overall &         & $17$ & $38$ & $45$ & $5$ & $1$ \\
       \bottomrule
     \end{tabularx}
   \end{center}
@@ -100,14 +100,14 @@ or reporting a wrong result (\textbf{wrong}).
       \cmidrule(l){3-7}
         & & valid & error & timeout & unknown & wrong \\
       \midrule
-        pthreads &        & $0$ & $1$  & X & X & $1$ \\
-        loops &           & $7$ & $12$ & X & X & $1$ \\
-        recursion &       & $2$ & $11$ & X & X & $0$ \\
-        bitvector &       & $7$ & $3$  & X & X & $0$ \\
-        product-lines &   & $12$ & $3$ & X & X & $0$ \\
+        pthreads &        & $0$ & $1$  & $4$  & $0$ & $1$ \\
+        loops &           & $6$ & $11$ & $4$  & $0$ & $2$ \\
+        recursion &       & $2$ & $11$ & $27$ & $0$ & $0$ \\
+        bitvector &       & $6$ & $4$  & $17$ & $0$ & $0$ \\
+        product-lines &   & $3$ & $7$  & $0$  & $0$ & $0$ \\
       \midrule
       \midrule
-        overall &         & X & X & X & X & X \\
+        overall &         & $17$ & $34$ & $52$ & $0$ & $3$ \\
       \bottomrule
     \end{tabularx}
   \end{center}
@@ -129,40 +129,35 @@ In \SymDIVINE, the process running the \SMT solver is maintained during the
 entire course of verification, hence it saves time on process creation.
 Moreover, the communication with the solver is via a dedicated interface,
 which is faster. Additionally, \SymDIVINE utilizes caching of queries.
-
 Hence, \SymDIVINE can explore a state-space much faster (around 200 states
 per second), but it encounters larger state spaces, because of missing state
 space reductions. On the other hand, \DIVINE proceeds more slowly (around 10
 states per second), but profits from smaller state spaces.
 
-Interestingly, in benchmarks that contain an error, the results were almost
-incomparable, because depending on the direction of the exploration algorithm,
-the error can be found immediately or after a few thousands of states. This
-phenomenon occurs with both tools in multiple benchmarks:
-  \begin{center}
-      \setlength{\tabcolsep}{0.5em}
-      \begin{tabularx}{\textwidth}{l r r r X r r }
-      \toprule
-        & ~ & \multicolumn{2}{c}{\DIVINE} &  & \multicolumn{2}{c}{\SymDIVINE} \\
-        \cmidrule(l){3-4} \cmidrule(l){6-7}
-        & ~ & time & states &  & time & states \\
-      \midrule
-          \code{Ackermann02\_false} & & $8s$  & $56$   &    & $17s$  & $410$ \\
-          \code{id\_o200\_false}    & & $55s$ & $609$  &    & $1s$   & $3$ \\
-          \code{id\_o1000\_false}   & & $12m 56s$ & $3009$  &    & $1s$   & $3$ \\
-          \code{byte\_add\_false}   & & $7m 2s$ & $232$  &    & $6s$   & $361$ \\
-      \bottomrule
-    \end{tabularx}
-  \end{center}
+\add{ add popis tabuliek }
 
-  \add{fix previous claim }
+For comparison we attach a quantitative plot of solved benchmarks by both tools
+in the \autoref{fig:accu}.
+Most of the benchmarks is solved in matter of seconds by both tools, but with
+higher timeframe, \DIVINE solve slightly more of them.
 
+\begin{figure}
+\includegraphics[width=\textwidth]{img/accum.pdf}
+    \caption{A comparison of \DIVINE (green) and \SymDIVINE (blue).}
+    \label{fig:accu}
+\end{figure}
+Further, we made a comparison of state space sizes (\autoref{fig:ss}). In this case, \SymDIVINE
+surprisingly competes well on the smaller benchmarks (less then 100 state), but
+on the larger state spaces \DIVINE has significantly better results.
 
-\add{ add qunatitative plot of benchmarks }
+\begin{figure}
+\includegraphics[width=\textwidth]{img/scatter.pdf}
+    \caption{A comparison of \DIVINE and \SymDIVINE state space sizes.}
+    \label{fig:ss}
+\end{figure}
 
-\add{ add description of plots }
-
-\add{ add reference to data and tables }
+Complete results can be found in the thesis archive. Here we have summarized
+only the significant data.
 
 \section{Data structures}
 
@@ -178,7 +173,7 @@ In all these benchmarks, we try to verify insertions and deletions of arbitrary
 values from the data structures. The data structures are stored on the
 stack, because we are limited in transformation by dynamic memory allocation.
 We use the following naming convention for the benchmarks: \code{\{name\}-\{num. of
-insertion\}-\{num. of deletions\}-\{V/E for validity or an \-error\}}.
+insertion\}-\{num. of deletions\}-\{V/E for validity or an\\error\}}.
 
 \begin{table}[!h]
   \begin{center}
@@ -186,24 +181,28 @@ insertion\}-\{num. of deletions\}-\{V/E for validity or an \-error\}}.
       \toprule
       Benchmark Name & Transformation & Verification & States \\
         \midrule
-        \code{sorted-list-3-0-E} & $8.52s$ & $0.02s$ & $14$ \\
-        \code{sorted-list-3-0-V} & $10s$ & $37s$ & $39$ \\
-        \code{sorted-list-4-0-V} & $11.6s$ & $2m 14s$ & $155$ \\
-        \code{sorted-list-5-0-V} & $9.04s$ & $8m 15s$ & $733$ \\
+        \code{sorted-list-3-0-V} & $2.10s$ & $37s$ & $39$ \\
+        \code{sorted-list-4-0-V} & $2.62s$ & $2m 14s$ & $155$ \\
+        \code{sorted-list-5-0-V} & $2.04s$ & $8m 15s$ & $733$ \\
+        \code{sorted-list-3-0-E} & $2.29s$ & $0.02s$ & $14$ \\
+        \code{sorted-list-4-0-E} & $2.17s$ & $58s$ & $31$ \\
+        \code{sorted-list-5-0-E} & $2.05s$ & $2m 57s$ & $57$ \\
         \midrule
 
-        \code{bintree-3-0-V} & $9.81s$ & $33.3s$ & $78$ \\
-        \code{bintree-3-1-V} & $12.3s$ & $33.9s$ & $124$ \\
-        \code{bintree-3-2-V} & $13s$ & $27s$ & $171$ \\
-        \code{bintree-3-3-V} & $12.1s$ & $16s$ & $192$ \\
+        \code{bintree-3-0-V} & $2.23s$ & $7s$ & $78$ \\
+        \code{bintree-4-0-V} & $2.77s$ & $1m 14s$ & $332$ \\
+        \code{bintree-5-0-V} & $3.22s$ & $4m 12s$ & $1846$ \\
+        \code{bintree-3-1-V} & $4.54s$ & $11.8s$ & $124$ \\
+        \code{bintree-3-2-V} & $3.91s$ & $22.3s$ & $168$ \\
+        \code{bintree-3-3-V} & $3.44s$ & $12.9s$ & $195$ \\
 
         \midrule
 
-        \code{avl-1-0-V} & $6.15s$ & $1.93s$ & $16$ \\
-        \code{avl-2-0-V} & $7.19s$ & $8.31s$ & $64$ \\
-        \code{avl-3-0-V} & $7.96s$ & $39s$ & $346$ \\
-        \code{avl-4-0-V} & $7.29s$ & $3m~27s$ & $1464$ \\
-        \code{avl-5-0-V} & $6.89s$ & $14m~16s$ & $9242$ \\
+        \code{avl-1-0-V} & $2.96s$ & $1.93s$ & $16$ \\
+        \code{avl-2-0-V} & $3.11s$ & $8.31s$ & $64$ \\
+        \code{avl-3-0-V} & $2.87s$ & $39s$ & $346$ \\
+        \code{avl-4-0-V} & $3.06s$ & $3m~27s$ & $1464$ \\
+        \code{avl-5-0-V} & $2.98s$ & $14m~16s$ & $9242$ \\
       \bottomrule
     \end{tabularx}
   \end{center}
@@ -236,7 +235,7 @@ branches depending on the inserted value.
 
 But since the algorithms on these data structures are simple, most of the errors
 are shallow and can be found quickly. Note, for instance, the difference of time
-in benchmarks \code{sorted-list\--3-0-V} and \code{sorted-list-3-0-V}.
+in benchmarks \code{sorted-list\\-3-0-V} and \code{sorted-list-3-0-E}.
 
 During the evaluation we have appreciated the qualities of the proposed
 approach, because besides the verification of the program we have verified the
