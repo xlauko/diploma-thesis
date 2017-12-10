@@ -1,0 +1,251 @@
+\areaset[current]{\dimexpr\textwidth+\marginparwidth+\marginparsep}{\textheight}
+\setlength{\marginparwidth}{0pt}
+\setlength{\marginparsep}{0pt}
+
+
+\chapter{\LLVM program transformations}\label{ch:appendixa}
+In \autoref{ch:abstraction} we have described the process of program abstraction.
+The entire chapter example was done on the \code{foo} function from the following code. We
+have added \code{main} and \code{bar} function for transformation to be more transparent.
+
+\begin{minted}{cpp}
+int bar(int a, int b ) { return a + b; }
+
+int foo(int a, int b) {
+    _SYM int x;
+    int y = 0;
+    if ( x < a ) {
+        y = x + 4;
+    } else {
+        y = bar(a, b);
+    }
+    y = bar(a, y);
+    return y;
+}
+
+int main() {
+    foo(5, 15);
+}
+\end{minted}
+
+\noindent
+Corresponding \LLVM bitcode is:
+
+\begin{minted}{llvm}
+define i32 @main() {
+  %call = call i32 @foo(i32 5, i32 15)
+  ret i32 0, !dbg !248166
+}
+
+define i32 @foo(i32 %a, i32 %b) {
+  %x = alloca i32
+  %y = alloca i32
+  call void @llvm.var.annotation(...) ;annotation of symbolic value
+  store i32 0, i32* %y
+  %0 = load i32, i32* %x
+  %cmp = icmp slt i32 %0, %a
+  br i1 %cmp, label %if.then, label %if.else
+if.then:
+  %1 = load i32, i32* %x
+  %add = add nsw i32 %1, 4
+  store i32 %add, i32* %y
+  br label %if.end
+if.else:
+  %call = call i32 @bar(i32 %a, i32 %b)
+  store i32 %call, i32* %y
+  br label %if.end
+if.end:
+  %2 = load i32, i32* %y
+  %call2 = call i32 @bar(i32 %a, i32 %2)
+  store i32 %call2, i32* %y
+  %3 = load i32, i32* %y
+  ret i32 %3
+}
+
+define i32 @bar(i32 %a, i32 %b) {
+  %add = add nsw i32 %a, %b
+  ret i32 %add
+}
+\end{minted}
+
+\noindent
+Instruction lifting transforms the program into the following form. Remark that
+it creates a new abstract version of \code{foo} and \code{bar}, named as
+'\code{foo.2}' and '\code{bar.2}'.\newpage
+
+\begin{minted}{llvm}
+define i32 @main() {
+  %0 = call %lart.sym.i32 @foo.2(i32 5, i32 15)
+  ret i32 0
+}
+
+define %lart.sym.i32 @foo.2(i32 %a, i32 %b) {
+  call void @__vmutil_interrupt()
+  %0 = call %lart.sym.i32* @lart.sym.alloca.i32()
+  %1 = call %lart.sym.i32* @lart.sym.alloca.i32()
+  %3 = call %lart.sym.i32 @lart.sym.lift.i32(i32 0)
+  call void @lart.sym.store.i32(%lart.sym.i32 %3, %lart.sym.i32* %1)
+  %4 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %0)
+  %5 = call %lart.sym.i32 @lart.sym.lift.i32(i32 %a)
+  %6 = call %lart.sym.i1 @lart.sym.icmp_slt.i32(%lart.sym.i32 %4, %lart.sym.i32 %5)
+  %7 = call %lart.tristate @lart.sym.bool_to_tristate(%lart.sym.i1 %6)
+  %8 = call i1 @lart.tristate.lower(%lart.tristate %7)
+  br i1 %8, label %if.then, label %if.else
+if.then:
+  %9 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %0)
+  %10 = call %lart.sym.i32 @lart.sym.lift.i32(i32 4)
+  %11 = call %lart.sym.i32 @lart.sym.add.i32(%lart.sym.i32 %9, %lart.sym.i32 %10)
+  call void @lart.sym.store.i32(%lart.sym.i32 %11, %lart.sym.i32* %1)
+  br label %if.end
+if.else:
+  %call = call i32 @bar(i32 %a, i32 %b)
+  %12 = call %lart.sym.i32 @lart.sym.lift.i32(i32 %call)
+  call void @lart.sym.store.i32(%lart.sym.i32 %12, %lart.sym.i32* %1)
+  br label %if.end
+if.end:
+  %13 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %1)
+  %14 = call %lart.sym.i32 @bar.2(i32 %a, %lart.sym.i32 %13)
+  call void @lart.sym.store.i32(%lart.sym.i32 %14, %lart.sym.i32* %1)
+  %15 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %1)
+  ret %lart.sym.i32 %15
+}
+
+define %lart.sym.i32 @_Z3barii.1543(i32 %a, %lart.sym.i32 %b) {
+  call void @__vmutil_interrupt(), !dbg !619444
+  %0 = call %lart.sym.i32 @lart.sym.lift.i32(i32 %a)
+  %1 = call %lart.sym.i32 @lart.sym.add.i32(%lart.sym.i32 %0, %lart.sym.i32 %b)
+  ret %lart.sym.i32 %1
+}
+\end{minted}
+
+\noindent
+Subsequent boolean constraint analysis inserts assumes after the branch
+instructions that are dependent on abstracted values:
+
+\begin{minted}{llvm}
+define i32 @main() {
+  %0 = call %lart.sym.i32 @foo.2(i32 5, i32 15)
+  ret i32 0
+}
+
+define %lart.sym.i32 @foo.2(i32 %a, i32 %b) {
+  call void @__vmutil_interrupt()
+  %0 = call %lart.sym.i32* @lart.sym.alloca.i32()
+  %1 = call %lart.sym.i32* @lart.sym.alloca.i32()
+  %3 = call %lart.sym.i32 @lart.sym.lift.i32(i32 0)
+  call void @lart.sym.store.i32(%lart.sym.i32 %3, %lart.sym.i32* %1)
+  %4 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %0)
+  %5 = call %lart.sym.i32 @lart.sym.lift.i32(i32 %a)
+  %6 = call %lart.sym.i1 @lart.sym.icmp_slt.i32(%lart.sym.i32 %4, %lart.sym.i32 %5)
+  %7 = call %lart.tristate @lart.sym.bool_to_tristate(%lart.sym.i1 %6)
+  %8 = call i1 @lart.tristate.lower(%lart.tristate %7)
+  br i1 %8, label %if.then, label %if.else
+if.then:
+  %9 = call %lart.sym.i32 @lart.sym.assume.i32(
+            %lart.sym.i32 %4, %lart.sym.i1 %6, i1 true)
+  %10 = call %lart.sym.i32 @lart.sym.assume.i32(
+             %lart.sym.i32 %5, %lart.sym.i1 %6, i1 true)
+  %11 = call %lart.sym.i1 @lart.sym.assume.i1(
+             %lart.sym.i1 %6, %lart.sym.i1 %6, i1 true)
+  br label %if.then.split
+if.then.split:
+  %12 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %0)
+  %13 = call %lart.sym.i32 @lart.sym.lift.i32(i32 4)
+  %14 = call %lart.sym.i32 @lart.sym.add.i32(%lart.sym.i32 %12, %lart.sym.i32 %13)
+  call void @lart.sym.store.i32(%lart.sym.i32 %14, %lart.sym.i32* %1)
+  br label %if.end
+if.else:
+  %15 = call %lart.sym.i32 @lart.sym.assume.i32(
+             %lart.sym.i32 %4, %lart.sym.i1 %6, i1 false)
+  %16 = call %lart.sym.i32 @lart.sym.assume.i32(
+             %lart.sym.i32 %5, %lart.sym.i1 %6, i1 false)
+  %17 = call %lart.sym.i1 @lart.sym.assume.i1(
+             %lart.sym.i1 %6, %lart.sym.i1 %6, i1 false)
+  br label %if.else.split
+if.else.split:
+  %call = call i32 @bar(i32 %a, i32 %b)
+  %18 = call %lart.sym.i32 @lart.sym.lift.i32(i32 %call)
+  call void @lart.sym.store.i32(%lart.sym.i32 %18, %lart.sym.i32* %1)
+  br label %if.end
+if.end:
+  %19 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %1)
+  %20 = call %lart.sym.i32 @bar.2(i32 %a, %lart.sym.i32 %19)
+  call void @lart.sym.store.i32(%lart.sym.i32 %20, %lart.sym.i32* %1)
+  %21 = call %lart.sym.i32 @lart.sym.load.i32(%lart.sym.i32* %1)
+  ret %lart.sym.i32 %21
+}
+
+define %lart.sym.i32 @bar.2(i32 %a, %lart.sym.i32 %b) {
+  call void @__vmutil_interrupt()
+  %0 = call %lart.sym.i32 @lart.sym.lift.i32(i32 %a)
+  %1 = call %lart.sym.i32 @lart.sym.add.i32(%lart.sym.i32 %0, %lart.sym.i32 %b)
+  ret %lart.sym.i32 %1
+}
+\end{minted}
+
+\newpage
+\noindent
+Further, we replace abstract instructions by calls to implementation of
+symbolic domain. The resulting program is fully transformed and during execution
+simulates manipulations with symbolic values.
+
+\begin{minted}{llvm}
+define i32 @main() {
+  %0 = call %Formula* @foo.2(i32 5, i32 15)
+  ret i32 0
+}
+
+define %Formula* @foo.2(i32 %a, i32 %b) {
+  call void @__vmutil_interrupt()
+  %0 = call %Formula** @__abstract_sym_alloca(i32 32)
+  %1 = call %Formula** @__abstract_sym_alloca(i32 32)
+  %2 = call %Formula* @__abstract_sym_lift(i64 0, i32 32)
+  call void @__abstract_sym_store(%Formula* %2, %Formula** %1)
+  %3 = call %Formula* @__abstract_sym_load(%Formula** %0, i32 32)
+  %4 = sext i32 %a to i64
+  %5 = call %Formula* @__abstract_sym_lift(i64 %4, i32 32)
+  %6 = call %Formula* @__abstract_sym_icmp_slt(%Formula* %3, %Formula* %5)
+  %7 = call %Tristate* @__abstract_sym_bool_to_tristate(%Formula* %6)
+  %8 = call i1 @__abstract_tristate_lower(%Tristate* %7)
+  br i1 %8, label %if.then, label %if.else
+if.then:
+  %9 = call %Formula* @__abstract_sym_assume(%Formula* %3, %Formula* %6, i1 true)
+  %10 = call %Formula* @__abstract_sym_assume(%Formula* %5, %Formula* %6, i1 true)
+  %11 = call %Formula* @__abstract_sym_assume(%Formula* %6, %Formula* %6, i1 true)
+  br label %if.then.split
+if.then.split:
+  %12 = call %Formula* @__abstract_sym_load(%Formula** %0, i32 32)
+  %13 = call %Formula* @__abstract_sym_lift(i64 4, i32 32)
+  %14 = call %Formula* @__abstract_sym_add(%Formula* %12, %Formula* %13)
+  call void @__abstract_sym_store(%Formula* %14, %Formula** %1)
+  br label %if.end
+if.else:
+  %15 = call %Formula* @__abstract_sym_assume(%Formula* %3, %Formula* %6, i1 false)
+  %16 = call %Formula* @__abstract_sym_assume(%Formula* %5, %Formula* %6, i1 false)
+  %17 = call %Formula* @__abstract_sym_assume(%Formula* %6, %Formula* %6, i1 false)
+  br label %if.else.split
+if.else.split:
+  %call = call i32 @bar(i32 %a, i32 %b)
+  %18 = sext i32 %call to i64, !dbg !619486
+  %19 = call %Formula* @__abstract_sym_lift(i64 %18, i32 32)
+  call void @__abstract_sym_store(%Formula* %19, %Formula** %1)
+  br label %if.end
+if.end:
+  %20 = call %Formula* @__abstract_sym_load(%Formula** %1, i32 32)
+  %21 = call %Formula* @bar.2(i32 %a, %Formula* %20)
+  call void @__abstract_sym_store(%Formula* %21, %Formula** %1)
+  %22 = call %Formula* @__abstract_sym_load(%Formula** %1, i32 32)
+  ret %Formula* %22
+}
+
+define %Formula* @bar.2(i32 %a, %Formula* %b) {
+  call void @__vmutil_interrupt()
+  %0 = sext i32 %a to i64
+  %1 = call %Formula* @__abstract_sym_lift(i64 %0, i32 32)
+  %2 = call %Formula* @__abstract_sym_add(%Formula* %1, %Formula* %b)
+  ret %Formula* %2
+}
+\end{minted}
+\areaset[current]{312pt}{657pt}
+\setlength{\marginparwidth}{7.5em}%
+\setlength{\marginparsep}{2em}%

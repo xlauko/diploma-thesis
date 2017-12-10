@@ -6,26 +6,26 @@ handling inputs by using symbolic model checking as introduced by Barnat et
 al.~in~\cite{Barnat14}. We will emphasize the differences between the
 explicit-state model checking algorithm and the symbolic model checking algorithm.
 The differences will be crucial in the next chapter where we will transform the
-program given to \DIVINE in such a way, that it will simulate the symbolic approach.
+program given to \DIVINE in such a way that it will simulate the symbolic approach.
 Hence \DIVINE will be able to verify programs with inputs.
 
 For the purpose of the transformation, only minimal knowledge of the architecture of
 \DIVINE is needed. Our interest is mostly in the \LLVM interpreter (\DIVM) and
-the exploration algorithm, since only they interacts with a transformed program.
+the exploration algorithm, since only they interact with a transformed program.
 Hence we will omit broader technicalities. Deeper description of \DIVINE can be
 found in a tool paper of latest release\sidenote{It is \DIVINE 4.0 at the time
 of writing this thesis.} \cite{Divine17} or on the project website
 \href{https://divine.fi.muni.cz/}{divine.fi.muni.cz}.
 
-At the end of the chapter we shortly summarize approaches of other verification
-tools, that use symbolic representation of data, and compare them to our approach.
+At the end of the chapter, we shortly summarize approaches of other verification
+tools, that use a symbolic representation of data, and compare them to our approach.
 
 \section{Model checking with \DIVINE}
 
 \DIVINE is a
-modular platform for verification of real world programs. The overall
+modular platform for verification of real-world programs. The overall
 architecture
-can be divided into 2 parts:
+can be divided into two parts:
 \begin{itemize}
     \item a~verification core that provides tools for \LLVM interpretation and
         state space exploration,
@@ -41,7 +41,7 @@ libraries. For user's program \DIVINE is distributed with a \Cpp{} standard
 library and \textsc{posix} threading library suited for \DIVINE interpreter. To
 simulate the real world conditions, user's program is executed on top of \DIVINE
 operating system (\DIOS). Besides error handling, the main purpose of \DIOS is
-to manage threads and their scheduling. The communication between program and
+to manage threads and their scheduling. The communication between the program and
 the \DIOS is performed through a set of `syscalls` that are implemented by \DIOS.
 
 The verification core consists of 2 main components: a \DIVINE virtual machine
@@ -97,7 +97,7 @@ further described in next section.
 \end{tikzpicture}
 }
 
-\caption{Layout of \DIVINE architecture.}\label{fig:architecture}
+\caption{Layout of a \DIVINE architecture.}\label{fig:architecture}
 \end{figure}
 
 \subsection{\DIVINE virtual machine}
@@ -109,7 +109,7 @@ is mainly used for scheduling of threads.} \cite{RockaiCB17}.
 
 Besides interpretation of \LLVM bitcode, \DIVM stores a representation of a
 program state. The verification algorithm may ask \DIVM for successors of a
-given state. Afterwards \DIVM interprets \LLVM bitcode from that state until it
+given state. Afterwards, \DIVM interprets \LLVM bitcode from that state until it
 reaches some interrupt.\sidenote{Interpreted \LLVM instructions then represent
 an edge between two states.} We~call this process edge generation. During
 the interpretation \DIVM checks for potential property violation.
@@ -140,18 +140,17 @@ In a code above, a nondeterministic choice creates a successor state for each
 \end{example}
 \subsection{State space reductions}
 
-In order to enable verification of real world programs, \DIVINE needs to employ
-some state space reduction technique. For this purpose a so called
+In order to enable verification of real-world programs, \DIVINE needs to employ
+some state space reduction technique. For this purpose a so-called
 $\tau$-reduction and heap symmetry-based reduction are used \cite{Rockai13,
 RockaiCB17}. \marginpar{$\tau$-reduction eliminates superfluous intermediate
 states and leave only those that are interesting for the verification.} It is
 demanded that state space reductions preserve all temporal properties
 verified by \DIVINE.
 
-In \LLVM, a large subset of instructions have no observable effect for other
+In \LLVM, a large subset of instructions has no observable effect for other
 threads. This holds for instructions that manipulate registers (registers are
-private for the executed function) and those instructions that manipulate only
-private memory of a thread. Hence \DIVINE does not need to emit a new state on
+private for the executed function) and those instructions that manipulate just private memory of a thread. Hence \DIVINE does not need to emit a new state on
 every interpreted instruction, but only when an observable action is reached. In
 the resulting state space, edges correspond to sequences of non-observable
 instructions.
@@ -164,9 +163,9 @@ signals to \DIVM that a memory operation was executed. For signalization of
 potential a loop in the program state space, the \code{interrupt\_cfl} hypercall
 is used.
 
-In the transformation we will use these hypercalls to notify the interpreter
+In the transformation, we will use these hypercalls to notify the interpreter
 that potential loop in the abstract state space may have occurred (i.e.~we need
-to insert them to the transformed program).
+to insert them into the transformed program).
 
 \subsection{Verification workflow}
 
@@ -176,9 +175,9 @@ transformed into a form suitable for \DIVM. In the second phase, the
 transformed program is processed by \DIVM and a verification algorithm.
 
 Since most of this thesis extends the preprocessing part, let us have a closer
-look on the program transformations. The transformations are similar to \LLVM
-optimization passes (they work in an \LLVM -to-\LLVM manner). They modify an
-input program in order to extend the capabilities of the model checker. For
+look at the program transformations. The transformations are similar to \LLVM
+optimisation passes (they work in an \LLVM -to-\LLVM manner). They modify an
+input program to extend the capabilities of the model checker. For
 example, verification of programs with weak memory models is done via a
 transformation \cite{Still16}, verification of programs with exceptions
 \cite{Still17} and minor optimizations like interrupt insertion for faster
@@ -190,8 +189,8 @@ tool}} The main motivation behind \LART is to provide preprocessing for \LLVM
 -based verification tools, simplifying their job by reducing the problem size
 without compromising soundness of verification.
 
-An abstraction tool, \LART was never fully implemented and till this thesis it
-was meant only as a proof of concept. The main aim of this thesis is to provide
+An abstraction tool, \LART was never fully implemented, and till this thesis, it
+was meant only as a proof of concept. The primary aim of this thesis is to provide
 a core analysis for \LART to be able to inject arbitrary abstraction into a
 program.
 
@@ -256,11 +255,11 @@ libraries. Then the bitcode is instrumented by \LART producing a suitable \LLVM 
 
 \section{Symbolic model checking with \SymDIVINE}\label{sub:symdivine}
 
-To extend \DIVINE abilities a prototype tool with capability of handling inputs
-was designed -- \SymDIVINE.  This tool is proof-of-concept that is based on the
+To extend \DIVINE abilities, a prototype tool with a capability of handling inputs
+was designed -- \SymDIVINE.  This tool is a proof-of-concept that is based on the
 idea of \emph{control-explicit data-symbolic} model checking \cite{Barnat14}.
 Since this was only prototype project, we would like to incorporate its
-abilities into the fully powered \DIVINE. In following text we describe
+abilities into the fully powered \DIVINE. In the following text, we describe
 differences between both tools, in order to recognize which parts need to be added
 to \DIVINE verification toolchain. Especially we want to detect, what are we
 able to simulate by transformed program directly and what parts of \SymDIVINE
@@ -270,25 +269,23 @@ needs to be incorporated into \DIVINE.
 
 In comparison to exhaustive enumeration of states in \DIVINE, a control-explicit
 data-symbolic approach tries to group states into sets, when they differ only in
-data values but not in control location. In this way \SymDIVINE is able to
+data values but not in control location. In this way, \SymDIVINE is able to
 represent inputs as sets of possible values. These sets, also called \emph{multi
 states}, are described by an explicit control location and symbolic
 representation of data (more precise description will be in
 \autoref{sec:multistates}). In \SymDIVINE, exploration algorithm works directly
 with multi states. In order to explore a state space, \SymDIVINE needs to be
 able to distinguish whether two multi states represent the same set of explicit
-states. Sadly this operation can be quite time-consuming. On the other hand
-symbolic approach may bring exponential memory savings and avoid state space
+states. Sadly this operation can be quite time-consuming. On the other hand, the symbolic approach may bring exponential memory savings and avoid state space
 explosion caused by inputs.
 
 \subsection{Representation of multi states} \label{sec:multistates}
 
 A challenging part of symbolic model checking is how to define a suitable
-representation of states. Representation of control location (explicit part of
-multi state) is straightforward. \SymDIVINE just needs to store
-a program location for each thread. On the other hand coming up with a good
+representation of states. Representation of control location (an explicit part of a multi state) is straightforward. \SymDIVINE just needs to store
+a program location for each thread. On the other hand, coming up with a good
 representation of symbolic data may be quite challenging. Since \SymDIVINE aims
-for bit-precise verification a suitable choice is representation of data
+for bit-precise verification, a suitable choice is a representation of data
 by fixed sized bit-vector formulae~\cite{Bauch14}.
 
 \emergencystretch=1em
@@ -300,7 +297,7 @@ and signed inequality of integers in $2$'s complement representation,
 respectively. Functions symbols in the theory are $+, \times, \div, \&, \mid,
 \oplus, \ll, \gg, \cdot, \extract{n}{p}$, representing addition, multiplication,
 unsigned division, bit-wise and, bit-wise or, bit-wise exclusive or, left-shift,
-right-shift, concatenation, and extraction of $n$ bits starting from position
+right-shift, concatenation, and extraction of $n$ bits starting from a position
 $p$, respectively~\cite{Jonas17}. For a precise description of the syntax and
 semantics of the bit-vector theory, we refer the reader to
 Hadarean~\cite{Hadarean14}.
@@ -308,13 +305,13 @@ Hadarean~\cite{Hadarean14}.
 Since \SymDIVINE does not support dynamic memory allocation, representation
 of symbolic data becomes much simpler. In representation via bit-vector
 \SMT formulae, an unambiguous identification of symbolic variables is crucial.
-Therefore \SymDIVINE uses names given by function
-segment on stack and offset of given variable in the corresponding segment \cite{Mrazek16}.
+Therefore \SymDIVINE uses names given by a function
+segment on a stack and offset of given variable in the corresponding segment \cite{Mrazek16}.
 Moreover, manipulations with symbolic data are represented by corresponding functional symbols.
 
 Besides remembering current values of variables, \SymDIVINE has to keep for
 some variables previous evaluations (also called generations). This happens when
-a value of symbolic variable depends on another symbolic variable.
+a value of the symbolic variable depends on another symbolic variable.
 
 \begin{example}\label{ex:gen}
 Having following C code \SymDIVINE has to store multiple generations of variable
@@ -340,13 +337,13 @@ Definitions are produced as a result of an assignment or arithmetic
 instructions. The structure of symbolic data representation allows for a
 precise description of what is needed for model checking, but it lacks a
 canonical representation. As a matter of fact, the equality of multi states
-cannot be performed as a syntax equality, instead, \SymDIVINE employs an \SMT
+cannot be performed as a syntax equality. Instead, \SymDIVINE employs an \SMT
 solver and quantified formulae to check the satisfiability of a path condition
 and to decide the equality of two multi states \cite{Mrazek16}.
 
 \subsection{State space exploration}
 
-When program reads some input, an explicit state model checker emits a
+When a program reads some input, an explicit state model checker emits a
 new successor for every possible input value. It is important to remark that all of
 these states differ only in a single value, but they occupy same control flow
 location. Hence a same sequence of instructions is applied to them.
@@ -355,21 +352,20 @@ location. Hence a same sequence of instructions is applied to them.
 \code{\_\_VERIFIER\_nondet\_\{type\}}, where \code{\{type\}} defines type of
 input value.}
 
-On the other hand a symbolic approach emits only one multi state. We may look at
-multi state as it represents a set of purely explicit states (defined by
+On the other hand, a symbolic approach emits only one multi state. We may look at the multi state as it represents a set of purely explicit states (defined by
 a set-based reducion~\cite{Havel14}). See an example \ref{ex:reduction} for comparison of
 explicit state space and state space reduced by set-based reduction.
 
 The only event that splits a state space of multi states is a branch in the
 program control flow, that depends on a symbolic value (conditional \code{br}
-instruction in \LLVM). As a consequence a pair of multi states has to be
+instruction in \LLVM). As a consequence, a pair of multi states has to be
 generated, one that corresponds to state when the branching condition was true and
 second when the condition was false. Additionally, according to comparison result
 corresponding values in multi states have to be constrained based on comparison
 condition. For better explanation see following example \ref{ex:reduction}.
 
 \begin{example}\label{ex:reduction}
-Let's have a look on the impact of set-based reduction on program with input and
+Let's have a look at the impact of set-based reduction on a program with input and
 branching. The corresponding \LLVM bitcode is on the right side.
 
 \begin{center}
@@ -397,7 +393,7 @@ In order to precisely verify a program with input, \DIVINE has to generate all
 possible evaluations of the \code{input} call. Hence the resulting state space
 suffers from the great state space explosion. We may notice that the state
 space is branched when the \code{input} call is executed, but following
-execution continues in a sequential manner:
+execution continues sequentially:
 
 \begin{centering}
 \resizebox{\textwidth}{!}{
@@ -563,13 +559,13 @@ which is more expensive than a quantifier-free one~\cite{Jonas17}.
 
 \subsection{Architecture of \SymDIVINE}
 Talking about \SymDIVINE overall architecture, it mimics the design of \DIVINE.
-Generally the verification workflow consists of a preprocessing part, where
-\LLVM bitcode is generated and minor optimizations are done. In comparison to
+Generally, the verification workflow consists of a preprocessing part, where
+\LLVM bitcode is generated, and minor optimizations are done. In comparison to
 \DIVINE, symbolic approach does not assimilate \DIOS layer. Hence all scheduling
 and memory management is done solely by the verification core of \SymDIVINE. Except
-that, we may distinguish 3 parts in the verification core, an interpreter, a state
+that, we may distinguish three parts in the verification core, an interpreter, a state
 generator and exploration manager. They behave similarly as their \DIVINE
-counterparts. Except the \SymDIVINE's state space generator, that needs to
+counterparts. Except for the \SymDIVINE's state space generator, that needs to
 communicate with the \SMT solver, to execute equality and reachability queries.
 
 \begin{figure}[!ht]
@@ -622,21 +618,20 @@ communicate with the \SMT solver, to execute equality and reachability queries.
 }
 \caption{ Verification workflow of \SymDIVINE is similar to \DIVINE{}'s. It
     consists of two steps, a preprocessing part where a suitable \LLVM bitcode
-    is created. In comparison to \DIVINE, compilation is done by unmodified
-    compiler and \LART transformations are used only slightly. We would like to
+    is created. In comparison to \DIVINE, a compilation is done by the unmodified
+    compiler, and \LART transformations are used only slightly. We would like to
     note, that only verified program attends a compilation process, since no
     \SymDIVINE proprietary runtime (as \DIOS) is needed. On the other hand
-    \SymDIVINE needs to simulate scheduling directly in interpreter and state
-    space generator. In comparison to \DIVINE a verification part of \SymDIVINE
+    \SymDIVINE needs to simulate scheduling directly in the interpreter and state space generator. In comparison to \DIVINE a verification part of \SymDIVINE
     maintains similar architecture. The only big difference is an interface to
     external \SMT solver.}\label{fig:symdivine}
 \end{figure}
 
 
 \subsection{Drawbacks of \SymDIVINE}
-Even though \SymDIVINE may sound as a suitable instrument for verification of
+Even though \SymDIVINE may sound like a suitable instrument for verification of
 programs with inputs, it has a few issues. First of all, since
-\SymDIVINE was designed only as a prototype tool, it does not provide full \Cpp{}
+\SymDIVINE was designed only as a prototype tool; it does not provide full \Cpp{}
 language support (for instance verification of program with exceptions).
 Likewise, \SymDIVINE does not provide support for \Cpp{} standard library.
 Moreover, it aims only for symbolic manipulation with integers, hence it
@@ -644,26 +639,26 @@ does not provide full support of the \LLVM instruction set, especially memory
 manipulations and symbolic indices.
 
 Another drawback of \SymDIVINE is that it can not interpret programs with
-explicit memory manipulations, since \SymDIVINE interprets symbolically all the
-instructions. Lastly, from the monolithic architecture of \SymDIVINE emerges a
+explicit memory manipulations, since \SymDIVINE interprets all the
+instructions symbolically. Lastly, from the monolithic architecture of \SymDIVINE emerges a
 disadvantage, that it is hardly expendable. Consequently it is hard to maintain
 the core of the tool correct when adding the new features, what is
 crucial for a verification tool.
 
 We believe that including the \SymDIVINE approach into \DIVINE can get rid
 of the most of these drawbacks. Especially it enables full support of \LLVM and
-\Cpp{} exceptions. Moreover,explicit data can be handled explicitly by
+\Cpp{} exceptions. Moreover, explicit data can be handled explicitly by
 well-tuned \DIVINE interpreter, hence support for explicit memory can be
 maintained.
 
 \begin{summary}
-We have seen that \SymDIVINE is able to verify programs with inputs. In order to
+We have seen that \SymDIVINE can verify programs with inputs. To
 do so, \SymDIVINE uses a bit-vector formulae to represent multi states --
 states that correspond to sets of explicit states. In comparison to
 explicit-state model checking, the symbolic approach employs an \SMT solver for
 equality check and reachability check.
 
-In the transformation for \DIVINE we will need to reflect all those additions.
+In the transformation for \DIVINE, we will need to reflect all those additions.
 Concretely we will define the formula representation of a state and insert
 the manipulations with it directly into the program. Similarly with path
 condition. Further, an interface to \SMT solver needs to be added to
@@ -675,10 +670,10 @@ condition. Further, an interface to \SMT solver needs to be added to
 A symbolic model checking is a well-known technique for a few
 decades~\cite{McMillan93}. Besides \SymDIVINE there are other symbolic
 model checkers such as NuSMV -- a tool based on the combination of \SMT and \BDD
-technique \cite{Cimatti20}, or PRISM equipped with large variety of symbolic
+technique \cite{Cimatti20}, or PRISM equipped with a large variety of symbolic
 algorithms \cite{Kwiatkowska20}. The big disadvantage of these tools is that
 they do not accept \Cpp{} as a form of input. The only tool that we found that
-is able to do a symbolic model checking on \Cpp{} programs is \textsc{redlib}
+can do a symbolic model checking on \Cpp{} programs is \textsc{redlib}
 \cite{redlib}, which is no longer developed.
 
 In comparison to the approaches of symbolic model checkers mentioned earlier, we
@@ -697,13 +692,12 @@ have designed a similar approach, an abstraction via program transformation for
 Their approach is designed as source-to-source transformation, which takes a
 Java code and replace the uses of input values by symbolic expressions. They are
 only able to transform integer fields in Java classes. To do so, all possible
-occurrences of symbolic expressions needs to be transformed manually as they
+occurrences of symbolic expressions need to be transformed manually as they
 describe shortly in the paper~\cite{Khurshid03}. Additionally, they insert a
 path condition and calls to the solver directly into the code.
 
-In comparison to their approach we have designed a value propagation analysis
-(see \autoref{ch:abstraction}), that gets rid of necessity to manually transform
-the program. Moreover, our approach is much more general, since we provide
-ability to use an arbitrary abstraction not just symbolic representation.
+In comparison to their approach, we have designed a value propagation analysis
+(see \autoref{ch:abstraction}), that gets rid of the necessity to manually transform
+the program. Moreover, our approach is much more general, since we provide the ability to use an arbitrary abstraction not just symbolic representation.
 
 

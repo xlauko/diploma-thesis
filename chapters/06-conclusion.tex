@@ -1,7 +1,7 @@
 \chapter{Conclusion}\label{ch:conclusion}
 
 In this thesis, we have explored how to deal with inputs in program
-verification. A common approach is to abstract inputs and perform an
+verification. A standard approach is to abstract inputs and perform an
 abstract-interpretation-like analysis of the program. However, adding this feature into a
 verification tool requires significantly tweaking the tool in many cases.
 
@@ -10,7 +10,7 @@ inputs. Specifically, an abstraction via program transformation. This way, we
 were able to abstract a program with only minor modifications of the verification
 tool.
 
-Especially, we have focused on symbolic representation of inputs as used in \SMT-based
+Primarily, we have focused on symbolic representation of inputs as used in \SMT-based
 symbolic model checkers. To do so, we have identified which parts of the program can be
 abstracted and what modifications of the verification tool need to be done.
 
@@ -33,7 +33,7 @@ blocks of the transformation are located.
 The transformation was evaluated with a symbolic domain,\marginpar{Implementation
 of the symbolic domain and a symbolic exploration algorithm in \DIVINE is not part of this thesis.}
 which showed that this approach can compete with traditional symbolic model
-checking. At the same time, a new abstractions can be easily implemented and
+checking. At the same time, new abstractions can be easily implemented and
 integrated into the mature \DIVINE toolchain. To demonstrate this, we have created a
 simple domain that distinguishes whether a value is zero or not.
 
@@ -43,20 +43,19 @@ available from the manual, on the project website -- \url{divine.fi.muni.cz}.
 
 \section{Future work}
 
-The proposed framework brings a number of new possibilities in abstraction of
+The proposed framework brings a number of new possibilities to the abstraction of
 programs. An example is predicate abstraction~\cite{Flanagan02}, which can be
 implemented in a similar manner as the symbolic one.
 
 A useful extension for the abstraction framework can also be an implementation
-of a \textsc{cegar} loop~\cite{Clarke20}. In current settings, we are able to
+of a \textsc{cegar} loop~\cite{Clarke20}. In current settings, we can
 abstract a program, verify it and find a potential counter-example. The
-remaining challenge is how to extract from the counter-example informations
-for refinement. The refinement can be then implemented as a more precise
+remaining challenge is how to extract from the counter-example pieces of information for a refinement. The refinement can be then implemented as a more precise
 transformation.
 
 In our framework, we have covered only a subset of program behaviours.
-Currently, the biggest limitation is abstraction of memory and pointers.
-Abstraction of those, can be done either naively, where program would build
+Currently, the biggest limitation is the abstraction of memory and pointers.
+Abstraction of those can be done either naively, where a program would build
 a lookup table for pointers and will simulate the pointers based
 on the values in the table. This approach has a big overhead on the runtime
 interpretation. A better direction should be to use a pointer analysis, to
@@ -66,7 +65,7 @@ The current implementation is also restricted in the abstraction of aggregate
 types, where we are not able to abstract array types, and there are limitations
 in abstraction of struct types. In this case, we can also let the runtime do the
 hard work and maintain the tables of abstract values, but for faster
-verification we can extend the transformation with a shape analysis. Finally,
+verification, we can extend the transformation with a shape analysis. Finally,
 the transformation can be easily extended to abstract floating
 point operations similarly to integers.For domains other than
 symbolic, better constraint propagation can be implemented. To do

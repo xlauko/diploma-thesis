@@ -1,21 +1,21 @@
 \chapter{Evaluation}\label{ch:results}
 
 The resulting transformation can handle programs where only integer
-arithmetic is abstracted. We provide ability for pointers to point to
+arithmetic is abstracted. We provide an ability for pointers to point to
 abstract values and structures to contain abstract elements. However, we are
 currently not able to insert abstract values into arrays, represent abstract
 pointers or perform a dynamic memory allocation of abstract values. These
 limitations are caused by insufficient representation of abstract
 data.\sidenote{Currently, we are not able to represent elements of arrays by
 shapes for abstract values. We think this can be easily implemented in a similar
-manner as abstraction of aggregate types. Further limitations represent a
+manner as the abstraction of aggregate types. Further limitations represent a
 runtime indices into the arrays, which we are not able to compute during
 transformation.}For further evaluation we have omitted programs that contain
 these unsupported characteristics.
 
 Other technicalities, such as support of threading and support of full \Cpp{}
 standard library is inherited from \DIVINE, since transformations do not
-interfere with explicit computation of a program.
+interfere with the explicit computation of a program.
 
 To show that the proposed approach is a sufficient replacement of \SymDIVINE, we
 will compare the symbolic transformation with \DIVINE as a backend against
@@ -28,7 +28,7 @@ complicated \AVL tree.
 All measurements were performed on machine with 24-core cpu (\code{Xeon E5-2630
 v2, 2.60GHz}), and sufficient amount of memory 125 GB.\sidenote{Neither of
 benchmarks have reached this bound.} We have restricted benchmarks to use
-only 4 cores.
+only four cores.
 
 \section{\textsc{sv-comp} benchmarks}
 
@@ -60,8 +60,7 @@ partitioned into the following categories:
 \end{itemize}
 
 Using those benchmarks, we have compared our implementation to \SymDIVINE. In
-particular, we have measured how many benchmarks we were able to correctly verify in a
-timeframe of 1 hour.
+particular, we have measured how many benchmarks we were able to verify in a timeframe of 1 hour correctly.
 
 In \autoref{tbl:resultsdiv} and \autoref{tbl:resultssym} we summarize each
 category for both tools. We count how many programs were correctly decided to be
@@ -115,30 +114,33 @@ or reporting a wrong result (\textbf{wrong}).
   \label{tbl:resultssym}
 \end{table}
 
+Results show that \DIVINE with transformation performs slightly better than
+\SymDIVINE. Besides completed verification and timeouts, we got $5$ unknown
+results caused by a failure during the verification. Moreover, \DIVINE decided
+one benchmark wrongly; we believe that this benchmark is falsely marked as
+valid, because both \SymDIVINE and \DIVINE found an error in it.
+
 In all benchmarks, the transformation successfully finishes in a few seconds.
 But differences between tools have shown during the verification. Surprisingly
 \SymDIVINE competes with \DIVINE quite well. Why is it so?
 
 Even though \DIVINE utilizes $\tau$-reduction and a faster \LLVM interpreter,
 the bottleneck of verification is the interface with an \SMT solver. For each
-\SMT query \DIVINE spawns a new process with a solver, and that requires
-nontrivial amount of time. Moreover, communication with the solver is
+\SMT query \DIVINE spawns a new process with a solver, and that requires a nontrivial amount of time. Moreover, communication with the solver is
 performed inefficiently, via a string stream.
 
 In \SymDIVINE, the process running the \SMT solver is maintained during the
 entire course of verification, hence it saves time on process creation.
 Moreover, the communication with the solver is via a dedicated interface,
-which is faster. Additionally, \SymDIVINE utilizes caching of queries.
+which is faster. Additionally, \SymDIVINE utilises caching of queries.
 Hence, \SymDIVINE can explore a state-space much faster (around 200 states
 per second), but it encounters larger state spaces, because of missing state
 space reductions. On the other hand, \DIVINE proceeds more slowly (around 10
 states per second), but profits from smaller state spaces.
 
-\add{ add popis tabuliek }
-
-For comparison we attach a quantitative plot of solved benchmarks by both tools
+For comparison, we attach a quantitative plot of solved benchmarks by both tools
 in the \autoref{fig:accu}.
-Most of the benchmarks is solved in matter of seconds by both tools, but with
+Most of the benchmarks are solved in a matter of seconds by both tools, but with
 higher timeframe, \DIVINE solve slightly more of them.
 
 \begin{figure}
@@ -156,22 +158,22 @@ on the larger state spaces \DIVINE has significantly better results.
     \label{fig:ss}
 \end{figure}
 
-Complete results can be found in the thesis archive. Here we have summarized
+Complete results can be found in the thesis archive. Here we have summarised
 only the significant data.
 
 \section{Data structures}
 
-The data structure benchmarks show the greatest contribution of a symbolic
-approach. By symbolic representation of elements in data structures, we can
+The data structure benchmarks show the most significant contribution of a symbolic
+approach. By the symbolic representation of elements in data structures, we can
 verify all possible behaviours for a given number of inputs. In these
 benchmarks, we demonstrate how much time the transformation takes and how
 much time \DIVINE spends in the verification process. We do not provide a
-comparison with \SymDIVINE, because it is unable to verify this type of
+comparison with \SymDIVINE because it is unable to verify this type of
 programs.
 
 In all these benchmarks, we try to verify insertions and deletions of arbitrary
 values from the data structures. The data structures are stored on the
-stack, because we are limited in transformation by dynamic memory allocation.
+stack because we are limited in transformation by dynamic memory allocation.
 We use the following naming convention for the benchmarks: \code{\{name\}-\{num. of
 insertion\}-\{num. of deletions\}-\{V/E for validity or an\\error\}}.
 
@@ -207,16 +209,15 @@ insertion\}-\{num. of deletions\}-\{V/E for validity or an\\error\}}.
     \end{tabularx}
   \end{center}
   \caption{Benchmarks of insertions and deletions from the data
-    structures. A~name of benchmark represents a data structure, number of
-    insertions and number of deletions. \code{V} or \code{E} at the end of
+    structures. A~name of benchmark represents a data structure, number of insertions and number of deletions. \code{V} or \code{E} at the end of
     the name denotes whether the benchmark is valid or contains an error.}
 \end{table}
 
 From the results, we can see that the bottleneck is still verification. Even though,
-we have defeated data nondeterminism, we have introduced a lot of control flow
+we have defeated data nondeterminism; we have introduced a lot of control flow
 nondeterminism because of nondeterministic choices on branches. The transformation
-time is approximately 10 seconds. The average speed of verification is 2 states
-per second. We believe that this is consequence of the slow \API between the model
+time is approximately 10 seconds. The average speed of verification is two states
+per second. We believe that this is a consequence of the slow \API between the model
 checker and the \SMT solver, since \SymDIVINE was able to generate 200 states
 per seconds in an average, with a less optimized exploration algorithm. Hence we
 believe that in the future, we can optimize the search algorithm to cope with
@@ -225,7 +226,7 @@ larger state spaces in a reasonable time.
 In benchmarks of the \AVL tree, we can see that despite the increasing number of
 inputs, the transformation time stays the same, but the verification time
 exponentially grows. The exponential growth is caused by the nature of the \AVL
-tree. When we are inserting an arbitrary value we have to branch the state space
+tree. When we are inserting an arbitrary value, we have to branch the state space
 on each comparison of the inserted value and node into which we are inserting.
 Branching creates two possibilities, first when the value is inserted into the
 left subtree and second for the right subtree. This way, we create during a
@@ -237,7 +238,7 @@ But since the algorithms on these data structures are simple, most of the errors
 are shallow and can be found quickly. Note, for instance, the difference of time
 in benchmarks \code{sorted-list\\-3-0-V} and \code{sorted-list-3-0-E}.
 
-During the evaluation we have appreciated the qualities of the proposed
+During the evaluation, we have appreciated the qualities of the proposed
 approach, because besides the verification of the program we have verified the
 implementation of the abstraction and fixed minor bugs that we have found. This
 would have been much harder if the abstraction would be implemented inside of the

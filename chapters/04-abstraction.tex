@@ -1,7 +1,7 @@
 \chapter{Program abstractions}\label{ch:abstraction}
 
 As we have already seen, abstractions are applicable in many ways in model
-checking and in software verification in general. In this chapter, we propose a novel
+checking and software verification in general. In this chapter, we propose a novel
 approach for verification of programs with inputs. We aim to provide a tool for
 abstraction of inputs with only minor modifications to the model checker.
 
@@ -9,8 +9,7 @@ One of the approaches to handle inputs is the symbolic model checking (described
 in \autoref{ch:divine}). We may consider the symbolic representation as a form
 of abstraction, since input data are abstracted into the sets of values. In this
 chapter, we review how programs are abstracted more generally. First, we
-introduce a simpler abstract domain, which does not require that much
-technicalities as the symbolic abstraction. Thereafter, we present an
+introduce a simpler abstract domain, which does not require that much technicalities as the symbolic abstraction. Thereafter, we present an
 approach to abstractions via program transformation. At the end of the chapter,
 we explore how the transformed program interacts with \DIVINE.
 
@@ -20,25 +19,25 @@ In general, there are two main approaches to do abstraction of programs. A
 traditional way of abstraction engines is to interpret the given
 program~\cite{Cousot79}. During interpretation, the abstraction tool needs to
 interpret code according to some semantics (either encoded in the tool or
-given). Similar approach is used in \SymDIVINE. During the interpretation of
+given). A similar approach is used in \SymDIVINE. During the interpretation of
 the \LLVM bitcode, \SymDIVINE manipulates a formula representing a multi state,
 as described in \autoref{sub:symdivine}.
 
-Another alternative to preform an abstraction is to insert the abstraction
+Another alternative to perform an abstraction is to insert the abstraction
 directly into the program. This can be achieved with a source-to-source
-transformation of the program. After the transformation the program will
+transformation of the program. After the transformation, the program will
 manipulate with abstract values instead of concrete ones. For example, in the
 case of symbolic abstraction, the abstracted program manipulates formulae that
 represent input values, instead of concrete values. The abstracted program after
-the transformation behaves almost as a traditional program. The main difference
+the transformation behaves almost like a traditional program. The main difference
 is that the abstracted program may become nondeterministic. This can happen if
 a branching in the program depends on an abstract value and both directions of
 the branch are possible.
 
-When comparing the above mentioned approaches, each of them comes with its pros
+When comparing the above-mentioned approaches, each of them comes with its pros
 and cons. The transformation approach does not complicate the verification tool
 since it is performed by the stand-alone tool before the verification process
-starts. As consequence, it minimizes the probability of creating a bug in the
+starts. As a consequence, it minimizes the probability of creating a bug in the
 verification tool. Further, we can benefit from the verification of the
 transformed program in the way that it will also check the correctness of the
 inserted abstraction, since it is encoded into the verified program. This is not possible
@@ -46,25 +45,24 @@ in interpretation approach, because the abstraction is part of the interpreter.
 
 On the other hand, the tool that performs a transformation requires a more
 complicated design, since most of the computation has to be done statically (we
-can not benefit from the values computed during a runtime as interpreters). Also
-the verification of the transformed program may potentially become slower, since
+can not benefit from the values computed during a runtime as interpreters). Also, the verification of the transformed program may potentially become slower, since
 abstract operations have to be interpreted by the verification tool.  Both
-approaches enable pluggable abstract domains, by generalizing their common
-analysis, as will be shown in this chapter.
+approaches enable pluggable abstract domains, by generalising their common
+analyses, as will be shown in this chapter.
 
 Since \DIVINE is a powerful explicit-state model checker, we have decided not to
 complicate the precisely crafted interpreter (\DIVM), and take the second
-approach. Besides having a symbolic abstraction as the main goal, we have
+approach. Besides having a symbolic abstraction as the primary goal, we have
 realized that the core of transformation is usable for arbitrary abstraction, as
 will be shown in this chapter.
 
 \section{Abstract domains} \label{sec:absdom}
 
-When dealing with abstraction of programs, first of all, one has to define an
+When dealing with an abstraction of programs, first of all, one has to define an
 abstract domain for program variables and semantics of operations on them. From
 a model checking point of view, we want to define a transformation from
 concrete states to abstract states, as described in \autoref{subsec:amc}. To
-formulate the transformation we need to define how concrete types are mapped to
+formulate the transformation, we need to specify how concrete types are mapped to
 abstract types, similarly with values and operations on then.
 
 \newpage
@@ -96,7 +94,7 @@ A set of concrete scalar types $S$ is a set of all integer types $S = \{
 s_i \mid i \in \mathbb{N}^+ \}$, where $i$ is the bitwidth of the integer type
 $s_i$.
 \end{definition}
-From the scalar types, we want to built all possible pointer types and
+From the scalar types, we want to build all possible pointer types and
 aggregate types. We denote a pointer to type $t$ as $t*$, and an aggregate type
 consisting of types $t_1, \dots, t_n$ as a tuple~$(t_1, \dots, t_n)$.
 
@@ -111,7 +109,7 @@ consisting of types $t_1, \dots, t_n$ as a tuple~$(t_1, \dots, t_n)$.
         \item if $t \in \Gamma_T$ then $t* \in \Gamma_S$.
     \end{itemize}
 \end{definition}
-Note, that a $\void$ type is not in the set of created types, because \LLVM does
+Note, that a $\void$ type is not in the set of created types because \LLVM does
 not permit a pointer to $\void$ or an aggregate to contain a $\void$. Hence we
 will add the $\void$ type as an extra type in the domain definition. With a
 created type system we define a concrete domain, which assigns values to
@@ -131,7 +129,7 @@ restricted type system.
     \end{itemize}
 \end{definition}
 
-To set up an abstraction of \LLVM, we define an abstract domain~$A$. First we
+To set up an abstraction of \LLVM, we define an abstract domain~$A$. First, we
 define an abstract type system $T_A$. Besides all abstract types, the abstract type
 system needs to define aggregates that may contain both abstract and concrete
 values. Moreover, we require that for each concrete scalar there exists an abstract scalar.
@@ -199,8 +197,8 @@ manipulate values from $V_Z$. We require that abstract operations preserve the
 type correspondence. For example, an abstract instruction $\mathit{add}_{i32}$ is
 abstracted \LLVM instruction that adds two 32-bit integers and returns 32-bit
 result. The type signature of the abstract operation has to correspond with the
-types in the domain $Z$: ${i32}_Z \times {i32}_Z \to {i32}_Z$. A semantic of
-operation is then defined as:
+types in the domain $Z$: ${i32}_Z \times {i32}_Z \to {i32}_Z$. 
+We define a semantic of operation as:
 \[
   \mathit{add}_{i32}(a, b) =
   \begin{cases}
@@ -257,9 +255,8 @@ in attachments of the thesis.
 \subsection{Domain interactions} \label{sec:interactions}
 In cases when multiple domains interact, special care needs to be
 taken. We need to solve two major types of interactions.
-We have already seen an interaction between abstract domain and concrete in a
-form of a $\lift$ and a $\low$. This interaction occurs when a concrete value
-has engaged in the abstract instruction, hence it has to be lifted to the
+We have already seen an interaction between abstract domain and concrete in the form of a $\lift$ and a $\low$. This interaction occurs when a concrete value
+has engaged in the abstract instruction. Hence it has to be lifted to the
 abstract domain.
 
 Another interaction between domains occurs when control flow depends on an
@@ -275,9 +272,9 @@ To unify handling of interaction with control flow, we introduce a tristate
 domain (\emph{true, false, maybe}), and require all abstract domains to define
 an operation that takes their abstract Boolean and transforms it to the tristate
 domain. We will refer to it as \code{bool\_to\_tristate}. Hence before each
-branching on an abstract value, we need to transform it to a generalized form of
+branching on an abstract value, we need to transform it to a generalised form of
 tristate and according to the value of the tristate decide whether to do the
-nondeterministic choice.\sidenote{Nondeterministic choice is made only when the
+nondeterministic choice.\sidenote{A nondeterministic choice is made only when the
 tristate has a value \emph{maybe}.}
 
 \subsection{Control flow of abstract programs} \label{subsec:cf}
@@ -304,17 +301,15 @@ described by two parts: \emph{data definitions} and \emph{path condition} (see
 \autoref{sub:symdivine}). We would like to bring this notion of separation of
 data and path condition also to the abstracted program.
 
-In \SymDIVINE data definitions were created by the instructions. In abstracted
-program we will do the same, i.e.~the symbolic definitions are will be created either via symbolic
+In \SymDIVINE, data definitions were created by the instructions. In the abstracted program, we will do the same; i.e.~the symbolic definitions will be created either via symbolic
 \code{alloca} or as a result of symbolic instruction.
 
 The path condition should reflect the already taken path in the program, hence
 it will be described by assumes that were encountered during the interpretation
 (i.e.~constraints given by branching).
 
-Symbolic data needs to represent a bit-vector formula, that defines their data.
-A common formula representation are formula trees. For example in the following
-program, the data representation at the end of the program by formula trees will
+Symbolic data needs to represent a bit-vector formula, which defines their data.
+A typical formula representation is formula tree. For example in the following program, the data representation at the end of the program by formula trees will
 be as on the left picture.
 
 \bigskip
@@ -355,32 +350,32 @@ int b = a * x;
 
 The trees are induced from the \SSA form of the program -- see that each
 variable points to the root of its formula tree. The input values $x$ and $y$
-point to the nodes representing atoms the formula, i.e.~arbitrary values.
-However, $a$ and $b$ point to nodes that represents on the abstract values.
+point to the nodes representing atoms the formula; i.e.~arbitrary values.
+However, $a$ and $b$ point to nodes that represent the abstract values.
 Overall, the operations in the symbolic domain are defined as operations on
 the tree representation.
 
 \begin{summary}
-In this section we have defined what is an abstract domain in the context of program
+In this section, we have defined what is an abstract domain in the context of program
 transformations. We have established a representation of the abstract domain in
-the high-level programing language, accompanied with abstract operations. In
+the high-level programing language, accompanied by abstract operations. In
 addition to abstract \LLVM instructions we have introduced \code{lift} and
 \code{lower} for conversion between the concrete and the abstract domain. We have
 examined interactions between domains, as casting between domains and
-transformation to tristate domain. Consequently we have analyzed the control flow
-of abstracted program, that introduces nondeterministic choices into the
-branching. Lastly we have settled a representation of the symbolic domain via formula
+transformation to the tristate domain. Consequently, we have analyzed the control flow
+of an abstracted program, that introduces nondeterministic choices into the
+branching. Lastly, we have settled a representation of the symbolic domain via formula
 trees.
 \end{summary}
 
 \section{Abstraction via program transformation}
 
-In following sections we will describe the actual implementation of domain
-insertion into the program. By providing a common set of analyses, we aim for
+In following sections, we will describe the actual implementation of domain
+insertion into the program. By providing a universal set of analyses, we aim for
 much easier implementation of new abstract domains. Furthermore, we want to
 create the transformation in such a manner, that the resulting program will be a
 runnable binary, provided the nondeterministic choice implementation.\sidenote{To
-implement nondeterministic choice for standalone program one can use a standard random
+implement a nondeterministic choice for a standalone program one can use a standard random
 function or a bit-vector of choices} Hence the abstracted program should be
 analyzable by arbitrary tools, not just by \DIVINE. Moreover to preserve
 the soundness of further analysis we have to define the transformation in an
@@ -433,17 +428,17 @@ together in \autoref{fig:transformation}.
 \end{figure}
 
 Abstraction of the program is done in four major steps. First, we analyze
-wherever abstract values in program may occur. This is done in value propagation
+wherever abstract values in the program may occur. This is done in value propagation
 analysis. The computed set of instructions is then abstracted into intermediate
 \LART instructions. Thereafter, \code{assume} calls are inserted into the
-program and constraints are propagated through the bitcode. Finally the
+program and constraints are propagated through the bitcode. Finally, the
 intermediate abstract representation is replaced by the appropriate operations
 in the respective domain. First three analysis are domain independent and can be
-done without need of the actual domain implementation.
+done without the need for the actual domain implementation.
 
 Providing the program and the domain implementation, one has
 to annotate which variables should be abstracted into which domain. In
-following example, the variable \code{x} is annotated as symbolic.
+the following example, the variable \code{x} is annotated as symbolic.
 \begin{minted}{cpp}
 int foo(int a, int b) {
     _SYM int x;
@@ -457,7 +452,7 @@ int foo(int a, int b) {
     return y;
 }
 \end{minted}
-In the next sections we work with this simple \Cpp{} program. For
+In next sections, we work with this simple \Cpp{} program. For
 readability we do not expose the corresponding \LLVM bitcode and instead
 work schematically on control flow diagrams, on which the mapping to actual
 \LLVM should be easily done. But for a curious reader, we attach results of
@@ -504,9 +499,9 @@ reachable instructions from those variables. We call them the
 \emph{roots} of the abstraction. The examination of the reachable instructions is
 performed in the first step by \emph{value propagation analysis}~(VPA).
 
-In order to generalize the process and to enable additional analysis, we
-postpone abstract domain insertion until the entire program is analyzed and
-transformed to a suitable form.
+To generalise the process and to enable additional analysis, we
+postpone abstract domain insertion until the entire program is analysed and
+transformed into a suitable form.
 
 Hence in the second step (after VPA), we introduce an intermediate representation of
 abstract instructions. These instructions do not provide any implementation and
@@ -515,7 +510,7 @@ are represented a manner similar to \LLVM intrinsic functions
 \emph{lift} the reached instructions provided by the VPA into the abstract form. The
 only purpose of these intrinsics is to carry the domain information for further
 analysis and to eliminate analysis of the domain implementation (since there is no need
-to look into implementation of domain operations). Additionally the \LLVM
+to look into the implementation of domain operations). Additionally, the \LLVM
 toolset can be used in this step for type checking of the applied transformation.
 
 In the next analysis, \code{assume} calls are inserted and backwards constraint
@@ -524,18 +519,17 @@ representation of abstract operations is replaced by a real domain
 implementation.
 
 \subsection{Value propagation analysis}
-In the first \LLVM pass, we analyze the reachable instructions from the
+In the first \LLVM pass, we analyse the reachable instructions from the
 annotated variables. Reachable instructions are those that use abstract values
 as their arguments. In this analysis, we also need to propagate through calls,
-when abstract values are arguments of called function. Similarly analyze
-functions into which we can return an abstract value from some function. The
+when abstract values are arguments of the called function. Similarly, analyse functions into which we can return an abstract value from some function. The
 result of VPA is a list of functions with corresponding abstract roots.
 
 \begin{example}\label{ex:vpa}
     When analyzing the function \code{foo} from \autoref{fig:exampleprogram}, we
-    compute the reachable set of instructions using DFS from root the
+    compute the reachable set of instructions using DFS from the root 
     \code{x}~through all its uses \cite{LLVM:langref}. We investigate all
-    instructions where \code{x}~appears on the right hand side (marked orange on
+    instructions where \code{x}~appears on the right-hand side (marked orange on
     the picture).
 
     The analysis find a \code{store} to variable \code{y} (in instruction the
@@ -613,9 +607,7 @@ variable, hence the analysis of the function \code{foo} is finished with the set
 of roots $\{\code{x}, \code{y}\}$.
 \end{example}
 
-As described in \autoref{ex:vpa}, the value propagation analysis, besides
-the exploring of reachable instructions, has to step into function calls with
-abstract arguments, marking the arguments as roots of the called function.
+As described in \autoref{ex:vpa}, besides the exploring of reachable instructions, the value propagation analysis has to step into function calls with abstract arguments, marking the arguments as roots of the called function.
 
 Since the called function may have some annotated values, we will distinguish
 two types of roots: annotation-dependent and argument-dependent. Let us
@@ -663,15 +655,14 @@ argument-dependent roots.
 Additionally, you may have noticed that depending on the
 argument, the result of the function \code{bar} can be abstract. To record this
 information, we also add the resulting value \code{res1} to anno\-tation-dependent
-roots of the function \code{foo}, since the abstract call was made due to
-propagation of its annotation roots.
+roots of the function \code{foo}, since the abstract call was made due to the propagation of its annotation roots.
 
-Because we need to precisely determine the return type of each function, we
+Because we need to determine the return type of each function precisely, we
 utilize the \code{UnifyFunctionExitNodes} pass, provided by the \LLVM toolset,
-to unify all exit nodes to single one (resulting function contains a single
+to unify all exit nodes to a single one (resulting function contains a single
 \code{ret} instruction). But when the function may return a value of multiple
 domains (see the function \code{bar} in the previous example) we need to put all
-the values to the same domain. The transformation can be performed by simple
+the values to the same domain. The transformation can be performed by a simple
 lift of concrete values to the corresponding abstract domain. In the function
 \code{bar}, we lift the value 42 to the symbolic domain.
 
@@ -699,13 +690,13 @@ in the function \code{main}).
 Last of all, we need to handle abstraction of aggregate types. Since we enable
 only annotation of scalar types, abstract elements in aggregates may occur
 only due to stores. The problem to be solved is how to mark domains of a
-particular element of the aggregate. For this purpose we introduce a tree-like
-structure, that mimics the structure of aggregate type and stores domains of
+particular element of the aggregate. For this purpose, we introduce a tree-like
+structure, that mimics the structure of the aggregate type and stores domains of
 its scalar elements (shown in \autoref{ex:fieldtrie}).
 
 In \LLVM, when an aggregate is created by an \code{alloca} instruction, we get a
 pointer to the aggregate base. In order to access the elements, we need to
-\code{load} using the pointer to the aggregate. The specifis element is then
+\code{load} using the pointer to the aggregate. The specific element is then
 accessed using the \code{getelementptr} instruction, which computes for a given
 sequence of indices, an offset into the structure.
 
@@ -716,19 +707,19 @@ Consider a nested structure represented in \LLVMIR:
 %Store = type { i64, i64, i64 }
 \end{minted}
 
-We have utilized this indexing strategy to create a tree-like representation
+We have utilised this indexing strategy to create a tree-like representation
 of types.\sidenote{The tree representation is sufficient only in simple cases.
 For more complex structures (recursive data types) we need to employ a shape
-analysis.} The representation of \code{Widget} as tree is shown on the
+analysis.} The representation of \code{Widget} as a tree is shown in the
 left picture. The edges of the tree represent the access operation type
 (i.e \code{load} operation or index in \code{getelementptr} instruction)
 \cite{LLVM:langref}.
 
-Since we work only with abstraction of scalar types, we need to focus only on
-the leafs of the tree structure. To denote a domain we assign the type of the
-abstraction to the leaf. Because we only need an information about abstract
-elements, we do not store the rest of the leafs. Example abstract structure
-with multiple domains is on the right picture.
+Since we work only with the abstraction of scalar types, we need to focus only on
+the leafs of the tree structure. To denote a domain, we assign the type of the
+abstraction to the leaf. Because we only need information about abstract
+elements, we do not store the rest of the leafs. Example of an abstract structure
+with multiple domains is in the right picture.
 
 \begin{center}
 \begin{minipage}[t]{.47\textwidth}
@@ -811,7 +802,7 @@ returns the roots of abstraction. Roots are those \LLVM values that introduce an
 abstract value in the context of a single function. We have divided roots into two
 kinds: annotation-dependent, that are dependent directly on annotated values
 in the function, and argument-dependent, that are dependent
-on the abstracted arguments of the function. At the end of the section we
+on the abstracted arguments of the function. At the end of the section, we
 have shown how to analyze aggregate types with multiple domains using a tree
 representation of the structures.
 \end{summary}
@@ -820,14 +811,11 @@ representation of the structures.
 Having the abstraction roots from the value propagation analysis, we can
 start program transformation. In this \LLVM pass, we want all the instructions
 that work with abstract values to be replaced by abstract intrinsics.
-Additionally all the required function prototypes have to be created, and
+Additionally, all the required function prototypes have to be created, and
 appropriate abstract implementation inserted into them.
 
-From the abstraction roots computed in VPA we can perform the transformation per
-function. But first of all, the function prototypes are created. This is done
-because we may need to call some abstract function during the transformation,
-that has not been abstracted yet, but to create a call of function its prototype
-is sufficient. This approach also elegantly deals with recursive calls.
+From the abstraction roots computed in VPA, we can perform the transformation per
+function. But first of all, the function prototypes are created. This is performed because we may need to call some abstract function during the transformation, which has not been abstracted yet. But to create a call to a function, its prototype is sufficient. This approach also elegantly deals with recursive calls.
 \begin{marginfigure}
 \itshape
 Consider a recursive function:
@@ -853,21 +841,21 @@ from the roots.
 
 In order to lift \LLVM instructions and function prototypes, we need to
 establish an abstract type system. To do so, we express an abstract type as an
-\LLVM structure, which maintains the information about domain and original
-type. For example an integer in symbolic domain is represented as follows.
+\LLVM structure, which maintains the information about the domain and original
+type. For example, an integer in the symbolic domain is represented as follows.
 
 \begin{minted}{llvm}
 %lart.sym.i32 = type { i32 }
 \end{minted}
 
 Names of abstract types are always prefixed by \code{lart}, followed by the
-domain name and finished by a name of a lifted \LLVM type.
+domain name and finished by the name of a lifted \LLVM type.
 
-In this type system we can create desired prototypes for the functions from our
+In this type system, we can create desired prototypes for the functions from our
 example program (\autoref{fig:exampleprogram}). Expecting that the function \code{foo}
 does not take any abstract value we need only to change to return type of the
 signature. For the function \code{bar} there are two cases: one does not take any
-abstract value and second one has one abstract argument. After prototype
+abstract value and the second one has one abstract argument. After prototype
 creation, the resulting \LLVM declarations look like this.
 \begin{minted}{llvm}
 declare %lart.sym.i32 @foo.2(i32, i32)
@@ -877,7 +865,7 @@ Since \LLVM requires distinct names for each function, indices are added in
 the order of prototype creation. The transformation is performed per function,
 specifically for each set of roots separately.
 
-From given roots we compute the reached set of instructions and sequentially
+From given roots, we compute the reached set of instructions and sequentially
 transform them. In order to have all the instructions transformed before their
 result is used further in the function, we transform them in a reverse postorder manner.
 
@@ -891,7 +879,7 @@ For example for the \code{add} operation, we create an abstract equivalent:
                               %lart.sym.i32 %b)
 \end{minted}
 
-When an instruction takes both a concrete and an abstract argument, we need to
+When an instruction takes both a concrete and abstract argument, we need to
 transform the concrete value into the correct domain. To do so, we perform an
 operation \code{lift}, which creates an abstract constant (described in
 \autoref{sec:absdom}).
@@ -968,10 +956,8 @@ With created prototypes the whole transformation of the program from
 }
 \end{center}
 
-In the picture, symbolic values are represented by bar over them.
-A notable change in the program are points where concrete values have to be
-lifted to symbolic domain. Besides that a transformation of conditional
-branching occur, with explicit branch over the lowered tristate. Lastly the
+In the picture, symbolic values are represented by a bar over them.
+A notable change in the program are points where concrete values have to be lifted to the symbolic domain. Besides that, a transformation of conditional branching occurs, with an explicit branch over the lowered tristate. Lastly, the
 correct symbolic form of \code{bar} function has to be called. We can observe that call
 with concrete arguments remains untouched.
 \end{example}
@@ -1042,15 +1028,15 @@ call void @lart.sym.store.i64( %lart.sym.i64 %l, %lart.sym.i64* %b )
 \end{minted}
 \end{example}
 
-However this approach has its limitations, because the abstract representation
+However, this approach has its limitations, because the abstract representation
 has to fit into the size of the original type in the aggregate (in the example
 abstract \code{v} had to fit into the size of element \code{a}). As consequence
-we are not currently able to store a pointer to representation of an abstract type
+we are not currently able to store a pointer to the representation of an abstract type
 into a smaller type than the pointer type (\code{i64} on 64-bit
 architecture).\sidenote{This limitation can be removed by a table during
 runtime, in which program stores information about abstract types.}
 
-But a big advantage of this approach is that we do not need to create
+But a significant advantage of this approach is that we do not need to create
 abstract aggregate types and handcraft entire structures. This way we also
 preserve pointer arithmetic operations, since the offsets within
 aggregates do not change.
@@ -1060,8 +1046,8 @@ Given the roots of abstraction, we have shown how to transform a program into an
 abstract intermediate form. Firstly we have constructed prototypes of
 functions with abstract signature (either has some abstract argument or
 returns an abstract value). Further, we have transformed all instructions
-reachable from the abstraction roots into abstract intrisics. Accordingly we
-have introduced representation of abstract types. During the transformation
+reachable from the abstraction roots into abstract intrisics. Accordingly, we
+have introduced a representation of abstract types. During the transformation
 process, we have also solved an interaction with control flow using
 transformation to tristate and lowering to \LLVM Boolean.
 \end{summary}
@@ -1071,13 +1057,13 @@ transformation to tristate and lowering to \LLVM Boolean.
 When a branch is taken due to a lowered tristate, we need to restrict the values
 engaged in the condition. Consider that a branch is taken, based on comparison $a
 > 10$, where $a$ is an abstract value. If we do not have any restriction on $a$
-yet and the branch was taken nondeterministically, as consequence, the value of $a$
+yet and the branch was taken nondeterministically, as a consequence, the value of $a$
 has to be greater than 10. However, when the branch was not taken,
-the value has to be 10 or less. We utilize this fact to restrict the value
+the value has to be 10 or less. We utilise this fact to restrict the value
 right after the branch was taken.
 
 We can compute the value restrictions independently of the abstract domain, as
-long as the abstract domain provides the right set of primitives. Specifically we
+long as the abstract domain provides the right set of primitives. Specifically, we
 need to be able to obtain a new restricted value from a value and a predicate
 instruction on which we want to base the restriction, along with the actual
 result of the predicate. For this purpose, we have established
@@ -1093,26 +1079,25 @@ according to the satisfied condition \code{\%cond}.
 
 The insertion of assumes is performed in two steps: first, we restrict only the
 tristates that are directly lowered and used in conditional branching. By this
-transformation we simply denote which path is taken based on the nondeterministic
+transformation, we simply denote which path is taken based on the nondeterministic
 choice. We then proceed in restriction of variables that are engaged in the condition
 predicate. It may seem reasonable to carry on backwards in the program history to
 provide more precise restriction, but backwards constraint propagation has some
 limitations.
 
 Since the whole computation has to be performed statically, it is not clear how far the
-backwards look up should proceed. The other limitation is that, the propagation
-can only sufficiently analyze only the local static scope and cannot infer
+backwards lookup should proceed. The other limitation is that the propagation
+can only sufficiently analyse only the local static scope and cannot infer
 information from function arguments and global state.
 
-Consequently we need to make trade-off between work given to domain
-implementation and simple constraint analysis. In symbolic domain, we are able
-to achieve restrictions by building a path condition. Hence we do not need the
-complicated analysis in this case, so we have decided to retain only simple
+Consequently, we need to make a trade-off between work given to domain
+implementation and simple constraint analysis. In the symbolic domain, we can achieve restrictions by building a path condition. Hence we do not need the
+complicated analysis, in this case, so we have decided to retain only simple
 assume insertion algorithm for this thesis.
 
 The symbolic domain can simply collect the restrictions as path condition and
 restricts the possible variable evaluations based on the entire path
-(detailed description of utilization of assumes in symbolic domain is
+(detailed description of utilisation of assumes in symbolic domain is
 described in \autoref{sec:symbolic}).
 
 In addition to backwards analysis, assumption demands a few minor
@@ -1175,16 +1160,16 @@ restrict values depending on one conditional branching:
 }
 
 In this simple case, proper assumes are inserted on the edges between branching
-and consequent basic blocks. Remark that a new basic blocks were created for
-each assume. Creation of new basic blocks does not make any diffence in this
-program, but for more complicated functions with loops edge splitting needs
-to be done in order to enable $\varphi$ nodes creation.
+and consequent basic blocks. Remark that new basic blocks were created for
+each assume. Creation of new basic blocks does not make any difference in this
+program, but for more complicated functions with loops, edge splitting needs
+to be done to enable $\varphi$ nodes creation.
 
-Notice, that each assume returns a new value for restricted variable, which
-is used in following code.  After an inspection we may observe that assume
-in \emph{false} branch is unnecessery since the value of restricted
+Notice, that each assume returns a new value for the restricted variable, which
+is used in the following code.  After an inspection we may observe that assume
+in \emph{false} branch is unnecessary since the value of restricted
 \code{\textoverline{x}} is never used afterwards, but we do not perform any
-optimizations in this case.
+optimisations in this case.
 \end{example}
 
 \begin{summary}
@@ -1193,7 +1178,7 @@ needs to constrain abstract values that appeared in the condition of the
 branching. For this purpose, we have introduced \code{assume} calls. Given
 the abstract value, the condition predicate, and the result of the
 predicate, an \code{assume} call computes the constrained value. In this
-section we have also introduced backwards constraint propagation, that
+section, we have also introduced backwards constraint propagation, which
 provides more precise restrictions.
 \end{summary}
 
@@ -1209,10 +1194,10 @@ Like in the abstraction of instructions from the second phase, we need to
 substitute instructions before they are used further in the bitcode (we proceed
 in reverse postorder). When processing an instruction, we look at the domain tag
 (in the name of the abstract intrinsic) and accordingly choose the appropriate
-implementation. Currently abstract intrinsics are replaced by calls to functions
-implementing the domain operations. This may be optimized in the future as
+implementation. Currently, abstract intrinsics are replaced by calls to functions
+implementing the domain operations. This may be optimised in the future as
 inlining of a block of code or direct replacement by a by single instruction
-(possible for simpler domain operations), to minimize the number of calls in the
+(possible for simpler domain operations), to minimise the number of calls in the
 bitcode.
 
 From the domain implementation point of view, there are two things to be
@@ -1227,22 +1212,20 @@ run-time representation using scalar values from the concrete domain. This is
 not a problem for simpler domains like $Z$, but for symbolic abstraction, the
 value representation has to be tweaked. As proposed in \autoref{sec:sym}, the
 data have to be represented by a formula tree. This representation can be
-then stored behind a pointer, and stored on program heap (i.e.~abstract value in
-program is a pointer to its representation). But with this approach, we
+then stored behind a pointer, and stored on program heap (i.e.~abstract value in the program is a pointer to its representation). But with this approach, we
 introduce memory leaks to the transformed bitcode. The other way is to copy the symbolic
-representation on every operation, which is quite inefficient in runtime. Due to
+representation on every operation, which is quite inefficient at runtime. Due to
 this, we have used special pointers provided by \DIVINE (weak pointer), which
-\DIVINE recognize as non leaking. These pointers are then maintained by \DIVM in
-similar fashion as garbage collectors do. Hence during the verification, \DIVINE
+\DIVINE recognize as not leaking. These pointers are then maintained by \DIVM similarly as garbage collectors do. Hence during the verification, \DIVINE
 distinguishes the pointers to symbolic values and conceal the memory leak.
 
-For verification in \DIVINE, weak pointers are also important for the state
+For verification in \DIVINE, weak pointers are also crucial for the state
 comparison, since we do not want to compare the shape of the tree behind them.
 The exact comparison is described in the next section.
 
 \begin{summary}
-In this section we have shown, how the actual domain is inserted into the
-program. Insertion is performed in per-instruction manner: given an abstract
+In this section, we have shown, how the actual domain is inserted into the
+program. Insertion is performed in a per-instruction manner: given an abstract
 instruction (intermediate intrinsic call), we replace it by corresponding code
 that implements manipulation in a given domain. We have also illustrated
 problems with more complicated data representation.
@@ -1253,14 +1236,14 @@ problems with more complicated data representation.
 When the program transformation is finished, abstracted program is given to
 \DIVINE for model checking. \DIVINE then interprets the program, in which
 abstract operations manipulate symbolic data. Moreover, a path condition is
-created during the execution of assumes. However equality and reachability of
-symbolic states cannot be decided in an explicit manner. Therefore we need to
+created during the execution of assumes. However, equality and reachability of
+symbolic states cannot be decided explicitly. Therefore we need to
 employ an exploration algorithm similar to
 \SymDIVINE (see \autoref{sub:symdivine}).
 
 During interpretation of a program, we need to check whether the state is
 reachable. This is done by querying an \SMT solver, to decide if the path
-condition is satisfiable. In current implementation a path condition is
+condition is satisfiable. In current implementation, a path condition is
 represented by a global formula, which is edited each time an assume is called.
 When the path condition changes, we need to check if it still satisfiable, hence
 proof a reachability of the state. We discuss a complete state space
@@ -1269,11 +1252,11 @@ exploration process in the following section.
 \subsection{Exploration algorithm}
 The symbolic exploration algorithm, similarly as explicit algorithm, uses \DIVM
 to interpret the \LLVM instructions. During the interpretation, abstracted
-operations manipulates with symbolic values, according to the inserted implementation of
+operations manipulate with symbolic values, according to the inserted implementation of
 symbolic domain (i.e.~they operates on formula trees, see \autoref{sec:sym}).
 Note that \DIVM interprets the symbolic representation as an ordinary \LLVM bitcode.
 
-In order to create path condition, program needs to track constraints over the
+In order to create path condition, a program needs to track constraints over the
 symbolic values. This is achieved with \code{assume} calls inserted after the
 control flow branching. Look at the simple program with some branches:
 \begin{minted}[linenos]{cpp}
@@ -1284,14 +1267,14 @@ if (x < 10) {
     }
 }
 \end{minted}
-In the program above on the 4.~line we need to ensure that value of \code{x} is
-between 5 and 10. This has to be done because the comparison on symbolic values
+In the program above on the 4.~line, we need to ensure that value of \code{x} is
+between 5 and 10. This has to be done because the comparison of symbolic values
 does not restrict the original value, only creates a nondeterministic choice
-whether the branch is taken or not, hence value of \code{x} is arbitrary even if
+whether the branch is taken or not, hence the value of \code{x} is arbitrary even if
 we have decided that it is smaller than 10 in the first condition.
 
 The restriction is achieved, right after the branch is taken, by
-\code{assume} call. To maintain the restrictions a path condition is stored in
+\code{assume} call. To maintain the restrictions, a path condition is stored in
 some global data structure. Then, when the \code{assume} call is executed a
 restriction is appended to the path condition. This is done in the
 implementation of the call \code{assume} in the symbolic domain
@@ -1299,7 +1282,7 @@ implementation of the call \code{assume} in the symbolic domain
 the example, the path condition on the 4.~line is represented by two
 restrictions: $(x < 10)$ and $(x > 5)$.
 
-When a new state is generated we need to check whether the state is reachable.
+When a new state is generated, we need to check whether the state is reachable.
 We do an equality check similarly as in \SymDIVINE, by checking the satisfiability of the
 path condition. The path condition for \SMT query is created as conjunction of
 all restrictions taken so far, i.e.~for line 4, the path condition looks like:
@@ -1381,7 +1364,7 @@ States in the same control location, do not differ in the memory shape. We can
 see that concrete values ($c_1$, $\widehat{c}_1$) and symbolic values ($p_1,
 p_2, \widehat{p}_1, \widehat{p}_2$) occupy the same memory locations in both
 states. Symbolic values are represented by formula trees, as described in
-\autoref{sec:sym}. In the leafs of trees we maintain constants or symbolic
+\autoref{sec:sym}. In the leafs of trees, we maintain constants or symbolic
 variables.  We remark that, even though symbolic values are represented by tree,
 we do not consider them in the memory shape comparison. Only the position of
 symbolic values $p_k$ is considered.\sidenote{Rest of the formula tree is hidden
@@ -1390,7 +1373,7 @@ comparison.}
 
 Semantically, we consider input values to come from a single source. As they are
 encountered during the interpretation, we number them in linear order. Hence,
-when comparison two states, input values are paired according to this
+when comparing two states, input values are paired according to this
 given order.\sidenote{In this way, we distinguish when a parallel program loads
 two values in different order, even though it does not depend on the order of
 the loads.} We denote symbolic variables of both states as $v_1, \dots, v_n$.
@@ -1440,11 +1423,11 @@ Hence to check whether \DIVINE encounters a new state $s$, we query the \SMT sol
 for equality with all already reached states in the same control location with the same memory shape.
 
 In comparison to \SymDIVINE, we create simpler queries to an \SMT solver.  This
-is because our equality check contains only one inplict existential quantifier
+is because our equality check contains only one implicit existential quantifier
 in compare to an alternation of two quantifiers used in \SymDIVINE formula
-$\notsubseteq$ (see \autoref{subsec:equality}). A difference is created by
+$\notsubseteq$ (see \autoref{subsec:equality}). The difference is created by
 numbering on the input values in \DIVINE, which match the corresponding inputs
-during the equality check. Whereby \SymDIVINE do not utilize numbering on the
+during the equality check. Whereby \SymDIVINE do not utilise numbering on the
 inputs and checks all possible pairings of them (using a quantifier in a
 formula). In this way, \SymDIVINE can merge more states, but for the cost of
 more expensive equality checks.

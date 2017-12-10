@@ -1,14 +1,13 @@
 \pdfbookmark[1]{Abstract}{Abstract}
 \chapter*{Abstract}
 
-To show reliability of software, developers usually reach out for testing
+To show a reliability of software, developers usually reach out for testing
 and static analysis. Hoverer, to prove correctness, all behaviours of a
 program need to be checked. In this respect, formal verification methods aim to
-provide an automated approach to verification. A big obstacle are inputs,
-because they massively increase the number of behaviours of the program.
+provide an automated approach to verification. A big obstacle are inputs because they massively increase the number of behaviours of the program.
 
 In this thesis, we present a technique which enables verification tools to
-perform automated checking of programs with inputs. Generally known approach
+perform automated checking of programs with inputs. A generally known approach
 is to interpret operations with input values in an abstract way. In this case,
 abstraction needs to be implemented in the verification tool. We propose that
 instead, an abstraction can be compiled into the program. Hence, the program
@@ -18,5 +17,5 @@ abstraction of inputs.
 We implement the proposed approach as an \LLVM-to-\LLVM transformation which
 inserts an abstraction to the program. The applicability of the proposed
 approach is demonstrated by transforming programs to represent their inputs
-symbolically. This in turn, enables an essentially explicit-state model checker
+symbolically. This, in turn, enables an essentially explicit-state model checker
 to verify the program. For evaluation purposes, we have chosen \DIVINE as the model checker.

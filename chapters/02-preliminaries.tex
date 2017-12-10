@@ -2,7 +2,7 @@
 
 In this chapter, we will introduce foundations for the proposed
 abstraction-based model checking approach. We will cover \LLVM bitcode as the
-input language for verification. Focus will be on the instruction set for
+input language for verification. A focus will be on the instruction set for
 value manipulation and its semantics, the \LLVM type system and the control flow
 of programs. Subsequen\-tly, the notion of model checking will be explored in
 the context of \LLVM programs. The exposition of model checking is mainly based on
@@ -11,14 +11,14 @@ Petr Ročkai's dissertation \cite{Rockai15} and is further covered in \autoref{c
 \section{Intro to \LLVMIR} \label{sec:introtollvm}
 
 Besides \marginpar{The \LLVM project is a collection of modular and
-reusable compiler and toolchain technologies. Despite its name -- low level
+reusable compiler and toolchain technologies. Despite its name -- low-level
 virtual machine, \LLVM has little to do with traditional virtual
 machines. The name \LLVM itself is not an acronym; it is the full name
 of the project. \href{http://llvm.org/}{[llvm.org]}}
 defining the semantics of bitcode in the form of \LLVMIR (intermediate
 representation), \LLVM{}~\cite{LLVM:web} is primarily a toolkit for building
 compilers. It was first introduced by Ch. Lattner and V. Adve \cite{Lattner04}
-as an optimization framework. Nowadays, \LLVM represents a set of libraries for
+as an optimisation framework. Nowadays, \LLVM represents a set of libraries for
 building and manipulation of an intermediate representation for compilers and
 platform-specific code generators.
 
@@ -30,12 +30,12 @@ common code representation used throughout almost all phases of the \LLVM compil
 strategy.
 
 Since the \LLVMIR simplifies semantics of the verified language, it is much more
-suitable for model checking. Model checking can abstract from complicated
+suitable for model checking. Model checking can abstract from the complicated
 grammar of the verified language and process \LLVM bicode produced by the compiler
 front-end.
 
 \subsection{Instructions, Functions and other LLVM building blocks}
-\label{subsec:infnllvm} \LLVMIR aims to be slightly richer assembly like
+\label{subsec:infnllvm} \LLVMIR aims to be slightly richer assembly-like
 language. When we look into a \LLVMIR file (or \emph{module}\sidenote{\LLVM
 programs are composed of modules, each of which is a translation unit of the
 input programs.}), we find a description of global data and function
@@ -49,7 +49,7 @@ within a basic block is entirely sequential, performing instructions in order of
 their appearance~\cite{Rockai15}.
 \end{definition}
 
-Instructions from basic blocks manipulate values in virtual registers or
+Instructions from basic blocks manipulate values in virtual registers, or
 they move values between registers and memory. Each instruction has at most one
 return value, which is assigned to a register for the time of execution of a
 function. Considering values in registers, \LLVM bitcode is always in a
@@ -61,19 +61,19 @@ requires that each variable is assigned exactly once, and every variable is
 defined before it is used~\cite{Cytron91}.
 \end{definition}
 
-In addition to register values \LLVMIR allows address-taken variables (i.e. it's
+In addition to register values, \LLVMIR allows address-taken variables (i.e. it is
 allowed to take the address of a variable and mutate its value).
 Hence, address-taken variables are not part of the \SSA form. In unoptimized
 \LLVM bitcode, each higher-level (C/\Cpp{}) variable becomes an address-taken
 variable, created by an \code{alloca} instruction. Consequently, register values are only
 created by the compiler as intermediate results of instructions. However, the \LLVM
 optimiser can lift many address-taken variables into registers if the addresses
-of those variables are not actually taken.
+of those variables are not taken.
 
-For our purpose we will meet only a subset of \LLVM instructions. Concretely
+For our purpose, we will meet only a subset of \LLVM instructions. Concretely
 instructions for manipulation of transformed values, memory operations and
 control flow (terminator) instructions. Precise documentation of all can be
-found in the \LLVM language reference manual \cite{LLVM:langref}. For better
+found in the \LLVM language reference manual \cite{LLVM:langref}. For a better
 understanding of \LLVM bitcode, please look at the following example.
 
 \begin{example} \label{ex:factorial}
@@ -172,7 +172,7 @@ are always at the end of a basic block, hence they are called \emph{terminator}
 instructions.
 
 As consequence of branching in the control flow graph and of its \SSA form, \LLVM needs to
-support acquisition of a value from different basic blocks. For this
+support the acquisition of a value from different basic blocks. For this
 purpose, \LLVM contains a special instruction -- a \code{phi} node \cite{Cytron91}.
 
 \begin{minted}{llvm}
@@ -185,7 +185,7 @@ coming from the \code{\%else} basic block.
 
 \subsection{Semantics} \label{subsec:semantics}
 
-In order to build abstraction over \LLVM bitcode, we need to set up a good
+In order to build an abstraction over \LLVM bitcode, we need to set up a good
 semantic model of the instruction set. For this purpose, small-step operational
 semantics \cite{Plotkin04} is a good candidate.
 
@@ -195,13 +195,13 @@ a command, an initial state and a final state.
 \end{definition}
 
 \noindent
-Since \LLVMIR semantics prevents unnamed value creation, we don not need to
+Since \LLVMIR semantics prevents unnamed value creation, we do not need to
 bother with expression semantics. The only state mutators are instructions, which are
 semantically atomic and operate only on existing named values. Moreover,
 instructions may mutate at most a single value in the program state. Hence, the
 semantic function with derivation rules can be derived from \LLVM
-language reference \cite{LLVM:langref}. Program state will basically
-consists of two parts -- stack frames and memory. Stack frames represent
+language reference \cite{LLVM:langref}. A program state will basically
+consist of two parts -- stack frames and memory. Stack frames represent
 register values, while the memory portion stores allocated variables.
 Further description of \LLVM semantics as used in \DIVINE can be found in Ročkai's
 dissertation thesis \cite{Rockai15}.
@@ -210,11 +210,11 @@ dissertation thesis \cite{Rockai15}.
 
 The compilation process using \LLVM starts with a \emph{front-end} compiler that produces
 \LLVMIR from higher-level code, e.g.~\clang for \Cpp{}, see \autoref{fig:compilation}.
-Bitcode generated by the front-end is then processed and optimized by \LLVM.
+Bitcode generated by the front-end is then processed and optimised by \LLVM.
 Optimization is divided into \LLVM \emph{passes}, where each of the passes
-performs some optimization task or code analysis. Passes can be run directly
-in the compiler or they can be run by an external tool, e.g.~the \LLVM
-optimization tool \emph{opt} \cite{LLVM:opt}. After optimization, \LLVMIR is passed to
+performs some optimisation task or code analysis. Passes can be run directly
+in the compiler, or they can be run by an external tool, e.g.~the \LLVM
+optimisation tool \emph{opt} \cite{LLVM:opt}. After optimisation, \LLVMIR is passed to
 an appropriate code generator, which generates assembly for a specific
 platform, e.g.~\texttt{x86} or ARM.
 
@@ -317,16 +317,15 @@ We employ error markings in verification of safety properties~\cite{Manna92}.  I
 sequence of instructions corresponding to an edge produces an error (null
 pointer dereference, violation of an assertion, etc.), we mark the edge by the
 $err$ action. When such an edge is seen during verification, the model checker
-declares an error. To verify a program we need to prove that an error transition
+declares an error. To verify a program, we need to prove that an error transition
 is never reachable. This is achieved by exhaustive exploration of the transition
-system $M = (S, s_0, Act, T)$ of the program. To be precise we check whether all
+system $M = (S, s_0, Act, T)$ of the program. To be precise, we check whether all
 runs starting from $s_0$ do not contain $err$ mark on any of their edges.
 
 Besides safety properties, we may want to verify temporal pro\-perties
 \cite{Manna92}. Temporal properties can describe not just properties about
 edges, but also properties about runs of a program. For example, we can check
-that variable $x$ will be eventually greater then 42. To verify such a property
-an automata-theoretic approach is used \cite{Vardi96}. In this approach, we have
+that variable $x$ will be eventually greater than 42. To verify such a property, an automata-theoretic approach is used \cite{Vardi96}. In this approach, we have
 to denote accepting edges by $acc$ mark. We say that a run is accepting if it
 contains infinitely many accepting edges. To check whether a program satisfies a
 temporal property $\varphi$, we do not have to decide whether all runs starting
@@ -335,11 +334,11 @@ a run satisfying~$\neg \varphi$. To do so, we check whether there exists an
 accepting run for property $\neg \varphi$, if not then $\varphi$ hold for the
 program.
 
-Further in thesis we will use a model checker called \DIVINE. It is based on
+Further in the thesis, we will use a model checker called \DIVINE. It is based on
 transition-based model checking and applies an automata-theoretic approach
 \cite{Vardi96}. In automata-based model checking we get a program $P$
 and temporal property $\varphi$ to be verified (in our case in the \LTL logic).
-We create a transition system $M$ of the program $P$, and construct a
+We create a transition system $M$ of the program $P$ and construct a
 transition-based automaton $A_{\neg \varphi}$ representing the negation of the
 property~$\varphi$. Model checking algorithm is then executed on the product of
 $M$ and $A_{\neg \varphi}$. The whole process is further described by
@@ -354,12 +353,12 @@ abstraction-based model checking was proposed by E. Clarke et al.~\cite{Clarke94
 
 In abstraction-based model checking, we abstract a transition system, replacing
 concrete states by a suitable abstract representation. In this way, we can
-represent a set of concrete states by a single abstract state. But we require
+represent a set of concrete states by a single abstract state. Moreover, we require
 that if there was a transition between two concrete states, there has to be a
-transition under same action between the abstract states that represent the
+transition under the same action between the abstract states that represent the
 concrete ones.
 
-Formally, given a concrete domain\sidenote{For example all possible values
+Formally, given a concrete domain\sidenote{For example, all possible values
 in~\LLVM.} $C$, we define a concrete state as an $n$-tuple of concrete values:
 $s \in C^n$, where each element represents a value of a program variable (there
 are $n$ variables in the program location of state $s$). An abstract state is
@@ -371,12 +370,12 @@ represented by a different number of values than the concrete state.
 In \LLVM we can have a concrete state $s$ with two variables $x$
 and $y$: $s = (x:5,y:0)$. Let's have an abstraction that determines whether a state
 contains a value equal to zero.\sidenote{This is a type of a predicate
-abstraction~\cite{Flanagan02}.} Then abstract abstract state $\widehat{s}$ contains only
+abstraction~\cite{Flanagan02}.} Then abstract state $\widehat{s}$ contains only
 a single value $true$.
 \end{example}
 
 To get an abstract transition system from a transition system $M$, we need to
-transform concrete states to abstract states and rearrange the transitions
+transform concrete states into abstract states and rearrange the transitions
 accordingly. Intuitively, we want an abstract state $\widehat{s}$ to represent
 all states from $M$ for which $\alpha(s) = \widehat{s}$.
 
@@ -389,8 +388,7 @@ all states from $M$ for which $\alpha(s) = \widehat{s}$.
             transition\\$\alpha(s) \xrightarrow[]{a} \alpha(p)$ in $\widehat{M}$.
     \end{enumerate}
 \end{definition}
-Remark that we maintain actions of transitions. This has to be done in order
-to preserve soundness of the method (i.e. when there was an error transition in
+Remark that we maintain actions of transitions. This has to be done to preserve the soundness of the method (i.e. when there was an error transition in
 the original transition system, we want to have an error transition in the
 abstract system between the corresponding abstract states).
 
@@ -433,15 +431,15 @@ original states $s_1$ and $s_2$.
 \end{example}
 
 Once we have an abstract transition system $\widehat{M}$, model checking is
-straightforward. Exploration of the abstract state space is done in the same
+straightforward. Exploration of the abstract state space is performed in the same
 manner as in the original explicit-state model checking approach. The only
 difference is that the satisfaction of a property has to be checked over
 abstract transitions. A problem occurs when the abstraction makes accessible an
 error that was unreachable in the concrete system (see an
 \autoref{ex:errtrans}).
-In this case a false positive error is found. However, since the abstracted system
+In this case, a false positive error is found. However, since the abstracted system
 includes all the behaviours of the original model $M$, we know that if
 $\widehat{M} \models \varphi$ then $M \models \varphi$, for some property
-$\varphi$. If the abstraction satisfies also the property $\widehat{M}
+$\varphi$. If the abstraction also satisfies the property $\widehat{M}
 \not\models \varphi \implies M \not\models \varphi$, we say that the abstraction
 is \emph{precise}.

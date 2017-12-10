@@ -1,0 +1,78 @@
+\chapter{How to abstract a program?}\label{ch:appendixb}
+
+\section{Archive and compilation}
+
+The archive attached to this thesis contains sources of \DIVINE with
+implementation of abstractions in \LART (located in
+\texttt{divine\\/lart/abstract}).
+Moreover, we include an entire set of benchmarks, with complete tables of results.
+
+\subsection{Compilation}
+To compile \DIVINE, unzip the distribution tarball and enter the
+newly created directory
+\begin{minted}{bash}
+$ tar xvzf divine.tar.gz
+$ cd divine
+\end{minted}
+The build is driven by a Makefile, and should be fully automatic. You only need to run:
+\begin{minted}{bash}
+$ make
+\end{minted}
+For further information, we kindly refer to the manual of the tool:
+\url{https://divine.fi.muni.cz/manual.html}, which is also inclu\-ded with a tool
+in \texttt{divine/doc} directory.
+
+\section{Program abstraction}
+In \DIVINE, we create an abstract variable using annotations or dedicated
+functions. Provided capabilities are to denote a domain of scalar value in the
+program. The abstract value does not need to be initialized since it is
+inherently considered to have an arbitrary value from the given domain.
+
+\subsection{Annotation}
+
+To annotate variable we use a compiler attribute (\code{\_\_atribute\_\_}) with
+a name of the domain. We predefine two types of annotations in
+\code{abstract/domains.h} of symbolic and zero domain:
+\begin{minted}{cpp}
+#define _SYM __attribute__((__annotate__("lart.abstract.sym")))
+#define _ZERO __attribute__((__annotate__("lart.abstract.zero")))
+\end{minted}
+In order to use annotations, user needs to include a header with annotation
+definitions. Thereafter, annotations \code{\_SYM} and \code{\_ZERO} can be used in
+the program:
+\begin{minted}{cpp}
+_SYM int x;
+\end{minted}
+
+To create a new domain, providing an implementation to the \LART, one can define
+an annotation in a similar way. The name of the domain is parsed from the
+annotation string.
+\add{ add note about note functioning zero domain }
+
+\subsection{\svcomp intrinsics}
+Besides the annotations, \DIVINE supports \svcomp intrinsics as defined in
+competition rules~\cite{svcomp}. Implementation of intrinsics using symbolic
+domain is compiled and linked with a verified program and can be directly used
+with verified program. \DIVINE provides following intrinsics:
+\begin{itemize}
+\item \code{\_\_VERIFIER\_nondet\_X()} to model nondeterministic values of
+type \code{X} (\code{bool, char, int, uint, short, ushort, long, ulong},
+\item \code{\_\_VERIFIER\_assume(int expression)} restrict a program \\behaviour
+    according to the expression,
+\item \code{\_\_VERIFIER\_assert(int condition)},
+\item \code{\_\_VERIFIER\_error()},
+\item \code{\_\_VERIFIER\_atomic\_begin()},
+\item \code{\_\_VERIFIER\_atomic\_end()}.
+\end{itemize}
+The implementation of the intrinsics can be found in \DIVINE project subfolder:
+\code{runtime/abstract/svcomp.cpp}.
+
+\subsection{Run symbolic \DIVINE}
+
+An annotated program can be verified by \DIVINE using symbolic algorithm:
+\begin{minted}{bash}
+./divine check --symbolic program.c
+\end{minted}
+A transformation is automatically executed before the verification starts. For
+further parameters description, we kindly refer to a manual of the tool.
+
