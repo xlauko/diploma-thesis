@@ -1,50 +1,45 @@
 \chapter{Introduction}\label{ch:Introduction}
 
-%\begin{chapquote}{Monty Python}
-%Nobody Expects the Spanish Inquisition.
-%\end{chapquote}
-
 \noindent
-
 In everyday practice, software engineers struggle to achieve correctness of
 software. Nowadays, a standard approach used by the industry is testing, which
 enables developers to cover basic use cases of their programs. However, with the
-increasing size of applications, it becomes harder to achieve satisfactory
-coverage, and include all the corner cases.
+increasing size of programs, it becomes harder to achieve satisfactory
+coverage, i.e.~cover all the corner cases.
 
 Moreover, testing is not sufficient when it encounters nondeterminism in a
-program. We may distinguish two types of nondeterminism. Data nondeterminism
+program. We may distinguish two types of nondeterminism: data nondeterminism,
 which is introduced by inputs from the environment, and control-flow
-nondeterminism caused by unpredictable interleaving of threads in parallel
+nondeterminism, caused by unpredictable interleaving of threads in parallel
 programs.
 
 To avoid the problems of testing, many techniques of formal verification have
 been invented, such as model checking~\cite{Baier08}, abstract
-interpretation~\cite{Cousot14}, symbolic execution~\cite{King76}. These
-techniques try to check all the behaviours of the program automatically, and
-hence cover all the corner cases.
+interpretation~\cite{Cousot14}, and symbolic execution~\cite{King76}.
+These techniques try to check all the behaviours of the program automatically,
+and hence cover all the corner cases.
 
 The technique that we are particularly interested in is explicit-state model
-checking.\sidenote{Explicit-state model checking is a technique, which
+checking.\sidenote{Explicit-state model checking is a technique which
 enumerates all possible states of a program and checks for the satisfaction
 of a given property.} The primary use case for model checking is to
-verify some property over the concurrent program by analysis of all
+verify some property over a concurrent program by analysis of all
 possible interleavings of its threads. This is a significant advantage
-against testing, since by testing we are not able to predict all thread
-interleavings and the tests may behave nondeterministically. Besides all
-the advantages of model checking, it comes with a drawback, that it is
-useless on programs that interact with an environment. In this case,
-model checking has to verify executions for each possible input, what
-requires an unmanageable amount of work -- an exploration of an enormous
-state space (also known as a \emph{state space explosion
+over testing, since by testing we are not able to predict all thread
+interleavings and the tests may behave randomly. Besides all
+the advantages of model checking, it comes with a~drawback -- it is
+useless on programs that interact with the environment. In this case,
+model checking has to verify executions for each possible input,
+requiring an unmanageable amount of work -- an exploration of an enormous
+state space (also known as the \emph{state space explosion
 problem}~\cite{Clarke99}).
 
 To tackle the problem with program inputs, a few extensions of explicit-state
-model checking have been introduced over the time -- abstraction-based model
+model checking have been introduced over time -- abstraction-based model
 checking~\cite{Clarke94} and symbolic model checking~\cite{Clarke96}. These
 techniques try to group inputs that do not induce changes in the behaviour of
 the program, and verify programs only according to those groups (or a
-representant is taken from the group). For example, consider a function
+representative is taken from the group). For example, consider a function
 that checks whether a number is greater than zero: we can separate all the
 possible inputs into two groups -- numbers bigger than zero, and the rest. Then
 we need to verify the program only according to those groups (i.e. just for the
@@ -62,8 +57,8 @@ from state space explosion.
 
 To be precise, we want to create a tool that will take a program and replace the
 nondeterministic data by some arbitrary representation of the group of inputs
-(i.e.~some abstraction of the input).  Likewise, we want to transform the
-operations on the input data to the operations on the groups of
+(i.e.~some abstraction of the input). Likewise, we want to transform
+operations on input data to operations on groups of
 data.\sidenote{For example, when we subtract a value one from the group of
 values $\{1,5,12\}$ the~resulting group is $\{0,4,11\}$.} Traditionally, a
 similar effect is achieved by interpreting the program and representing the
@@ -71,25 +66,26 @@ nondeterministic data internally in the verification tool. Our proposal is
 not to complicate the verification tool, letting the program do the work and
 manipulate abstract values directly. To achieve this, we suggest that
 instead of interpreting the program instructions in an abstract way, the
-abstraction can be compiled into the program directly (using a program
-transformation). Hence, the transformed program will manipulate with
-an abstract representation of the input instead of a concrete value.  The
-program transformed in this way, we can forward for analysis to an arbitrary
+abstraction can be compiled into the program (using a program
+transformation). Hence, the transformed program will manipulate
+an abstract representation of the input instead of a concrete value. We can
+forward the program transformed in this way for analysis to an arbitrary
 verification tool.
+
 
 In this work, we will present how such a transformation can be achieved and how
 abstract data can be represented. The structure of the thesis is following:
-first in \autoref{ch:preliminaries}, we will cover the input language for our
-transformation (\LLVM), and we will define what is model checking more
-precisely. In \autoref{ch:divine}, we will look on \DIVINE model checker
-toolchain \cite{Divine17}, in which is the program transformation implemented.
-In this chapter, we will also cover other approaches to the input abstraction,
+first, in \autoref{ch:preliminaries}, we will cover the input language for our
+transformation (\LLVM), and we will define what model checking is more
+precisely. In \autoref{ch:divine}, we will look at the \DIVINE model checker
+toolchain \cite{Divine17}, in which the program transformation is implemented.
+In this chapter, we will also cover other approaches to input abstraction,
 from which we have taken inspiration. More specifically, the \SymDIVINE
 approach of handling inputs will be explored \cite{Mrazek16}.
-\autoref{ch:abstraction} presents basic abstractions and the whole process of
+\autoref{ch:abstraction} presents basic abstractions and the process of
 program transformation. The experimental evaluation of the work is summarised
-in the \autoref{ch:results}. Evaluation has been made on the subset of
+in \autoref{ch:results}. Evaluation has been made on a subset of
 \textsc{sv-comp} (software verification competition) benchmarks
-\cite{Beyer17} and on the set of handcrafted data structures, such as an AVL
+\cite{Beyer17} and on a set of hand-crafted data structures, such as an AVL
 tree. Finally, \autoref{ch:conclusion} summarizes contributions of the work.
 

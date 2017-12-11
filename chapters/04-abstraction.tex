@@ -48,7 +48,7 @@ complicated design, since most of the computation has to be done statically (we
 can not benefit from the values computed during a runtime as interpreters). Also, the verification of the transformed program may potentially become slower, since
 abstract operations have to be interpreted by the verification tool.  Both
 approaches enable pluggable abstract domains, by generalising their common
-analyses, as will be shown in this chapter.
+analyses.
 
 Since \DIVINE is a powerful explicit-state model checker, we have decided not to
 complicate the precisely crafted interpreter (\DIVM), and take the second
@@ -197,7 +197,7 @@ manipulate values from $V_Z$. We require that abstract operations preserve the
 type correspondence. For example, an abstract instruction $\mathit{add}_{i32}$ is
 abstracted \LLVM instruction that adds two 32-bit integers and returns 32-bit
 result. The type signature of the abstract operation has to correspond with the
-types in the domain $Z$: ${i32}_Z \times {i32}_Z \to {i32}_Z$. 
+types in the domain $Z$: ${i32}_Z \times {i32}_Z \to {i32}_Z$.
 We define a semantic of operation as:
 \[
   \mathit{add}_{i32}(a, b) =
@@ -527,7 +527,7 @@ result of VPA is a list of functions with corresponding abstract roots.
 
 \begin{example}\label{ex:vpa}
     When analyzing the function \code{foo} from \autoref{fig:exampleprogram}, we
-    compute the reachable set of instructions using DFS from the root 
+    compute the reachable set of instructions using DFS from the root
     \code{x}~through all its uses \cite{LLVM:langref}. We investigate all
     instructions where \code{x}~appears on the right-hand side (marked orange on
     the picture).
@@ -817,7 +817,7 @@ appropriate abstract implementation inserted into them.
 From the abstraction roots computed in VPA, we can perform the transformation per
 function. But first of all, the function prototypes are created. This is performed because we may need to call some abstract function during the transformation, which has not been abstracted yet. But to create a call to a function, its prototype is sufficient. This approach also elegantly deals with recursive calls.
 \begin{marginfigure}
-\itshape
+\itshape\footnotesize
 Consider a recursive function:
 \begin{minted}{cpp}
 int foo(int a) {
@@ -1390,16 +1390,16 @@ concrete states represented by $s_1$ and $s_2$ are equal, we define a formula
 $equals(s_1, s_2)$:
 \begin{equation*}
 \begin{aligned}
-    pc_{eq}(\varphi, \psi) \defeq & ~(\varphi \iff \psi) \\
-    val_{eq}(s_1, s_2) \defeq & ~\varphi \implies (p_1 = \widehat{p}_1 \wedge \dots \wedge p_k = \widehat{p}_k ) \\
-    equals(s_1, s_2) \defeq & ~\forall~v_1,\dots, v_n (pc_{eq}(\varphi, \psi)
+    \mathit{pc}_{eq}(\varphi, \psi) \defeq & ~(\varphi \iff \psi) \\
+    \mathit{val}_{eq}(s_1, s_2) \defeq & ~\varphi \implies (p_1 = \widehat{p}_1 \wedge \dots \wedge p_k = \widehat{p}_k ) \\
+    \mathit{equals}(s_1, s_2) \defeq & ~\forall~v_1,\dots, v_n (\mathit{pc}_{eq}(\varphi, \psi)
     \wedge val_{eq}(s_1, s_2))
 \end{aligned}
 \end{equation*}
 The formula says, that states are equal when the path conditions are
 \marginpar{In reality when we check for equality of two states, we just need to
 find the proof that there exists an evaluation distinguishing both states.
-This is done easily by querying the \SMT solver for $\neg equals(s_1, s_2)$.
+This is done easily by querying the \SMT solver for $\neg \mathit{equals}(s_1, s_2)$.
 Hence we have simplified the work for solver, because it has to find a proof only
 for existential quantifier used in negated formula instead of universal from
 original formula.}
